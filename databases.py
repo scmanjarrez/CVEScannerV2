@@ -11,6 +11,7 @@ import dateutil.parser
 import sqlite3 as sql
 import datetime
 import zipfile
+import shutil
 import urllib
 import json
 import time
@@ -20,10 +21,13 @@ import re
 
 
 DB = 'cve.db'
+TMP_DIR = 'temp'
 TITLE = re.compile("<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 PAGE_CHUNK = 4096
 UA = UserAgent()
 BATCH = 50
+THREADS = 6
+DELAY = 0.5
 
 
 def create_db(db):
@@ -175,25 +179,8 @@ def update_exploit_name(db, exploit_name):
             'UPDATE Exploits '
             'SET Name = ? '
             'WHERE Exploit = ?',
-            [exploit_name])
+            exploit_name)
         db.commit()
-
-
-def exploit_name_updater(queue, finished):
-    db = sql.connect('cve.db')
-    batch = 50
-    to_update = []
-    while not finished.is_set():
-        if not queue.empty():
-            if len(to_update) < batch:
-                to_update.append(queue.get())
-            else:
-                update_exploit_name(db, to_update)
-                to_update = []
-        else:
-            time.sleep(1)
-    update_exploit_name(db, to_update)
-    db.close()
 
 
 def bulk_insert_exploit(db, exploit_list):
@@ -458,10 +445,10 @@ def scrape_title(exploit):
                     unquoted = match.group(1).replace("&#039;", "'")
                     break
     except (req.exceptions.ConnectionError,
-            req.exceptions.ConnectTimeout):
-        print("Error ocurred:", exploit)
+            req.exceptions.ConnectTimeout) as e:
+        print("Error ocurred:", exploit, e)
     finally:
-        time.sleep(1)
+        time.sleep(DELAY)
         return (unquoted, exploit)
 
 
@@ -489,8 +476,10 @@ def check_updates():
         populate_finished = Event()
         populate_iqueue = Queue()
         populate_oqueue = Queue()
-        populate_thread = PopulateDBThread(populate_finished, populate_ychanged,
-                                           populate_iqueue, populate_oqueue)
+        populate_thread = PopulateDBThread(populate_finished,
+                                           populate_ychanged,
+                                           populate_iqueue,
+                                           populate_oqueue)
         populate_thread.start()
         time.sleep(1)
 
@@ -508,22 +497,24 @@ def check_updates():
                 if last_update == cached_lu:
                     update = False
 
-                tmpfile = f"temp/{filename}{year}.json"
+                tmpfile = f"{TMP_DIR}/{filename}{year}.json"
                 if update:
                     try:
-                        os.makedirs("temp", exist_ok=True)
+                        os.makedirs(TMP_DIR, exist_ok=True)
                     except PermissionError:
-                        print("[ERROR] Insufficient permission "
-                              "to create \"temp\" directory.")
+                        print(f"[ERROR] Insufficient permission "
+                              f"to create \"{TMP_DIR}\" directory.")
                         sys.exit(-1)
 
                     tmpurl = f"{url}{filename}{year}.json.zip"
                     with alive_bar(total=1,
                                    title=f"[DWNLD] Year {year}:") as bar:
                         try:
-                            urllib.request.urlretrieve(tmpurl, f"{tmpfile}.zip")
+                            urllib.request.urlretrieve(tmpurl,
+                                                       f"{tmpfile}.zip")
                         except urllib.error.ContentTooShortError:
-                            print("[ERROR] Data downloaded is less than expected.")
+                            print("[ERROR] Data downloaded "
+                                  "is less than expected.")
                             sys.exit(-1)
                         except urllib.error.URLError as e:
                             print(f"[ERROR] {e}")
@@ -531,7 +522,7 @@ def check_updates():
 
                         with zipfile.ZipFile(f"{tmpfile}.zip", 'r') as zf:
                             try:
-                                zf.extractall('temp')
+                                zf.extractall(TMP_DIR)
                             except ValueError:
                                 print("[ERROR] Unexpected close.")
                                 sys.exit(-1)
@@ -543,15 +534,17 @@ def check_updates():
                     with alive_bar(total=len(data['CVE_Items']),
                                    title=f"[PARSE] Year {year}:") as bar:
                         for idx, cve_item in enumerate(data['CVE_Items']):
-                            if '** REJECT **' in (cve_item['cve']['description']
-                                                  ['description_data'][0]
-                                                  ['value']):
+                            if '** REJECT **' in (
+                                    cve_item['cve']['description']
+                                    ['description_data'][0]
+                                    ['value']):
                                 bar()
                                 continue
                             cve_id = cve_item['cve']['CVE_data_meta']['ID']
                             try:
-                                cvssv2 = (cve_item['impact']
-                                          ['baseMetricV2']['cvssV2']['baseScore'])
+                                cvssv2 = (
+                                    cve_item['impact']['baseMetricV2']
+                                    ['cvssV2']['baseScore'])
                             except KeyError:
                                 bar()
                                 continue
@@ -571,7 +564,9 @@ def check_updates():
                             if not cve_in_db(db, cve_id):
                                 try:
                                     populate_iqueue.put((1,
-                                                         (cve_id, cvssv2, cvssv3,
+                                                         (cve_id,
+                                                          cvssv2,
+                                                          cvssv3,
                                                           cve_year)))
                                 except sql.IntegrityError:
                                     print(cve_id, cvssv2, cvssv3, cve_year)
@@ -589,32 +584,43 @@ def check_updates():
                                 for product in products:
                                     uri = cpeuri.match(product['cpe23Uri'])
                                     if uri is not None:
-                                        ptype, vend, prod, vers, upd = uri.groups()
+                                        groups = uri.groups()
+                                        ptype, vend, prod, vers, upd = groups
                                         ptype = product_type[ptype]
                                         if not product_type_in_db(db,
                                                                   ptype):
-                                            insert_product_type(db, ptype)
+                                            insert_product_type(db,
+                                                                ptype)
                                         if not vendor_in_db(db,
                                                             vend):
-                                            populate_iqueue.put((3, (vend,)))
+                                            populate_iqueue.put((3,
+                                                                 (vend,)))
                                         if not product_in_db(db,
                                                              ptype, vend,
                                                              prod, vers,
                                                              upd):
-                                            populate_iqueue.put((4, (ptype, vend,
-                                                                     prod, vers,
+                                            populate_iqueue.put((4, (ptype,
+                                                                     vend,
+                                                                     prod,
+                                                                     vers,
                                                                      upd)))
                                         if not product_is_affected(db,
-                                                                   cve_id, ptype,
-                                                                   vend, prod,
-                                                                   vers, upd):
+                                                                   cve_id,
+                                                                   ptype,
+                                                                   vend,
+                                                                   prod,
+                                                                   vers,
+                                                                   upd):
                                             populate_iqueue.put((5,
-                                                                 (cve_id, ptype,
-                                                                  vend, prod,
-                                                                  vers, upd)))
+                                                                 (cve_id,
+                                                                  ptype,
+                                                                  vend,
+                                                                  prod,
+                                                                  vers,
+                                                                  upd)))
                                     else:
-                                        print(f"[ERROR] "
-                                              f"Can't parse {product['cpe23Uri']}")
+                                        print(f"[ERROR] Can't parse "
+                                              f"{product['cpe23Uri']}")
                                         continue
 
                             for reference in references:
@@ -649,18 +655,30 @@ def check_updates():
             populate_thread.join()
             bar()
 
-        exploits = exploits_in_db()
+        exploits = exploits_in_db(db)
         expl_generator = exploit_batch(exploits)
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=THREADS) as executor:
             with alive_bar(
                     total=len(exploits)//BATCH+1,
                     title="[CRAWL] Exploit names") as bar:
                 for batch in expl_generator:
                     results = executor.map(scrape_title, batch)
-                    update_exploit_name(db, results)
+                    update_exploit_name(db, list(results))
                     bar()
+
+
+def clean_temp():
+    with alive_bar(
+            total=1, title="[CLEAN] Temporary files") as bar:
+        try:
+            shutil.rmtree(TMP_DIR)
+        except FileNotFoundError:
+            pass
+        finally:
+            bar()
 
 
 if __name__ == "__main__":
     config_handler.set_global(bar='classic', spinner='classic')
     check_updates()
+    clean_temp()
