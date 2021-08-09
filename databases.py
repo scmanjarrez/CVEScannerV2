@@ -624,7 +624,8 @@ def check_updates():
                                         continue
 
                             for reference in references:
-                                if "exploit-db" in reference['url']:
+                                if ('exploit-db' in reference['url'] and
+                                    'Broken Link' not in reference['tags']):
                                     expl_match = expl_name.match(
                                         reference['url'])
                                     if expl_match is not None:
@@ -656,26 +657,28 @@ def check_updates():
             bar()
 
         exploits = exploits_in_db(db)
-        expl_generator = exploit_batch(exploits)
-        with ThreadPoolExecutor(max_workers=THREADS) as executor:
-            with alive_bar(
-                    total=len(exploits)//BATCH+1,
-                    title="[CRAWL] Exploit names") as bar:
-                for batch in expl_generator:
-                    results = executor.map(scrape_title, batch)
-                    update_exploit_name(db, list(results))
-                    bar()
+        if len(exploits) > 0:
+            expl_generator = exploit_batch(exploits)
+            with ThreadPoolExecutor(max_workers=THREADS) as executor:
+                with alive_bar(
+                        total=len(exploits)//BATCH+1,
+                        title="[CRAWL] Exploit names") as bar:
+                    for batch in expl_generator:
+                        results = executor.map(scrape_title, batch)
+                        update_exploit_name(db, list(results))
+                        bar()
 
 
 def clean_temp():
-    with alive_bar(
-            total=1, title="[CLEAN] Temporary files") as bar:
-        try:
-            shutil.rmtree(TMP_DIR)
-        except FileNotFoundError:
-            pass
-        finally:
-            bar()
+    if os.path.exists(TMP_DIR) and os.path.isdir(TMP_DIR):
+        with alive_bar(
+                total=1, title="[CLEAN] Temporary files") as bar:
+            try:
+                shutil.rmtree(TMP_DIR)
+            except FileNotFoundError:
+                pass
+            finally:
+                bar()
 
 
 if __name__ == "__main__":
