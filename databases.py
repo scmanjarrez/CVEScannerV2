@@ -50,9 +50,7 @@ def create_db(db):
                 CVSSV2 REAL,
                 CVSSV3 REAL,
                 Year INTEGER,
-                Exploit TEXT,
-                FOREIGN KEY (Year) REFERENCES Years (Year),
-                FOREIGN KEY (Exploit) REFERENCES Exploits (Exploit)
+                FOREIGN KEY (Year) REFERENCES Years (Year)
             );
 
             CREATE TABLE IF NOT EXISTS ProductTypes (
@@ -137,9 +135,9 @@ def bulk_insert_year(db, year_list):
 def update_year(db, year, last_update, sha256):
     with closing(db.cursor()) as cur:
         cur.execute(
-            ('UPDATE Years '
-             'SET LastUpdate = ?, SHA256 = ? '
-             'WHERE Year = ?'),
+            'UPDATE Years '
+            'SET LastUpdate = ?, SHA256 = ? '
+            'WHERE Year = ?',
             [last_update, sha256, year])
         db.commit()
 
