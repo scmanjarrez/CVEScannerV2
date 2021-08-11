@@ -1,5 +1,25 @@
 #!/usr/bin/env python
 
+# database - Database generator.
+
+# Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+# Universidad Carlos III de Madrid.
+
+# This file is part of CVEScannerV2.
+
+# CVEScannerV2 is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# CVEScannerV2 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
+
 from alive_progress import alive_bar, config_handler
 from concurrent.futures import ThreadPoolExecutor
 from fake_useragent import UserAgent
@@ -9,6 +29,7 @@ from queue import Queue
 import requests as req
 import dateutil.parser
 import sqlite3 as sql
+import argparse
 import datetime
 import zipfile
 import shutil
@@ -28,6 +49,14 @@ UA = UserAgent()
 BATCH = 50
 THREADS = 6
 DELAY = 0.5
+
+COPYRIGHT = """
+CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+Universidad Carlos III de Madrid.
+This program comes with ABSOLUTELY NO WARRANTY; for details check below.
+This is free software, and you are welcome to redistribute it
+under certain conditions; check below for details.
+"""
 
 
 def create_db(db):
@@ -679,7 +708,41 @@ def clean_temp():
                 bar()
 
 
+def clean_db():
+    with closing(sql.connect(DB)) as db:
+        with closing(db.cursor()) as cur:
+            cur.execute(
+                'DELETE FROM Referenced '
+                'WHERE Exploit IN ('
+                'SELECT Exploit FROM Exploits '
+                'WHERE Name LIKE "404 %")')
+            cur.execute(
+                'DELETE FROM Exploits '
+                'WHERE Name LIKE "404 Page %"')
+            db.commit()
+
+
 if __name__ == "__main__":
     config_handler.set_global(bar='classic', spinner='classic')
-    check_updates()
-    clean_temp()
+    parser = argparse.ArgumentParser(description=("Tool to generate cve.db.")
+                                     )
+
+    parser.add_argument('-c', '--clean',
+                        action='store_true',
+                        help="Clean database from exploit-db removed exploits."
+                        )
+
+    args = parser.parse_args()
+
+    print(COPYRIGHT)
+
+    if args.clean:
+        print("[CLEAN] Removing exploit-db orphan references")
+        clean_db()
+    else:
+        if os.path.exists(DB) and os.path.isfile(DB):
+            print("[START] Updating database ...")
+        else:
+            print("[START] Generating database ...")
+        check_updates()
+        clean_temp()

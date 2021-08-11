@@ -1,68 +1,132 @@
+-- cvescanner - NSE script.
+
+-- Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+-- Universidad Carlos III de Madrid.
+
+-- This file is part of CVEScannerV2.
+
+-- CVEScannerV2 is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+-- CVEScannerV2 is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
+
 description = [[
-Search for vulnerabilities analyzing open ports. CVEs information gathered from nvd.nist.gov.
+Search for probable vulnerabilities based on services discovered in open ports.
+CVEs information gathered from nvd.nist.gov.
 ]]
 --- Prerequisite: Download Databases
 -- @usage ./databases.py
-
+--
 --- Execute CVEscanner
 -- @usage nmap -sV <target-ip> --script=./cvescanner.nse
 --
 -- @output
 -- PORT      STATE SERVICE       VERSION
--- 3306/tcp  open  mysql         MySQL 5.5.23
+-- 3306/tcp  open  mysql         MySQL 5.5.55
 -- | cvescanner:
--- |   product: MYSQL
--- |   version: 5.5.23
--- |   n_vulnerabilities: X
+-- |   source: nvd.nist.gov
+-- |   product: MySQL
+-- |   version: 5.5.55
+-- |   n_vulnerabilities: 5
 -- |   vulnerabilities:
 -- |     CVE ID           CVSSv2   CVSSv3   Exploits
+-- |     CVE-2021-3278    7.5      9.8      Yes
 -- |     CVE-2019-13401   6.8      8.8      No
 -- |     CVE-2019-13402   6.5      8.8      No
--- |     CVE-2019-13400   5.0      9.8      Yes
--- |     CVE-2019-13403   5.0      7.5      Yes
--- |     CVE-2015-4651    5.0      -        Yes
--- |     ...
+-- |     CVE-2016-3976    5.0      7.5      Yes
+-- |_    CVE-2014-3631    7.2      -        Yes
+--
 ---
 
 categories = {"discovery", "version", "safe"}
-
 author = "Sergio Chica"
-
 
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local sql = require "luasql.sqlite3"
 
 local DB = 'cve.db'
-
-env = sql.sqlite3()
-conn = env:connect(DB)
+local env = sql.sqlite3()
+local conn = env:connect(DB)
+local logger = assert(io.open('cvescanner.log', 'a'))
+local time = os.date("%Y-%m-%d %H:%M:%S")
 
 -- Returns true for every host-port open
-portrule = function(host, port)
+portrule = function (host, port)
    return port.service ~= "tcpwrapped" and
       port.service ~= "unknown" and
       port.version.product ~= nil and
       port.version.version ~= nil
 end
 
-postrule = function () return true end
 
-function check_db()
+postrule = function ()
+   return true
+end
+
+
+local function fmt (msg, ...)
+   return string.format(msg, ...)
+end
+
+
+local function log (msg, ...)
+   logger:write(fmt(msg .. "\n", ...))
+   stdnse.verbose(2, msg, ...)
+end
+
+
+local function check_db ()
    local db = io.open(DB, "r")
    return db ~= nil and io.close(db)
 end
 
 
-local function vulnerabilities(product, version)
-   -- Query CVE, CVSSv2 and CVSSv3 by product and version
+local function timestamp ()
+   logger:write(fmt("#################################################\n" ..
+                    "############## %s ##############\n" ..
+                    "#################################################\n\n", time))
+   stdnse.verbose(2, fmt("[INFO] Starting analysis ..."))
+   stdnse.verbose(2, fmt("[INFO] timestamp: %s", time))
+end
+
+
+local function log_exploit (vuln)
    local cur = conn:execute(
-      string.format(
+      fmt(
+         [[SELECT Referenced.Exploit, Exploits.Name
+           FROM Referenced
+           INNER JOIN Exploits ON Referenced.Exploit = Exploits.Exploit
+           WHERE Referenced.CVE = "%s"]],
+           vuln)
+   )
+   local exploit, name = cur:fetch()
+   while exploit do
+      log("[INFO] cve_id: %s", vuln)
+      log("[INFO] exploit_name: %s", name)
+      log("[INFO] exploit_url: https://www.exploit-db.com/exploits/%s", exploit)
+      exploit, name = cur:fetch()
+   end
+end
+
+
+local function vulnerabilities (product, version)
+   -- Query CVE, CVSSv2, CVSSv3 and Exploits bool by product and version
+   local cur = conn:execute(
+      fmt(
          [[SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3, (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) as Exploits
            FROM Products
            INNER JOIN Affected ON Products.ProductID = Affected.ProductID
            INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
-           WHERE Products.Product = "%s" AND Products.Version = "%s";]],
+           WHERE Products.Product = "%s" AND Products.Version = "%s"]],
            product, version)
    )
    local vulns = {}
@@ -79,18 +143,14 @@ local function vulnerabilities(product, version)
    end
    table.sort(sorted, function(a, b) return a[2] > b[2] end)
 
+   log("[INFO] n_vulnerabilities: %d", #sorted)
+
    -- Pretty print the output
    local output = {}
-   table.insert(output,
-                string.format(
-                   "%-15s\t%-5s\t%-5s\t%-10s",
-                   "CVE ID", "CVSSv2", "CVSSv3", "Exploits"
-                )
-   )
    for _, value in ipairs(sorted) do
-      print(value[4])
+      log_exploit(value[1])
       table.insert(output,
-                   string.format(
+                   fmt(
                       "%-15s\t%-5s\t%-5s\t%-10s",
                       value[1], value[2],
                       value[3] and value[3] or "-",
@@ -98,31 +158,51 @@ local function vulnerabilities(product, version)
                    )
       )
    end
-
    cur:close()
    return output
 end
 
-function portaction (host, port)
+
+local function portaction (host, port)
    if check_db() then
-      local product = string.lower(port.version.product)
+      timestamp()
+      local product = port.version.product
       local version = port.version.version
 
-      stdnse.verbose(2, "[QUERY] product: %s | version: %s", product, version)
-      local vulns = vulnerabilities(product, version)
-      -- local vulns = vulnerabilities("tenshi", "0.15")
-      if #vulns > 1 then
+      log("[INFO] product: %s", product)
+      log("[INFO] version: %s", version)
+
+      local vulns = vulnerabilities(string.lower(product), version)
+      local nvulns = #vulns
+      if nvulns > 1 then
+         table.insert(vulns, 1, "source: nvd.nist.gov")
+         table.insert(vulns, 2, fmt("product: %s", product))
+         table.insert(vulns, 3, fmt("version: %s", version))
+         table.insert(vulns, 4, fmt("n_vulnerabilities: %d", nvulns))
+         table.insert(vulns, 5, "vulnerabilities:")
+         table.insert(vulns, 6,
+                      fmt(
+                         "%-15s\t%-5s\t%-5s\t%-10s",
+                         "CVE ID", "CVSSv2", "CVSSv3", "Exploits"
+                      )
+         )
          return vulns
       end
    else
-      stdnse.verbose(1, "Database not found. Run ./databases.py before running nmap script.")
+      stdnse.verbose(1,
+                     "Database not found. " ..
+                     "Run ./databases.py before running nmap script.")
    end
 end
 
-function postaction ()
+
+local function postaction ()
         conn:close()
         env:close()
+        logger:write("\n")
+        logger:close()
 end
+
 
 local ActionsTable = {
   portrule = portaction,
@@ -130,4 +210,4 @@ local ActionsTable = {
 }
 
 -- execute the action function corresponding to the current rule
-action = function(...) return ActionsTable[SCRIPT_TYPE](...) end
+action = function (...) return ActionsTable[SCRIPT_TYPE](...) end

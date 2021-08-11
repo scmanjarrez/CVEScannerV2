@@ -3,7 +3,8 @@ pycve
 *.bk
 json-viewer/
 cve.db
-databases/
+tmp/
+*pdf
 
 ## Default python ignore
 # Byte-compiled / optimized / DLL files
