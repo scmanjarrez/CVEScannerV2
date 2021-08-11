@@ -57,3 +57,16 @@ After database has been created, it is necessary to specify the script to launch
 `sudo apt install lua-sql-sqlite3`
 
 `sudo ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua`
+
+# Acknowledgement
+
+Based on [alegr3/CVEScanner](https://github.com/alegr3/CVEscanner) script.
+
+# License
+    CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+    Universidad Carlos III de Madrid.
+    This program comes with ABSOLUTELY NO WARRANTY; for details check below.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions; check below for details.
+
+[LICENSE](https://github.com/scmanjarrez/CVEScannerV2/blob/master/LICENSE)
