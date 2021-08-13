@@ -47,7 +47,7 @@ TITLE = re.compile("<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 PAGE_CHUNK = 4096
 UA = UserAgent()
 BATCH = 50
-THREADS = 6
+THREADS = 5
 DELAY = 0.5
 
 COPYRIGHT = """

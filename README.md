@@ -8,7 +8,7 @@ Nmap script that searches for probable vulnerabilities based on services discove
 
 # Run
 ### Prelaunch
-In order to execute **cvescanner** script, it is necessary to generate the CVEs database.
+In order to execute **cvescannerv2** script, it is necessary to generate the CVEs database.
 
 The script **database.py** generates the database **cve.db** with all the required information.
 It may take some time due to the high amount of vulnerabilities.
@@ -18,7 +18,7 @@ It may take some time due to the high amount of vulnerabilities.
 `python database.py`
 
 ### Optional
-Script **cvescanner.nse** can be placed in Nmap default script directory to execute
+Script **cvescannerv2.nse** can be placed in Nmap default script directory to execute
 from anywhere.
 
 - Linux location can be:
@@ -32,11 +32,11 @@ from anywhere.
 ### Launch
 After database has been created, it is necessary to specify the script to launch.
 
-`nmap -sV <target_ip> --script=cvescanner.nse`
-> If **cvescanner.nse** file was placed in Nmap default script directory
+`nmap -sV <target_ip> --script=cvescannerv2.nse`
+> If **cvescannerv2.nse** file was placed in Nmap default script directory
 
-`nmap -sV <target_ip> --script=./cvescanner.nse`
-> If **cvescanner.nse** file is in the current working directory
+`nmap -sV <target_ip> --script=./cvescannerv2.nse`
+> If **cvescannerv2.nse** file is in the current working directory
 
 
 # Errors, causes and fixes
@@ -47,7 +47,7 @@ After database has been created, it is necessary to specify the script to launch
 
 <br>
 
-> cvescanner.nse:54: module 'luasql.sqlite3' not found:<br>
+> cvescannerv2.nse:54: module 'luasql.sqlite3' not found:<br>
 > NSE failed to find nselib/luasql/sqlite3.lua in search paths.<br>
 > ...
 - Error caused because of missing luasql library.

@@ -1,4 +1,4 @@
--- cvescanner - NSE script.
+-- cvescannerv2 - NSE script.
 
 -- Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 -- Universidad Carlos III de Madrid.
@@ -25,13 +25,13 @@ CVEs information gathered from nvd.nist.gov.
 --- Prerequisite: Download Databases
 -- @usage ./databases.py
 --
---- Execute CVEscanner
--- @usage nmap -sV <target-ip> --script=./cvescanner.nse
+--- Execute CVEscannerV2
+-- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse
 --
 -- @output
 -- PORT      STATE SERVICE       VERSION
 -- 3306/tcp  open  mysql         MySQL 5.5.55
--- | cvescanner:
+-- | cvescannerv2:
 -- |   source: nvd.nist.gov
 -- |   product: MySQL
 -- |   version: 5.5.55
@@ -56,7 +56,7 @@ local sql = require "luasql.sqlite3"
 local DB = 'cve.db'
 local env = sql.sqlite3()
 local conn = env:connect(DB)
-local logger = assert(io.open('cvescanner.log', 'a'))
+local logger = assert(io.open('cvescannerv2.log', 'a'))
 local time = os.date("%Y-%m-%d %H:%M:%S")
 
 -- Returns true for every host-port open
@@ -174,7 +174,7 @@ local function portaction (host, port)
 
       local vulns = vulnerabilities(string.lower(product), version)
       local nvulns = #vulns
-      if nvulns > 1 then
+      if nvulns > 0 then
          table.insert(vulns, 1, "source: nvd.nist.gov")
          table.insert(vulns, 2, fmt("product: %s", product))
          table.insert(vulns, 3, fmt("version: %s", version))
