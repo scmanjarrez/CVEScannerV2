@@ -5,6 +5,7 @@ Nmap script that searches for probable vulnerabilities based on services discove
 - luasql
 - nmap
 - python
+- git
 
 # Run
 ### Prelaunch
