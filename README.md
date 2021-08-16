@@ -18,6 +18,9 @@ It may take some time due to the high amount of vulnerabilities.
 
 `python database.py`
 
+**Note:** A semi-updated database is uploaded as .sql file in
+[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB) repository.
+
 ### Optional
 Script **cvescannerv2.nse** can be placed in Nmap default script directory to execute
 from anywhere.
@@ -61,7 +64,7 @@ After database has been created, it is necessary to specify the script to launch
 
 # Acknowledgement
 
-Based on [alegr3/CVEScanner](https://github.com/alegr3/CVEscanner) script.
+Based on [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner) script.
 
 # License
     CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
