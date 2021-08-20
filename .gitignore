@@ -1,9 +1,13 @@
 ## Own ignore
+.idea/
 pycve
 *.bk
 json-viewer/
 cve.db
 tmp/
+practica/
+t.py
+queries.sql
 *pdf
 
 ## Default python ignore

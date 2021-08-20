@@ -34,6 +34,7 @@ import datetime
 import zipfile
 import shutil
 import urllib
+import html
 import json
 import time
 import sys
@@ -43,12 +44,17 @@ import re
 
 DB = 'cve.db'
 TMP_DIR = 'temp'
-TITLE = re.compile("<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
-PAGE_CHUNK = 4096
+TITLE = re.compile(
+    r"<title[^>]*>(.*?)</title>",
+    re.IGNORECASE | re.DOTALL)
+MSFNAME = re.compile(
+    r"""['"]Name['"]\s+=>\s+(?P<quote>['"])((\\.|.)*?)(?P=quote)""",
+    re.IGNORECASE | re.DOTALL)
 UA = UserAgent()
-BATCH = 50
-THREADS = 5
-DELAY = 0.5
+BATCH = 25
+# low requests per minute, but we need this to bypass WAF
+THREADS = 3
+DELAY = 5
 
 COPYRIGHT = """
 CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
@@ -71,7 +77,8 @@ def create_db(db):
 
             CREATE TABLE IF NOT EXISTS Exploits (
                 Exploit INTEGER PRIMARY KEY,
-                Name TEXT
+                Name TEXT,
+                Metasploit TEXT
             );
 
             CREATE TABLE IF NOT EXISTS CVEs (
@@ -98,7 +105,7 @@ def create_db(db):
                 Version TEXT,
                 VUpdate TEXT,
                 FOREIGN KEY (Vendor) REFERENCES Vendors (Vendor),
-                FOREIGN KEY (ProductType) REFERENCES ProductTypes (ProductType),
+                FOREIGN KEY (ProductType) REFERENCES ProductTypes(ProductType),
                 UNIQUE (ProductType, Vendor, Product, Version, VUpdate)
             );
 
@@ -152,15 +159,6 @@ def insert_year(db, year, last_update, sha256):
         db.commit()
 
 
-def bulk_insert_year(db, year_list):
-    with closing(db.cursor()) as cur:
-        cur.executemany(
-            'INSERT or IGNORE INTO Years (Year, LastUpdate, SHA256) '
-            'VALUES (?, ?, ?)',
-            year_list)
-        db.commit()
-
-
 def update_year(db, year, last_update, sha256):
     with closing(db.cursor()) as cur:
         cur.execute(
@@ -168,16 +166,6 @@ def update_year(db, year, last_update, sha256):
             'SET LastUpdate = ?, SHA256 = ? '
             'WHERE Year = ?',
             [last_update, sha256, year])
-        db.commit()
-
-
-def bulk_update_year(db, year_list):
-    with closing(db.cursor()) as cur:
-        cur.executemany(
-            'UPDATE Years '
-            'SET LastUpdate = ?, SHA256 = ? '
-            'WHERE Year = ?',
-            year_list)
         db.commit()
 
 
@@ -200,13 +188,13 @@ def exploits_in_db(db):
         return [expl[0] for expl in cur.fetchall()]
 
 
-def update_exploit_name(db, exploit_name):
+def bulk_update_exploit_name(db, exploit_names):
     with closing(db.cursor()) as cur:
         cur.executemany(
             'UPDATE Exploits '
-            'SET Name = ? '
+            'SET Name = ?, Metasploit = ? '
             'WHERE Exploit = ?',
-            exploit_name)
+            exploit_names)
         db.commit()
 
 
@@ -228,31 +216,12 @@ def cve_in_db(db, cve):
         return cur.fetchone()[0]
 
 
-def insert_cve(db, cve, cvssv2, cvssv3, year):
-    with closing(db.cursor()) as cur:
-        cur.execute(
-            'INSERT INTO CVEs (CVE, CVSSV2, CVSSV3, Year) '
-            'VALUES (?, ?, ?, ?)',
-            [cve, cvssv2, cvssv3, year])
-    db.commit()
-
-
 def bulk_insert_cve(db, cve_list):
     with closing(db.cursor()) as cur:
         cur.executemany(
             'INSERT or IGNORE INTO CVEs (CVE, CVSSV2, CVSSV3, Year) '
             'VALUES (?, ?, ?, ?)',
             cve_list)
-        db.commit()
-
-
-def update_cve(db, cve, cvssv2, cvssv3, year):
-    with closing(db.cursor()) as cur:
-        cur.execute(
-            'UPDATE CVEs '
-            'SET CVSSV2 = ?, CVSSV3 = ?, Year = ? '
-            'WHERE CVE = ?',
-            [cvssv2, cvssv3, year, cve])
         db.commit()
 
 
@@ -284,14 +253,6 @@ def insert_product_type(db, product_type):
         db.commit()
 
 
-def bulk_insert_product_type(db, ptype_list):
-    with closing(db.cursor()) as cur:
-        cur.executemany(
-            'INSERT or IGNORE INTO ProductTypes VALUES (?)',
-            ptype_list)
-        db.commit()
-
-
 def vendor_in_db(db, vendor):
     with closing(db.cursor()) as cur:
         cur.execute(
@@ -300,14 +261,6 @@ def vendor_in_db(db, vendor):
             'WHERE Vendor = ?)',
             [vendor])
         return cur.fetchone()[0]
-
-
-def insert_vendor(db, vendor):
-    with closing(db.cursor()) as cur:
-        cur.execute(
-            'INSERT INTO Vendors VALUES (?)',
-            [vendor])
-        db.commit()
 
 
 def bulk_insert_vendor(db, vendor_list):
@@ -328,16 +281,6 @@ def product_in_db(db, product_type, vendor, product, version, update):
             'Version = ? AND VUpdate = ?)',
             [product_type, vendor, product, version, update])
         return cur.fetchone()[0]
-
-
-def insert_product(db, product_type, vendor, product, version, update):
-    with closing(db.cursor()) as cur:
-        cur.execute(
-            'INSERT INTO Products ('
-            'ProductType, Vendor, Product, Version, VUpdate) '
-            'VALUES (?, ?, ?, ?, ?)',
-            [product_type, vendor, product, version, update])
-        db.commit()
 
 
 def bulk_insert_product(db, product_list):
@@ -364,19 +307,6 @@ def product_is_affected(db, cve, product_type, vendor,
         return cur.fetchone()[0]
 
 
-def insert_affected(db, cve, product_type, vendor,
-                    product, version, update):
-    with closing(db.cursor()) as cur:
-        cur.execute(
-            'INSERT INTO Affected '
-            'VALUES (?, ('
-            'SELECT ProductID FROM Products '
-            'WHERE ProductType = ? AND Vendor = ? AND '
-            'Product = ? AND Version = ? AND VUpdate = ?))',
-            [cve, product_type, vendor, product, version, update])
-        db.commit()
-
-
 def bulk_insert_affected(db, product_cve_list):
     with closing(db.cursor()) as cur:
         cur.executemany(
@@ -399,15 +329,6 @@ def cve_has_reference(db, cve, exploit):
         return cur.fetchone()[0]
 
 
-def insert_referenced(db, cve, exploit):
-    with closing(db.cursor()) as cur:
-        cur.execute(
-            'INSERT INTO Referenced '
-            'VALUES (?, ?)',
-            [cve, exploit])
-        db.commit()
-
-
 def bulk_insert_referenced(db, cve_exploit_list):
     with closing(db.cursor()) as cur:
         cur.executemany(
@@ -415,6 +336,20 @@ def bulk_insert_referenced(db, cve_exploit_list):
             'VALUES (?, ?)',
             cve_exploit_list)
         db.commit()
+
+
+def clean_db():
+    with closing(sql.connect(DB)) as db:
+        with closing(db.cursor()) as cur:
+            cur.execute(
+                'DELETE FROM Referenced '
+                'WHERE Exploit IN ('
+                'SELECT Exploit FROM Exploits '
+                'WHERE Name LIKE "404 %")')
+            cur.execute(
+                'DELETE FROM Exploits '
+                'WHERE Name LIKE "404 Page %"')
+            db.commit()
 
 
 class PopulateDBThread(Thread):
@@ -459,24 +394,24 @@ class PopulateDBThread(Thread):
 
 
 def scrape_title(exploit):
-    unquoted = None
+    title = None
+    msfmodule = False
+    msfname = None
     try:
         with req.get(f'https://www.exploit-db.com/exploits/{exploit}',
-                     stream=True, headers={'User-Agent': UA.random}
-                     ) as page:
-            buff = ""
-            for chk in page.iter_content(chunk_size=PAGE_CHUNK):
-                buff += chk.decode('utf-8')
-                match = TITLE.search(buff)
-                if match:
-                    unquoted = match.group(1).replace("&#039;", "'")
-                    break
+                     headers={'User-Agent': UA.random}) as page:
+            decoded = html.unescape(page.text)
+            title = TITLE.search(decoded).group(1).replace('\r\n', ' ')
+            if "(Metasploit)" in title:
+                msfmodule = True
+            if msfmodule:
+                msfname = MSFNAME.search(decoded).group(1).replace('\r\n', ' ')
     except (req.exceptions.ConnectionError,
             req.exceptions.ConnectTimeout) as e:
         print("Error ocurred:", exploit, e)
     finally:
         time.sleep(DELAY)
-        return (unquoted, exploit)
+        return title, msfname, exploit
 
 
 def exploit_batch(exploits):
@@ -596,7 +531,9 @@ def check_updates():
                                                           cvssv3,
                                                           cve_year)))
                                 except sql.IntegrityError:
-                                    print(cve_id, cvssv2, cvssv3, cve_year)
+                                    print(f"[ERROR]: Integrity error: "
+                                          f"{cve_id}, {cvssv2}, {cvssv3}, "
+                                          f"{cve_year}")
                                     sys.exit(-1)
                             else:
                                 populate_iqueue.put((2,
@@ -652,7 +589,7 @@ def check_updates():
 
                             for reference in references:
                                 if ('exploit-db' in reference['url'] and
-                                    'Broken Link' not in reference['tags']):
+                                    'Broken Link' not in reference['tags']):  # noqa
                                     expl_match = expl_name.match(
                                         reference['url'])
                                     if expl_match is not None:
@@ -692,7 +629,7 @@ def check_updates():
                         title="[CRAWL] Exploit names") as bar:
                     for batch in expl_generator:
                         results = executor.map(scrape_title, batch)
-                        update_exploit_name(db, list(results))
+                        bulk_update_exploit_name(db, list(results))
                         bar()
 
 
@@ -708,24 +645,9 @@ def clean_temp():
                 bar()
 
 
-def clean_db():
-    with closing(sql.connect(DB)) as db:
-        with closing(db.cursor()) as cur:
-            cur.execute(
-                'DELETE FROM Referenced '
-                'WHERE Exploit IN ('
-                'SELECT Exploit FROM Exploits '
-                'WHERE Name LIKE "404 %")')
-            cur.execute(
-                'DELETE FROM Exploits '
-                'WHERE Name LIKE "404 Page %"')
-            db.commit()
-
-
 if __name__ == "__main__":
     config_handler.set_global(bar='classic', spinner='classic')
-    parser = argparse.ArgumentParser(description=("Tool to generate cve.db.")
-                                     )
+    parser = argparse.ArgumentParser(description="Tool to generate cve.db.")
 
     parser.add_argument('-c', '--clean',
                         action='store_true',

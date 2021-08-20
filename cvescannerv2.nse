@@ -101,45 +101,56 @@ end
 
 local function log_exploit (vuln)
    local cur = conn:execute(
-      fmt(
-         [[SELECT Referenced.Exploit, Exploits.Name
-           FROM Referenced
-           INNER JOIN Exploits ON Referenced.Exploit = Exploits.Exploit
-           WHERE Referenced.CVE = "%s"]],
-           vuln)
+      fmt([[
+          SELECT Referenced.Exploit, Exploits.Name, Exploits.Metasploit
+          FROM Referenced
+          INNER JOIN Exploits ON Referenced.Exploit = Exploits.Exploit
+          WHERE Referenced.CVE = "%s"
+          ]],
+          vuln)
    )
-   local exploit, name = cur:fetch()
+   local exploit, name, metasploit = cur:fetch()
    while exploit do
       log("[INFO] cve_id: %s", vuln)
       log("[INFO] exploit_name: %s", name)
+      log("[INFO] metasploit_name: %s", metasploit)
       log("[INFO] exploit_url: https://www.exploit-db.com/exploits/%s", exploit)
-      exploit, name = cur:fetch()
+      exploit, name, metasploit = cur:fetch()
    end
 end
 
 
 local function vulnerabilities (product, version)
-   -- Query CVE, CVSSv2, CVSSv3 and Exploits bool by product and version
+   -- Query CVE, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
+   -- by product and version
    local cur = conn:execute(
-      fmt(
-         [[SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3, (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) as Exploits
-           FROM Products
-           INNER JOIN Affected ON Products.ProductID = Affected.ProductID
-           INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
-           WHERE Products.Product = "%s" AND Products.Version = "%s"]],
-           product, version)
+      fmt([[
+          SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3,
+          (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) AS ExploitDB,
+          (SELECT EXISTS (SELECT 1 FROM Exploits as ex
+          INNER JOIN Referenced AS rf ON rf.Exploit = ex.Exploit
+          WHERE rf.CVE = Affected.CVE AND ex.Metasploit IS NOT NULL)) AS Metasploit
+          FROM Products
+          INNER JOIN Affected ON Products.ProductID = Affected.ProductID
+          INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
+          INNER JOIN Referenced on Affected.CVE = Referenced.CVE
+          INNER JOIN Exploits ON Referenced.Exploit = Exploits.Exploit
+          WHERE Products.Product = "%s" AND Products.Version = "%s"
+          GROUP BY Affected.CVE
+          ]],
+          product, version)
    )
    local vulns = {}
-   local vuln, cvssv2, cvssv3, exploits = cur:fetch()
+   local vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
    while vuln do
-      vulns[vuln] = {CVSSV2 = cvssv2, CVSSV3 = cvssv3, Exploits = exploits}
-      vuln, cvssv2, cvssv3, exploits = cur:fetch()
+      vulns[vuln] = {CVSSV2 = cvssv2, CVSSV3 = cvssv3, ExploitDB = exploitdb, Metasploit = metasploit}
+      vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
    end
 
    -- Sort CVEs by CVSSv2
    local sorted = {}
    for key, value in pairs(vulns) do
-      table.insert(sorted, {key, value.CVSSV2, value.CVSSV3, value.Exploits})
+      table.insert(sorted, {key, value.CVSSV2, value.CVSSV3, value.ExploitDB, value.Metasploit})
    end
    table.sort(sorted, function(a, b) return a[2] > b[2] end)
 
@@ -151,10 +162,11 @@ local function vulnerabilities (product, version)
       log_exploit(value[1])
       table.insert(output,
                    fmt(
-                      "%-15s\t%-5s\t%-5s\t%-10s",
+                      "%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
                       value[1], value[2],
                       value[3] and value[3] or "-",
-                      value[4] == 1 and "Yes" or "No"
+                      value[4] == 1 and "Yes" or "No",
+                      value[5] == 1 and "Yes" or "No"
                    )
       )
    end
@@ -182,8 +194,8 @@ local function portaction (host, port)
          table.insert(vulns, 5, "vulnerabilities:")
          table.insert(vulns, 6,
                       fmt(
-                         "%-15s\t%-5s\t%-5s\t%-10s",
-                         "CVE ID", "CVSSv2", "CVSSv3", "Exploits"
+                         "%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
+                         "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
                       )
          )
          return vulns
