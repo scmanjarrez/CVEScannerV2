@@ -42,6 +42,59 @@ After database has been created, it is necessary to specify the script to launch
 `nmap -sV <target_ip> --script=./cvescannerv2.nse`
 > If **cvescannerv2.nse** file is in the current working directory
 
+# Output
+Nmap will show all CVEs related to every service-version discovered.
+```
+PORT      STATE SERVICE       VERSION
+3306/tcp  open  mysql         MySQL 5.5.55
+| cvescannerv2:
+|   source: nvd.nist.gov
+|   product: MySQL
+|   version: 5.5.55
+|   n_vulnerabilities: 5
+|   vulnerabilities:
+|     CVE ID           CVSSv2   CVSSv3   ExploitDB   Metasploit
+|     CVE-2021-3278    7.5      9.8      Yes         No
+|     CVE-2019-13401   6.8      8.8      No          No
+|     CVE-2019-13402   6.5      8.8      No          No
+|     CVE-2016-3976    5.0      7.5      Yes         Yes
+|_    CVE-2014-3631    7.2      -        Yes         Yes
+```
+
+Also, a log file **cvescannerv2.log** will be generated, containing every exploit
+related to CVEs.
+```
+#################################################
+############## 2021-08-20 14:56:37 ##############
+#################################################
+
+[INFO] product: openview_storage_data_protector
+[INFO] version: 6.00
+[INFO] n_vulnerabilities: 2
+[INFO] cve_id: CVE-2011-1866
+[INFO] exploit_name: HP Data Protector 6.20 - EXEC_CMD Buffer Overflow - Windows dos Exploit
+[INFO] metasploit_name: -
+[INFO] exploit_url: https://www.exploit-db.com/exploits/17461
+[INFO] cve_id: CVE-2011-1865
+[INFO] exploit_name: HP Data Protector 6.20 - Multiple Vulnerabilities - Windows dos Exploit
+[INFO] metasploit_name: -
+[INFO] exploit_url: https://www.exploit-db.com/exploits/17458
+[INFO] cve_id: CVE-2011-1865
+[INFO] exploit_name: HP - 'OmniInet.exe' Opcode 27 Buffer Overflow (Metasploit) - Windows remote Exploit
+[INFO] metasploit_name: HP OmniInet.exe Opcode 27 Buffer Overflow
+[INFO] exploit_url: https://www.exploit-db.com/exploits/17467
+[INFO] cve_id: CVE-2011-1865
+[INFO] exploit_name: HP Data Protector 6.11 - Remote Buffer Overflow (DEP Bypass) - Windows remote Exploit
+[INFO] metasploit_name: -
+[INFO] exploit_url: https://www.exploit-db.com/exploits/17468
+[INFO] cve_id: CVE-2011-1865
+[INFO] exploit_name: HP OmniInet.exe Opcode 20 - Remote Buffer Overflow (Metasploit) - Windows remote Exploit
+[INFO] metasploit_name: HP OmniInet.exe Opcode 20 Buffer Overflow
+[INFO] exploit_url: https://www.exploit-db.com/exploits/17490
+
+```
+
+
 
 # Errors, causes and fixes
 > Connection timeout/error during CRAWL phase when executing **database.py**

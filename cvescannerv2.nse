@@ -25,7 +25,9 @@ CVEs information gathered from nvd.nist.gov.
 --- Prerequisite: Download Databases
 -- @usage ./databases.py
 --
---- Execute CVEscannerV2
+--- Optional: Download semiupdated databases from CVEScannerV2DB repository
+--
+--- Run: Execute CVEscannerV2
 -- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse
 --
 -- @output
@@ -37,12 +39,12 @@ CVEs information gathered from nvd.nist.gov.
 -- |   version: 5.5.55
 -- |   n_vulnerabilities: 5
 -- |   vulnerabilities:
--- |     CVE ID           CVSSv2   CVSSv3   Exploits
--- |     CVE-2021-3278    7.5      9.8      Yes
--- |     CVE-2019-13401   6.8      8.8      No
--- |     CVE-2019-13402   6.5      8.8      No
--- |     CVE-2016-3976    5.0      7.5      Yes
--- |_    CVE-2014-3631    7.2      -        Yes
+-- |     CVE ID           CVSSv2   CVSSv3   ExploitDB   Metasploit
+-- |     CVE-2021-3278    7.5      9.8      Yes         No
+-- |     CVE-2019-13401   6.8      8.8      No          No
+-- |     CVE-2019-13402   6.5      8.8      No          No
+-- |     CVE-2016-3976    5.0      7.5      Yes         Yes
+-- |_    CVE-2014-3631    7.2      -        Yes         Yes
 --
 ---
 
@@ -113,7 +115,7 @@ local function log_exploit (vuln)
    while exploit do
       log("[INFO] cve_id: %s", vuln)
       log("[INFO] exploit_name: %s", name)
-      log("[INFO] metasploit_name: %s", metasploit)
+      log("[INFO] metasploit_name: %s", metasploit ~= nil and metasploit or "-")
       log("[INFO] exploit_url: https://www.exploit-db.com/exploits/%s", exploit)
       exploit, name, metasploit = cur:fetch()
    end
