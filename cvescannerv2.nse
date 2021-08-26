@@ -35,16 +35,23 @@ CVEs information gathered from nvd.nist.gov.
 -- 3306/tcp  open  mysql         MySQL 5.5.55
 -- | cvescannerv2:
 -- |   source: nvd.nist.gov
--- |   product: MySQL
+-- |   product: mysql
 -- |   version: 5.5.55
--- |   n_vulnerabilities: 5
--- |   vulnerabilities:
--- |     CVE ID           CVSSv2   CVSSv3   ExploitDB   Metasploit
--- |     CVE-2021-3278    7.5      9.8      Yes         No
--- |     CVE-2019-13401   6.8      8.8      No          No
--- |     CVE-2019-13402   6.5      8.8      No          No
--- |     CVE-2016-3976    5.0      7.5      Yes         Yes
--- |_    CVE-2014-3631    7.2      -        Yes         Yes
+-- |   vupdate: *
+-- |   cves: 5
+-- |       CVE ID           CVSSv2   CVSSv3   ExploitDB   Metasploit
+-- |       CVE-2021-3278    7.5      9.8      Yes         No
+-- |       CVE-2014-3631    7.2      -        Yes         Yes
+-- |       CVE-2019-13401   6.8      8.8      No          No
+-- |       CVE-2019-13402   6.5      8.8      No          No
+-- |_      CVE-2016-3976    5.0      7.5      Yes         Yes
+--
+--- Optional parameters
+-- maxcve: Limit the number of CVEs printed on screen (default 10)
+-- log: Change the log file (default cvescannerv2.log)
+-- db: Change the database file (default cve.db)
+-- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log
+-- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log,maxcve=20,db=mydb.db
 --
 ---
 
@@ -55,11 +62,46 @@ local nmap = require "nmap"
 local stdnse = require "stdnse"
 local sql = require "luasql.sqlite3"
 
-local DB = 'cve.db'
-local env = sql.sqlite3()
-local conn = env:connect(DB)
-local logger = assert(io.open('cvescannerv2.log', 'a'))
-local time = os.date("%Y-%m-%d %H:%M:%S")
+local db_arg = stdnse.get_script_args('db') or 'cve.db'
+local log_arg = stdnse.get_script_args('log') or 'cvescannerv2.log'
+local maxcve_arg = stdnse.get_script_args('maxcve') or 10
+
+
+if not nmap.registry[SCRIPT_NAME] then
+   nmap.registry[SCRIPT_NAME] = {
+      env = nil,
+      conn = nil,
+      logger = nil,
+      time = nil
+   }
+end
+
+local registry = nmap.registry[SCRIPT_NAME]
+
+
+local function fmt (msg, ...)
+   return string.format(msg, ...)
+end
+
+
+local function db_exists ()
+   local db = io.open(db_arg, "r")
+   return db ~= nil and io.close(db)
+end
+
+
+prerule = function ()
+   if not db_exists() then
+      stdnse.verbose(1,
+                     fmt("Database %s not found. " ..
+                         "Run ./databases.py before running nmap script.",
+                         db_arg)
+      )
+      os.exit()
+   else
+      return true
+   end
+end
 
 -- Returns true for every host-port open
 portrule = function (host, port)
@@ -75,34 +117,22 @@ postrule = function ()
 end
 
 
-local function fmt (msg, ...)
-   return string.format(msg, ...)
-end
-
-
 local function log (msg, ...)
-   logger:write(fmt(msg .. "\n", ...))
-   stdnse.verbose(2, msg, ...)
-end
-
-
-local function check_db ()
-   local db = io.open(DB, "r")
-   return db ~= nil and io.close(db)
+   registry.logger:write(fmt(msg .. "\n", ...))
 end
 
 
 local function timestamp ()
-   logger:write(fmt("#################################################\n" ..
-                    "############## %s ##############\n" ..
-                    "#################################################\n\n", time))
-   stdnse.verbose(2, fmt("[INFO] Starting analysis ..."))
-   stdnse.verbose(2, fmt("[INFO] timestamp: %s", time))
+   registry.logger:write(fmt("#################################################\n" ..
+                             "############## %s ##############\n" ..
+                             "#################################################\n\n", registry.time))
+   stdnse.verbose(2, fmt("Timestamp: %s", registry.time))
 end
 
 
 local function log_exploit (vuln)
-   local cur = conn:execute(
+   log("[+] \tid: %s", vuln)
+   local cur = registry.conn:execute(
       fmt([[
           SELECT Referenced.Exploit, Exploits.Name, Exploits.Metasploit
           FROM Referenced
@@ -113,35 +143,57 @@ local function log_exploit (vuln)
    )
    local exploit, name, metasploit = cur:fetch()
    while exploit do
-      log("[INFO] cve_id: %s", vuln)
-      log("[INFO] exploit_name: %s", name)
-      log("[INFO] metasploit_name: %s", metasploit ~= nil and metasploit or "-")
-      log("[INFO] exploit_url: https://www.exploit-db.com/exploits/%s", exploit)
+      log("[*] \t\texploit_name: %s", name)
+      log("[*] \t\texploit_url: https://www.exploit-db.com/exploits/%s", exploit)
+      log("[*] \t\tmetasploit_name: %s", metasploit ~= nil and metasploit or "-")
       exploit, name, metasploit = cur:fetch()
    end
 end
 
 
-local function vulnerabilities (product, version)
-   -- Query CVE, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
-   -- by product and version
-   local cur = conn:execute(
-      fmt([[
-          SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3,
-          (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) AS ExploitDB,
-          (SELECT EXISTS (SELECT 1 FROM Exploits as ex
-          INNER JOIN Referenced AS rf ON rf.Exploit = ex.Exploit
-          WHERE rf.CVE = Affected.CVE AND ex.Metasploit IS NOT NULL)) AS Metasploit
-          FROM Products
-          INNER JOIN Affected ON Products.ProductID = Affected.ProductID
-          INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
-          INNER JOIN Referenced on Affected.CVE = Referenced.CVE
-          INNER JOIN Exploits ON Referenced.Exploit = Exploits.Exploit
-          WHERE Products.Product = "%s" AND Products.Version = "%s"
-          GROUP BY Affected.CVE
-          ]],
-          product, version)
-   )
+local function vulnerabilities (product, version, vupdate, multiple)
+   local cur = nil
+   if not multiple then
+      -- Query CVE, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
+      -- by product and version
+      cur = registry.conn:execute(
+         fmt([[
+              SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3,
+              (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) AS ExploitDB,
+              (SELECT EXISTS (SELECT 1 FROM Exploits as ex
+              INNER JOIN Referenced AS rf ON rf.Exploit = ex.Exploit
+              WHERE rf.CVE = Affected.CVE AND ex.Metasploit IS NOT NULL)) AS Metasploit
+              FROM Products
+              INNER JOIN Affected ON Products.ProductID = Affected.ProductID
+              INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
+              WHERE Products.Product = "%s"
+              AND Products.Version = "%s"
+              AND Products.VUpdate = "%s"
+              GROUP BY Affected.CVE
+              ]],
+              product, version, vupdate)
+      )
+   else
+      -- Query CVE, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
+      -- by product and multiple versions
+      cur = registry.conn:execute(
+         fmt([[
+              SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3,
+              (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) AS ExploitDB,
+              (SELECT EXISTS (SELECT 1 FROM Exploits as ex
+              INNER JOIN Referenced AS rf ON rf.Exploit = ex.Exploit
+              WHERE rf.CVE = Affected.CVE AND ex.Metasploit IS NOT NULL)) AS Metasploit
+              FROM Products
+              INNER JOIN Affected ON Products.ProductID = Affected.ProductID
+              INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
+              WHERE Products.Product = "%s"
+              AND (Products.Version > "%s" OR Products.Version LIKE "%s")
+              AND (Products.Version < "%s" OR Products.Version LIKE "%s")
+              GROUP BY Affected.CVE
+              ]],
+              product, version, version, vupdate, vupdate)
+      )
+   end
    local vulns = {}
    local vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
    while vuln do
@@ -156,71 +208,157 @@ local function vulnerabilities (product, version)
    end
    table.sort(sorted, function(a, b) return a[2] > b[2] end)
 
-   log("[INFO] n_vulnerabilities: %d", #sorted)
+   log("[+] cves: %d", #sorted)
 
    -- Pretty print the output
    local output = {}
+   table.insert(output, #sorted)
+   local counter = 0
    for _, value in ipairs(sorted) do
       log_exploit(value[1])
-      table.insert(output,
-                   fmt(
-                      "%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
-                      value[1], value[2],
-                      value[3] and value[3] or "-",
-                      value[4] == 1 and "Yes" or "No",
-                      value[5] == 1 and "Yes" or "No"
-                   )
-      )
+      if counter < tonumber(maxcve_arg) then
+         table.insert(output,
+                      fmt(
+                         "\t%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
+                         value[1], value[2],
+                         value[3] and value[3] or "-",
+                         value[4] == 1 and "Yes" or "No",
+                         value[5] == 1 and "Yes" or "No"
+                      )
+         )
+      end
+      counter = counter + 1
    end
    cur:close()
    return output
 end
 
 
+local function find_version(product, version, vupdate)
+   local cur = registry.conn:execute(
+      fmt([[
+          SELECT COUNT(*)
+          FROM Products
+          WHERE Products.Product = "%s"
+          AND Products.Version = "%s"
+          AND Products.VUpdate = "%s";
+          ]],
+          product, version, vupdate)
+   )
+   return cur:fetch()
+end
+
+
+local function version_check(product, version)
+   local ver, vup = version:match("([^-]*)- ([^-]*)")
+   -- if ver match patterns: 3.x - 4.y | 3.x.y - 3.x.z | etc
+   if ver ~= nil then
+      local from, to = ver, vup
+      if from == nil and to == nil then
+         return nil
+      else
+         f1, f2 = from:match("([^%a]*)(.*)")
+         f2 = f2:gsub("[xX]", "%%")
+         t1, t2 = to:match("([^%a]*)(.*)")
+         t2 = t2:gsub("[xX]", "%%")
+         return product, nil, nil, f1 .. f2, t1 .. t2
+      end
+   else
+      ver, vup = version:match("([0-9.]*)([^-]*).*")
+   end
+   if find_version(product, ver, vup) ~= 0 then
+      return product, ver, vup
+   elseif find_version(product, ver .. vup, "*") ~= 0 then
+      return product, ver .. vup, "*"
+   else
+      return nil
+   end
+end
+
+
+local function cpe_info(cpe, version)
+   local info = {}
+   for data in (cpe .. ":"):gmatch("([^:]*):") do
+      table.insert(info, data)
+   end
+   -- [1] = cpe, [2] = /a or /h or /o, [3] = vendor, [4] = product, [5] = version
+   if #info == 4 then
+      table.insert(info, version)
+   end
+   return version_check(info[4], info[5])
+end
+
+
+local function log_product(product, version, vupdate)
+   log("[+] product: %s", product)
+   log("[+] version: %s", version)
+   log("[+] vupdate: %s", vupdate)
+end
+
+
+local function preaction ()
+   registry.env = sql.sqlite3()
+   registry.conn = registry.env:connect(db_arg)
+   registry.logger = io.open(log_arg, 'a')
+   registry.time = os.date("%Y-%m-%d %H:%M:%S")
+   timestamp()
+end
+
+
 local function portaction (host, port)
-   if check_db() then
-      timestamp()
-      local product = port.version.product
-      local version = port.version.version
-
-      log("[INFO] product: %s", product)
-      log("[INFO] version: %s", version)
-
-      local vulns = vulnerabilities(string.lower(product), version)
-      local nvulns = #vulns
+   local product, version, vupdate, from, to = cpe_info(port.version.cpe[1],
+                                                        port.version.version)
+   -- local product, version, vupdate, from, to = cpe_info("cpe:/a:samba:samba",
+   --                                                      "3.X - 4.X")
+   if product ~= nil then
+      local vulns = nil
+      if version ~= nil then
+         log_product(product, version, vupdate)
+         vulns = vulnerabilities(product, version, vupdate, false)
+      else
+         version = port.version.version
+         vupdate = "*"
+         log_product(product, version, vupdate)
+         vulns = vulnerabilities(product, from, to, true)
+      end
+      local nvulns = table.remove(vulns, 1)
       if nvulns > 0 then
-         table.insert(vulns, 1, "source: nvd.nist.gov")
+         table.insert(vulns, 1, fmt("source: %s", "nvd.nist.gov"))
          table.insert(vulns, 2, fmt("product: %s", product))
          table.insert(vulns, 3, fmt("version: %s", version))
-         table.insert(vulns, 4, fmt("n_vulnerabilities: %d", nvulns))
-         table.insert(vulns, 5, "vulnerabilities:")
+         table.insert(vulns, 4, fmt("vupdate: %s", vupdate))
+         table.insert(vulns, 5, fmt("cves: %d", nvulns))
          table.insert(vulns, 6,
                       fmt(
-                         "%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
+                         "\t%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
                          "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
                       )
          )
          return vulns
       end
    else
-      stdnse.verbose(1,
-                     "Database not found. " ..
-                     "Run ./databases.py before running nmap script.")
+      local vulns = {}
+      table.insert(vulns, 1,
+                   "No match found. If you think this could be an error, open an Issue in GitHub.")
+      table.insert(vulns, 2,
+                   fmt("Attach cpe => %s and version => %s in the Issue.", port.version.cpe[1], port.version.version))
+      return vulns
    end
 end
 
 
 local function postaction ()
-        conn:close()
-        env:close()
-        logger:write("\n")
-        logger:close()
+   registry.conn:close()
+   registry.env:close()
+   registry.logger:write("\n")
+   registry.logger:close()
 end
 
 
 local ActionsTable = {
-  portrule = portaction,
-  postrule = postaction
+   prerule = preaction,
+   portrule = portaction,
+   postrule = postaction
 }
 
 -- execute the action function corresponding to the current rule
