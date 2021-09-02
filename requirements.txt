@@ -1,8 +1,10 @@
-alive-progress==1.6.2
+about-time==3.1.1
+alive-progress==2.0.0
 certifi==2021.5.30
 charset-normalizer==2.0.4
 fake-useragent==0.1.11
 flake8==3.9.2
+grapheme==0.6.0
 idna==3.2
 mccabe==0.6.1
 pycodestyle==2.7.0

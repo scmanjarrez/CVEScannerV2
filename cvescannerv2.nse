@@ -134,10 +134,10 @@ local function log_exploit (vuln)
    log("[+] \tid: %s", vuln)
    local cur = registry.conn:execute(
       fmt([[
-          SELECT Referenced.Exploit, Exploits.Name, Exploits.Metasploit
-          FROM Referenced
-          INNER JOIN Exploits ON Referenced.Exploit = Exploits.Exploit
-          WHERE Referenced.CVE = "%s"
+          SELECT referenced.exploit_id, exploits.name, exploits.metasploit
+          FROM referenced
+          INNER JOIN exploits ON referenced.exploit_id = exploits.exploit_id
+          WHERE referenced.cve_id = "%s"
           ]],
           vuln)
    )
@@ -158,38 +158,38 @@ local function vulnerabilities (product, version, vupdate, multiple)
       -- by product and version
       cur = registry.conn:execute(
          fmt([[
-              SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3,
-              (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) AS ExploitDB,
-              (SELECT EXISTS (SELECT 1 FROM Exploits as ex
-              INNER JOIN Referenced AS rf ON rf.Exploit = ex.Exploit
-              WHERE rf.CVE = Affected.CVE AND ex.Metasploit IS NOT NULL)) AS Metasploit
-              FROM Products
-              INNER JOIN Affected ON Products.ProductID = Affected.ProductID
-              INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
-              WHERE Products.Product = "%s"
-              AND Products.Version = "%s"
-              AND Products.VUpdate = "%s"
-              GROUP BY Affected.CVE
+              SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
+              (SELECT EXISTS (SELECT 1 FROM referenced WHERE cve_id = affected.cve_id)) AS ExploitDB,
+              (SELECT EXISTS (SELECT 1 FROM exploits as ex
+              INNER JOIN referenced AS rf ON rf.exploit_id = ex.exploit_id
+              WHERE rf.cve_id = affected.cve_id AND ex.metasploit IS NOT NULL)) AS Metasploit
+              FROM products
+              INNER JOIN affected ON products.product_id = affected.product_id
+              INNER JOIN cves ON affected.cve_id = cves.cve_id
+              WHERE products.product = "%s"
+              AND products.version = "%s"
+              AND products.version_update = "%s"
+              GROUP BY affected.cve_id
               ]],
               product, version, vupdate)
       )
    else
-      -- Query CVE, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
+      -- Query CVE_ID, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
       -- by product and multiple versions
       cur = registry.conn:execute(
          fmt([[
-              SELECT Affected.CVE, CVEs.CVSSV2, CVEs.CVSSV3,
-              (SELECT EXISTS (SELECT 1 FROM Referenced WHERE CVE = Affected.CVE)) AS ExploitDB,
-              (SELECT EXISTS (SELECT 1 FROM Exploits as ex
-              INNER JOIN Referenced AS rf ON rf.Exploit = ex.Exploit
-              WHERE rf.CVE = Affected.CVE AND ex.Metasploit IS NOT NULL)) AS Metasploit
-              FROM Products
-              INNER JOIN Affected ON Products.ProductID = Affected.ProductID
-              INNER JOIN CVEs ON Affected.CVE = CVEs.CVE
-              WHERE Products.Product = "%s"
-              AND (Products.Version > "%s" OR Products.Version LIKE "%s")
-              AND (Products.Version < "%s" OR Products.Version LIKE "%s")
-              GROUP BY Affected.CVE
+              SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
+              (SELECT EXISTS (SELECT 1 FROM referenced WHERE cve_id = affected.cve_id)) AS ExploitDB,
+              (SELECT EXISTS (SELECT 1 FROM exploits as ex
+              INNER JOIN referenced AS ref ON ref.exploit_id = ex.exploit_id
+              WHERE ref.cve_id = affected.cve_id AND ex.metasploit IS NOT NULL)) AS Metasploit
+              FROM products
+              INNER JOIN affected ON products.product_id = affected.product_id
+              INNER JOIN cves ON affected.cve_id = cves.cve_id
+              WHERE products.product = "%s"
+              AND (products.version > "%s" OR products.version LIKE "%s")
+              AND (products.version < "%s" OR products.version LIKE "%s")
+              GROUP BY affected.cve_id
               ]],
               product, version, version, vupdate, vupdate)
       )
@@ -238,10 +238,10 @@ local function find_version(product, version, vupdate)
    local cur = registry.conn:execute(
       fmt([[
           SELECT COUNT(*)
-          FROM Products
-          WHERE Products.Product = "%s"
-          AND Products.Version = "%s"
-          AND Products.VUpdate = "%s";
+          FROM products
+          WHERE products.product = "%s"
+          AND products.version = "%s"
+          AND products.version_update = "%s";
           ]],
           product, version, vupdate)
    )
@@ -341,7 +341,8 @@ local function portaction (host, port)
       table.insert(vulns, 1,
                    "No match found. If you think this could be an error, open an Issue in GitHub.")
       table.insert(vulns, 2,
-                   fmt("Attach cpe => %s and version => %s in the Issue.", port.version.cpe[1], port.version.version))
+                   fmt("Attach the following information in the Issue: cpe => %s | version => %s.",
+                       port.version.cpe[1], port.version.version))
       return vulns
    end
 end

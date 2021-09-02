@@ -5,7 +5,6 @@ Nmap script that searches for probable vulnerabilities based on services discove
 - luasql
 - nmap
 - python
-- git
 
 # Run
 ### Prelaunch
@@ -45,20 +44,44 @@ After database has been created, it is necessary to specify the script to launch
 # Output
 Nmap will show all CVEs related to every service-version discovered.
 ```
-PORT      STATE SERVICE       VERSION
-3306/tcp  open  mysql         MySQL 5.5.55
+PORT      STATE    SERVICE        VERSION
+53/tcp    open     domain         ISC BIND 9.4.2
 | cvescannerv2:
 |   source: nvd.nist.gov
-|   product: MySQL
-|   version: 5.5.55
-|   n_vulnerabilities: 5
-|   vulnerabilities:
-|     CVE ID           CVSSv2   CVSSv3   ExploitDB   Metasploit
-|     CVE-2021-3278    7.5      9.8      Yes         No
-|     CVE-2019-13401   6.8      8.8      No          No
-|     CVE-2019-13402   6.5      8.8      No          No
-|     CVE-2016-3976    5.0      7.5      Yes         Yes
-|_    CVE-2014-3631    7.2      -        Yes         Yes
+|   product: bind
+|   version: 9.4.2
+|   vupdate: *
+|   cves: 24
+|       CVE ID          CVSSv2  CVSSv3  ExploitDB       Metasploit
+|       CVE-2012-1667   8.5     -       No              No
+|       CVE-2012-3817   7.8     -       No              No
+|       CVE-2014-8500   7.8     -       No              No
+|       CVE-2012-4244   7.8     -       No              No
+|       CVE-2012-5166   7.8     -       No              No
+|       CVE-2010-0382   7.6     -       No              No
+|       CVE-2015-8461   7.1     -       No              No
+|       CVE-2009-0025   6.8     -       No              No
+|       CVE-2015-8704   6.8     6.5     No              No
+|_      CVE-2015-8705   6.6     7.0     No              No
+445/tcp   open     netbios-ssn    Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+| cvescannerv2:
+|   source: nvd.nist.gov
+|   product: samba
+|   version: 3.X - 4.X
+|   vupdate: *
+|   cves: 91
+|       CVE ID          CVSSv2  CVSSv3  ExploitDB       Metasploit
+|       CVE-2017-7494   10.0    9.8     Yes             Yes
+|       CVE-2012-1182   10.0    -       No              No
+|       CVE-2004-0882   10.0    -       No              No
+|       CVE-2004-0600   10.0    -       No              No
+|       CVE-2007-2446   10.0    -       No              No
+|       CVE-2015-0240   10.0    -       Yes             No
+|       CVE-2004-1154   10.0    -       No              No
+|       CVE-2007-6015   9.3     -       No              No
+|       CVE-2009-1886   9.3     -       No              No
+|_      CVE-2007-5398   9.3     -       No              No
+...
 ```
 
 Also, a log file **cvescannerv2.log** will be generated, containing every exploit
@@ -68,30 +91,55 @@ related to CVEs.
 ############## 2021-08-20 14:56:37 ##############
 #################################################
 
-[INFO] product: openview_storage_data_protector
-[INFO] version: 6.00
-[INFO] n_vulnerabilities: 2
-[INFO] cve_id: CVE-2011-1866
-[INFO] exploit_name: HP Data Protector 6.20 - EXEC_CMD Buffer Overflow - Windows dos Exploit
-[INFO] metasploit_name: -
-[INFO] exploit_url: https://www.exploit-db.com/exploits/17461
-[INFO] cve_id: CVE-2011-1865
-[INFO] exploit_name: HP Data Protector 6.20 - Multiple Vulnerabilities - Windows dos Exploit
-[INFO] metasploit_name: -
-[INFO] exploit_url: https://www.exploit-db.com/exploits/17458
-[INFO] cve_id: CVE-2011-1865
-[INFO] exploit_name: HP - 'OmniInet.exe' Opcode 27 Buffer Overflow (Metasploit) - Windows remote Exploit
-[INFO] metasploit_name: HP OmniInet.exe Opcode 27 Buffer Overflow
-[INFO] exploit_url: https://www.exploit-db.com/exploits/17467
-[INFO] cve_id: CVE-2011-1865
-[INFO] exploit_name: HP Data Protector 6.11 - Remote Buffer Overflow (DEP Bypass) - Windows remote Exploit
-[INFO] metasploit_name: -
-[INFO] exploit_url: https://www.exploit-db.com/exploits/17468
-[INFO] cve_id: CVE-2011-1865
-[INFO] exploit_name: HP OmniInet.exe Opcode 20 - Remote Buffer Overflow (Metasploit) - Windows remote Exploit
-[INFO] metasploit_name: HP OmniInet.exe Opcode 20 Buffer Overflow
-[INFO] exploit_url: https://www.exploit-db.com/exploits/17490
-
+[+] product: bind
+[+] version: 9.4.2
+[+] vupdate: *
+[+] cves: 24
+[+] 	id: CVE-2012-1667
+[+] 	id: CVE-2012-3817
+[+] 	id: CVE-2014-8500
+[+] 	id: CVE-2012-4244
+[+] 	id: CVE-2012-5166
+[+] 	id: CVE-2010-0382
+[+] 	id: CVE-2015-8461
+[+] 	id: CVE-2009-0025
+[+] 	id: CVE-2015-8704
+[+] 	id: CVE-2015-8705
+[+] 	id: CVE-2010-3614
+[+] 	id: CVE-2012-1033
+[+] 	id: CVE-2011-4313
+[+] 	id: CVE-2015-8000
+[+] 	id: CVE-2016-1286
+[+] 	id: CVE-2016-9444
+[+] 	id: CVE-2009-0265
+...
+...
+[+] product: samba
+[+] version: 3.X - 4.X
+[+] vupdate: *
+[+] cves: 91
+[+] 	id: CVE-2017-7494
+[*] 		exploit_name: Samba 3.5.0 - Remote Code Execution
+[*] 		exploit_url: https://www.exploit-db.com/exploits/42060
+[*] 		metasploit_name: -
+[*] 		exploit_name: Samba 3.5.0 < 4.4.14/4.5.10/4.6.4 - 'is_known_pipename()' Arbitrary Module Load (Metasploit)
+[*] 		exploit_url: https://www.exploit-db.com/exploits/42084
+[*] 		metasploit_name: Samba is_known_pipename() Arbitrary Module Load
+[+] 	id: CVE-2012-1182
+[+] 	id: CVE-2004-0882
+[+] 	id: CVE-2004-0600
+[+] 	id: CVE-2007-2446
+[+] 	id: CVE-2015-0240
+[*] 		exploit_name: Samba < 3.6.2 (x86) - Denial of Service (PoC)
+[*] 		exploit_url: https://www.exploit-db.com/exploits/36741
+[*] 		metasploit_name: -
+[+] 	id: CVE-2004-1154
+[+] 	id: CVE-2007-6015
+[+] 	id: CVE-2009-1886
+[+] 	id: CVE-2007-5398
+[+] 	id: CVE-2007-4572
+...
+...
 ```
 
 
