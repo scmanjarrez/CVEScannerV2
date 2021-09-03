@@ -306,44 +306,47 @@ end
 
 
 local function portaction (host, port)
-   local product, version, vupdate, from, to = cpe_info(port.version.cpe[1],
-                                                        port.version.version)
-   -- local product, version, vupdate, from, to = cpe_info("cpe:/a:samba:samba",
-   --                                                      "3.X - 4.X")
-   if product ~= nil then
-      local vulns = nil
-      if version ~= nil then
-         log_product(product, version, vupdate)
-         vulns = vulnerabilities(product, version, vupdate, false)
+   if port.version.cpe[1] ~= nil then
+      print(port.version.cpe[1])
+      local product, version, vupdate, from, to = cpe_info(port.version.cpe[1],
+                                                           port.version.version)
+      -- local product, version, vupdate, from, to = cpe_info("cpe:/a:samba:samba",
+      --                                                      "3.X - 4.X")
+      if product ~= nil then
+         local vulns = nil
+         if version ~= nil then
+            log_product(product, version, vupdate)
+            vulns = vulnerabilities(product, version, vupdate, false)
+         else
+            version = port.version.version
+            vupdate = "*"
+            log_product(product, version, vupdate)
+            vulns = vulnerabilities(product, from, to, true)
+         end
+         local nvulns = table.remove(vulns, 1)
+         if nvulns > 0 then
+            table.insert(vulns, 1, fmt("source: %s", "nvd.nist.gov"))
+            table.insert(vulns, 2, fmt("product: %s", product))
+            table.insert(vulns, 3, fmt("version: %s", version))
+            table.insert(vulns, 4, fmt("vupdate: %s", vupdate))
+            table.insert(vulns, 5, fmt("cves: %d", nvulns))
+            table.insert(vulns, 6,
+                         fmt(
+                            "\t%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
+                            "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
+                         )
+            )
+            return vulns
+         end
       else
-         version = port.version.version
-         vupdate = "*"
-         log_product(product, version, vupdate)
-         vulns = vulnerabilities(product, from, to, true)
-      end
-      local nvulns = table.remove(vulns, 1)
-      if nvulns > 0 then
-         table.insert(vulns, 1, fmt("source: %s", "nvd.nist.gov"))
-         table.insert(vulns, 2, fmt("product: %s", product))
-         table.insert(vulns, 3, fmt("version: %s", version))
-         table.insert(vulns, 4, fmt("vupdate: %s", vupdate))
-         table.insert(vulns, 5, fmt("cves: %d", nvulns))
-         table.insert(vulns, 6,
-                      fmt(
-                         "\t%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
-                         "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
-                      )
-         )
+         local vulns = {}
+         table.insert(vulns, 1,
+                      "No match found. If you think this could be an error, open an Issue in GitHub.")
+         table.insert(vulns, 2,
+                      fmt("Attach the following information in the Issue: cpe => %s | version => %s.",
+                          port.version.cpe[1], port.version.version))
          return vulns
       end
-   else
-      local vulns = {}
-      table.insert(vulns, 1,
-                   "No match found. If you think this could be an error, open an Issue in GitHub.")
-      table.insert(vulns, 2,
-                   fmt("Attach the following information in the Issue: cpe => %s | version => %s.",
-                       port.version.cpe[1], port.version.version))
-      return vulns
    end
 end
 

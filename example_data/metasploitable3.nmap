@@ -1,0 +1,132 @@
+# Nmap 7.92 scan initiated Fri Sep  3 11:59:12 2021 as: nmap -sV --script=./cvescannerv2.nse --script-args log=metasploitable3.log -oA metasploitable3 172.16.2.132
+Nmap scan report for 172.16.2.132
+Host is up (0.00087s latency).
+Not shown: 980 closed tcp ports (conn-refused)
+PORT      STATE SERVICE              VERSION
+22/tcp    open  ssh                  OpenSSH 7.1 (protocol 2.0)
+| cvescannerv2: 
+|   source: nvd.nist.gov
+|   product: openssh
+|   version: 7.1
+|   vupdate: *
+|   cves: 5
+|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2016-8858  	7.8  	7.5  	No        	No        
+|   	CVE-2016-1907  	5.0  	5.3  	No        	No        
+|   	CVE-2017-15906 	5.0  	5.3  	No        	No        
+|   	CVE-2016-0778  	4.6  	8.1  	No        	No        
+|_  	CVE-2016-0777  	4.0  	6.5  	No        	No        
+135/tcp   open  msrpc                Microsoft Windows RPC
+139/tcp   open  netbios-ssn          Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds         Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
+3000/tcp  open  http                 WEBrick httpd 1.3.1 (Ruby 2.3.3 (2016-11-21))
+| cvescannerv2: 
+|   source: nvd.nist.gov
+|   product: ruby
+|   version: 2.3.3
+|   vupdate: *
+|   cves: 4
+|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2017-10784 	9.3  	8.8  	No        	No        
+|   	CVE-2017-14064 	7.5  	9.8  	No        	No        
+|   	CVE-2017-0898  	6.4  	9.1  	No        	No        
+|_  	CVE-2017-14033 	5.0  	7.5  	No        	No        
+|_http-server-header: WEBrick/1.3.1 (Ruby/2.3.3/2016-11-21)
+3306/tcp  open  mysql                MySQL 5.5.20-log
+| cvescannerv2: 
+|   source: nvd.nist.gov
+|   product: mysql
+|   version: 5.5.20
+|   vupdate: *
+|   cves: 125
+|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2012-2750  	10.0 	-    	No        	No        
+|   	CVE-2012-3163  	9.0  	-    	No        	No        
+|   	CVE-2012-3158  	7.5  	-    	No        	No        
+|   	CVE-2013-1492  	7.5  	-    	No        	No        
+|   	CVE-2012-0553  	7.5  	-    	No        	No        
+|   	CVE-2014-0001  	7.5  	-    	No        	No        
+|   	CVE-2012-0882  	7.5  	-    	No        	No        
+|   	CVE-2012-5060  	6.8  	-    	No        	No        
+|   	CVE-2012-1703  	6.8  	-    	No        	No        
+|_  	CVE-2013-0384  	6.8  	-    	No        	No        
+3389/tcp  open  ssl/ms-wbt-server?
+4848/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
+| cvescannerv2: 
+|   No match found. If you think this could be an error, open an Issue in GitHub.
+|_  Attach the following information in the Issue: cpe => cpe:/a:oracle:jsp:2.3 | version => 4.0.
+|_http-server-header: GlassFish Server Open Source Edition  4.0 
+7676/tcp  open  java-message-service Java Message Service 301
+8009/tcp  open  ajp13                Apache Jserv (Protocol v1.3)
+8022/tcp  open  http                 Apache Tomcat/Coyote JSP engine 1.1
+|_http-server-header: Apache-Coyote/1.1
+| cvescannerv2: 
+|   No match found. If you think this could be an error, open an Issue in GitHub.
+|_  Attach the following information in the Issue: cpe => cpe:/a:apache:coyote_http_connector:1.1 | version => 1.1.
+8031/tcp  open  ssl/unknown
+8080/tcp  open  http                 Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
+| cvescannerv2: 
+|   No match found. If you think this could be an error, open an Issue in GitHub.
+|_  Attach the following information in the Issue: cpe => cpe:/a:oracle:jsp:2.3 | version => 4.0.
+|_http-server-header: GlassFish Server Open Source Edition  4.0 
+8181/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
+| cvescannerv2: 
+|   No match found. If you think this could be an error, open an Issue in GitHub.
+|_  Attach the following information in the Issue: cpe => cpe:/a:oracle:jsp:2.3 | version => 4.0.
+8443/tcp  open  ssl/https-alt?
+9200/tcp  open  wap-wsp?
+| fingerprint-strings: 
+|   FourOhFourRequest: 
+|     HTTP/1.0 400 Bad Request
+|     Content-Type: text/plain; charset=UTF-8
+|     Content-Length: 80
+|     handler found for uri [/nice%20ports%2C/Tri%6Eity.txt%2ebak] and method [GET]
+|   GetRequest: 
+|     HTTP/1.0 200 OK
+|     Content-Type: application/json; charset=UTF-8
+|     Content-Length: 310
+|     "status" : 200,
+|     "name" : "Hugh Jones",
+|     "version" : {
+|     "number" : "1.1.1",
+|     "build_hash" : "f1585f096d3f3985e73456debdc1a0745f512bbc",
+|     "build_timestamp" : "2014-04-16T14:27:12Z",
+|     "build_snapshot" : false,
+|     "lucene_version" : "4.7"
+|     "tagline" : "You Know, for Search"
+|   HTTPOptions: 
+|     HTTP/1.0 200 OK
+|     Content-Type: text/plain; charset=UTF-8
+|     Content-Length: 0
+|   RTSPRequest, SIPOptions: 
+|     HTTP/1.1 200 OK
+|     Content-Type: text/plain; charset=UTF-8
+|_    Content-Length: 0
+49152/tcp open  msrpc                Microsoft Windows RPC
+49153/tcp open  msrpc                Microsoft Windows RPC
+49154/tcp open  msrpc                Microsoft Windows RPC
+49176/tcp open  java-rmi             Java RMI
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port9200-TCP:V=7.92%I=7%D=9/3%Time=6131F1FD%P=x86_64-redhat-linux-gnu%r
+SF:(GetRequest,18D,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\x20application
+SF:/json;\x20charset=UTF-8\r\nContent-Length:\x20310\r\n\r\n{\r\n\x20\x20\
+SF:"status\"\x20:\x20200,\r\n\x20\x20\"name\"\x20:\x20\"Hugh\x20Jones\",\r
+SF:\n\x20\x20\"version\"\x20:\x20{\r\n\x20\x20\x20\x20\"number\"\x20:\x20\
+SF:"1\.1\.1\",\r\n\x20\x20\x20\x20\"build_hash\"\x20:\x20\"f1585f096d3f398
+SF:5e73456debdc1a0745f512bbc\",\r\n\x20\x20\x20\x20\"build_timestamp\"\x20
+SF::\x20\"2014-04-16T14:27:12Z\",\r\n\x20\x20\x20\x20\"build_snapshot\"\x2
+SF:0:\x20false,\r\n\x20\x20\x20\x20\"lucene_version\"\x20:\x20\"4\.7\"\r\n
+SF:\x20\x20},\r\n\x20\x20\"tagline\"\x20:\x20\"You\x20Know,\x20for\x20Sear
+SF:ch\"\r\n}\n")%r(HTTPOptions,4F,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:
+SF:\x20text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n")%r(RT
+SF:SPRequest,4F,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x20text/plain;\x2
+SF:0charset=UTF-8\r\nContent-Length:\x200\r\n\r\n")%r(FourOhFourRequest,A9
+SF:,"HTTP/1\.0\x20400\x20Bad\x20Request\r\nContent-Type:\x20text/plain;\x2
+SF:0charset=UTF-8\r\nContent-Length:\x2080\r\n\r\nNo\x20handler\x20found\x
+SF:20for\x20uri\x20\[/nice%20ports%2C/Tri%6Eity\.txt%2ebak\]\x20and\x20met
+SF:hod\x20\[GET\]")%r(SIPOptions,4F,"HTTP/1\.1\x20200\x20OK\r\nContent-Typ
+SF:e:\x20text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n");
+Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Fri Sep  3 12:01:01 2021 -- 1 IP address (1 host up) scanned in 109.13 seconds
