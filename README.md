@@ -41,6 +41,18 @@ After database has been created, it is necessary to specify the script to launch
 `nmap -sV <target_ip> --script=./cvescannerv2.nse`
 > If **cvescannerv2.nse** file is in the current working directory
 
+**Note**: cvescannerv2.nse can accept the following script args: db, log, maxcve, path and regex. If
+no arg received, default values are used.
+```bash
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args log=cvescannerv2.log
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args maxcve=10
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args path=http-paths-vulnerscom.json
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args regex=http-regex-vulnerscom.json
+
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db,log=cvescannerv2.log
+```
+
 # Output
 Nmap will show all CVEs related to every service-version discovered.
 ```
@@ -166,6 +178,8 @@ related to CVEs.
 # Acknowledgement
 
 Based on [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner) script.
+
+Common server regexes and paths from [vulnersCom/nmap-vulners](https://github.com/vulnersCom/nmap-vulners).
 
 # License
     CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
