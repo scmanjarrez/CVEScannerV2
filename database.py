@@ -59,6 +59,7 @@ CPE = re.compile(r'cpe:2.3:'
 LAST_MOD = re.compile(r'lastModifiedDate:([\w\d:-]+).*?sha256:([\w\d]+)',
                       re.DOTALL)
 EXPL_NAME = re.compile(r'https?://www.exploit-db.com/exploits/(\d+)')
+REF_CVE = re.compile(r'CVE-\d+-\d+')
 
 DB = 'cve.db'
 TMP_DIR = 'temp'
@@ -93,8 +94,12 @@ def create_db(db):
 
             CREATE TABLE IF NOT EXISTS exploits (
                 exploit_id INTEGER PRIMARY KEY,
-                name TEXT,
-                metasploit TEXT
+                name TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS metasploits (
+                metasploit_id INTEGER PRIMARY KEY,
+                name TEXT
             );
 
             CREATE TABLE IF NOT EXISTS cves (
@@ -123,7 +128,7 @@ def create_db(db):
                 PRIMARY KEY (cve_id, product_id)
             );
 
-            CREATE TABLE IF NOT EXISTS referenced (
+            CREATE TABLE IF NOT EXISTS referenced_exploit (
                 cve_id TEXT,
                 exploit_id INTEGER,
                 FOREIGN KEY (cve_id)
@@ -131,6 +136,16 @@ def create_db(db):
                 FOREIGN KEY (exploit_id)
                     REFERENCES exploits (exploit_id),
                 PRIMARY KEY (cve_id, exploit_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS referenced_metasploit (
+                cve_id TEXT,
+                metasploit_id INTEGER,
+                FOREIGN KEY (cve_id)
+                    REFERENCES cves (cve_id),
+                FOREIGN KEY (metasploit_id)
+                    REFERENCES metasploits (metasploit_id),
+                PRIMARY KEY (cve_id, metasploit_id)
             );
 
             PRAGMA foreign_keys = ON;
@@ -183,16 +198,26 @@ def update_year(db, year, last_update, sha256):
         db.commit()
 
 
-def exploit_in_db(db, exploit):
+def exploit_in_db(db, exploit, msf=False):
     with closing(db.cursor()) as cur:
-        cur.execute(
-            'SELECT EXISTS '
-            '('
-            'SELECT 1 '
-            'FROM exploits '
-            'WHERE exploit_id = ?'
-            ')',
-            [exploit])
+        if not msf:
+            cur.execute(
+                'SELECT EXISTS '
+                '('
+                'SELECT 1 '
+                'FROM exploits '
+                'WHERE exploit_id = ?'
+                ')',
+                [exploit])
+        else:
+            cur.execute(
+                'SELECT EXISTS '
+                '('
+                'SELECT 1 '
+                'FROM metasploits '
+                'WHERE name = ?'
+                ')',
+                [exploit])
         return cur.fetchone()[0]
 
 
@@ -210,13 +235,13 @@ def bulk_update_exploit_name(db, exploits_names):
         cur.executemany(
             'UPDATE exploits '
             'SET '
-            'name = ?, metasploit = ? '
+            'name = ? '
             'WHERE exploit_id = ?',
             exploits_names)
         db.commit()
 
 
-def bulk_insert_exploit(db, exploits):
+def bulk_insert_exploits(db, exploits):
     with closing(db.cursor()) as cur:
         cur.executemany(
             'INSERT or IGNORE INTO exploits '
@@ -224,6 +249,17 @@ def bulk_insert_exploit(db, exploits):
             'VALUES '
             '(?)',
             exploits)
+        db.commit()
+
+
+def bulk_insert_metasploits(db, metasploits):
+    with closing(db.cursor()) as cur:
+        cur.executemany(
+            'INSERT or IGNORE INTO metasploits '
+            '(name) '
+            'VALUES '
+            '(?)',
+            metasploits)
         db.commit()
 
 
@@ -321,34 +357,61 @@ def bulk_insert_affected(db, cves_products):
         db.commit()
 
 
-def cve_is_referenced(db, cve, exploit):
+def cve_is_referenced(db, cve, exploit, msf=False):
     with closing(db.cursor()) as cur:
-        cur.execute(
-            'SELECT EXISTS '
-            '('
-            'SELECT 1 '
-            'FROM referenced '
-            'WHERE cve_id = ? AND exploit_id = ?'
-            ')',
-            [cve, exploit])
+        if not msf:
+            cur.execute(
+                'SELECT EXISTS '
+                '('
+                'SELECT 1 '
+                'FROM referenced_exploit '
+                'WHERE cve_id = ? AND exploit_id = ?'
+                ')',
+                [cve, exploit])
+        else:
+            cur.execute(
+                'SELECT EXISTS '
+                '('
+                'SELECT 1 '
+                'FROM referenced_metasploit '
+                'WHERE cve_id = ? AND metastploit_id = ?'
+                ')',
+                [cve, exploit])
         return cur.fetchone()[0]
 
 
-def bulk_insert_referenced(db, cves_exploits):
+def bulk_insert_ereferenced(db, cves_exploits):
     with closing(db.cursor()) as cur:
         cur.executemany(
-            'INSERT or IGNORE INTO referenced '
+            'INSERT or IGNORE INTO referenced_exploit '
             'VALUES '
             '(?, ?)',
             cves_exploits)
         db.commit()
 
 
+def bulk_insert_mreferenced(db, cves_metasploits):
+    with closing(db.cursor()) as cur:
+        cur.executemany(
+            'INSERT or IGNORE INTO referenced_metasploit '
+            'VALUES '
+            '(?, '
+            '('
+            'SELECT metasploit_id '
+            'FROM metasploits '
+            'WHERE name = ?'
+            ')'
+            ')',
+            cves_metasploits)
+        db.commit()
+
+
 def clean_db():
+    print("[CLEAN] Removing exploit-db orphan references")
     with closing(sql.connect(DB)) as db:
         with closing(db.cursor()) as cur:
             cur.execute(
-                'DELETE FROM referenced '
+                'DELETE FROM referenced_exploit '
                 'WHERE exploit_id IN '
                 '('
                 'SELECT exploit_id '
@@ -359,6 +422,15 @@ def clean_db():
                 'DELETE FROM exploits '
                 'WHERE name LIKE "404 Page %"')
             db.commit()
+
+
+def clean_temp():
+    if os.path.exists(TMP_DIR) and os.path.isdir(TMP_DIR):
+        print("[CLEAN] Removing temporary files")
+        try:
+            shutil.rmtree(TMP_DIR)
+        except FileNotFoundError:
+            pass
 
 
 class PopulateDBThread(Thread):
@@ -373,8 +445,10 @@ class PopulateDBThread(Thread):
             1: bulk_update_cve,
             2: bulk_insert_product,
             3: bulk_insert_affected,
-            4: bulk_insert_exploit,
-            5: bulk_insert_referenced
+            4: bulk_insert_exploits,
+            5: bulk_insert_ereferenced,
+            6: bulk_insert_metasploits,
+            7: bulk_insert_mreferenced
         }
         self.datalist = {k: [] for k in self.execmany}
 
@@ -400,24 +474,17 @@ class PopulateDBThread(Thread):
 
 def scrape_title(exploit):
     title = None
-    msfmodule = False
-    msfname = None
     try:
         with req.get(f'{EXPL_DB_URL}/{exploit}',
                      headers={'User-Agent': UA.random}) as page:
             decoded = html.unescape(page.text)
             title = TITLE.search(decoded).group(3)  # group 1 and 2 are quotes
-            if "(Metasploit)" in title:
-                msfmodule = True
-            if msfmodule:
-                # group 1 is quote
-                msfname = MSFNAME.search(decoded).group(2).replace('\r\n', ' ')
     except (req.exceptions.ConnectionError,
             req.exceptions.ConnectTimeout) as e:
         print("Error ocurred:", exploit, e)
     finally:
         time.sleep(DELAY)
-        return title, msfname, exploit
+        return title, exploit
 
 
 def exploit_batch(exploits):
@@ -439,17 +506,17 @@ def parse_node(node):
         return [split(cpe['cpe23Uri']) for cpe in node['cpe_match']]
 
 
-def check_updates():
+def check_updates(msf_cache):
     with closing(sql.connect(DB)) as db:
         years = range(2002, datetime.datetime.now().year + 1)
 
-        pop_finished = Event()
-        pop_new_year = Event()
-        pop_iqueue = Queue()
-        pop_oqueue = Queue()
-        pop_thread = PopulateDBThread(pop_finished, pop_new_year,
-                                      pop_iqueue, pop_oqueue)
-        pop_thread.start()
+        popu_finished = Event()
+        popu_new_year = Event()
+        popu_iqueue = Queue()
+        popu_oqueue = Queue()
+        popu_thread = PopulateDBThread(popu_finished, popu_new_year,
+                                       popu_iqueue, popu_oqueue)
+        popu_thread.start()
         time.sleep(1)
 
         for year in years:
@@ -519,7 +586,7 @@ def check_updates():
                             cve_item['publishedDate']).year
                         if not cve_in_db(db, cve_id):
                             try:
-                                pop_iqueue.put(
+                                popu_iqueue.put(
                                     (0, (cve_id, cvssv2, cvssv3,
                                          published)))
                             except sql.IntegrityError:
@@ -528,7 +595,7 @@ def check_updates():
                                       f"{published}")
                                 sys.exit(-1)
                         else:
-                            pop_iqueue.put(
+                            popu_iqueue.put(
                                 (1, (cve_id, cvssv2, cvssv3,
                                      published)))
 
@@ -542,13 +609,13 @@ def check_updates():
                                         if not product_in_db(
                                                 db, vend, prod,
                                                 vers, vupd):
-                                            pop_iqueue.put(
+                                            popu_iqueue.put(
                                                 (2, (vend, prod,
                                                      vers, vupd)))
                                         if not product_is_affected(
                                                 db, cve_id,
                                                 vend, prod, vers, vupd):
-                                            pop_iqueue.put(
+                                            popu_iqueue.put(
                                                 (3, (cve_id, vend,
                                                      prod, vers, vupd)))
 
@@ -563,24 +630,42 @@ def check_updates():
                                         exploit, = expl_match.groups()
                                         if not exploit_in_db(
                                                 db, exploit):
-                                            pop_iqueue.put(
+                                            popu_iqueue.put(
                                                 (4, (exploit,)))
                                         if not cve_is_referenced(
                                                 db, cve_id, exploit):
-                                            pop_iqueue.put(
+                                            popu_iqueue.put(
                                                 (5, (cve_id, exploit)))
                         bar()
-                pop_new_year.set()
+                popu_new_year.set()
                 with alive_bar(1, title=f"[STORE] Year {year}:") as bar:
-                    pop_oqueue.get()
+                    popu_oqueue.get()
                     bar()
                 update_year(db, year, last_update, sha256)
             else:
                 print(f"[CHECK] Year {year}: Already in DB ... skipping")
 
+        if not os.path.isfile(msf_cache):
+            print("[MTSPL] Metasploit cache file missing")
+        else:
+            with open(msf_cache, 'r') as f:
+                cache = json.load(f)
+
+            with alive_bar(len(cache),
+                           title="[MTSPL] Reading MSF cache:") as bar:
+                for meta in cache:
+                    name = cache[meta]['fullname']
+                    if not exploit_in_db(db, name, msf=True):
+                        popu_iqueue.put((6, (name,)))
+                    for ref in cache[meta]['references']:
+                        match = REF_CVE.match(ref)
+                        if match and cve_in_db(db, ref):
+                            popu_iqueue.put((7, (ref, name)))
+                    bar()
+                popu_new_year.set()
         with alive_bar(1, title="[AWAIT] Populate threads") as bar:
-            pop_finished.set()
-            pop_thread.join()
+            popu_finished.set()
+            popu_thread.join()
             bar()
 
         exploits = exploits_in_db(db)
@@ -595,37 +680,22 @@ def check_updates():
                         bar()
 
 
-def clean_temp():
-    if os.path.exists(TMP_DIR) and os.path.isdir(TMP_DIR):
-        with alive_bar(1, title="[CLEAN] Temporary files") as bar:
-            try:
-                shutil.rmtree(TMP_DIR)
-            except FileNotFoundError:
-                pass
-            finally:
-                bar()
-
-
 if __name__ == "__main__":
     config_handler.set_global(bar='classic', spinner='classic')
     parser = argparse.ArgumentParser(description="Tool to generate cve.db.")
 
-    parser.add_argument('-c', '--clean',
-                        action='store_true',
-                        help="Clean database from exploit-db removed exploits."
-                        )
+    parser.add_argument('-m', '--metasploit',
+                        default='msf_cache.json',
+                        help="Metasploit cache file.")
 
     args = parser.parse_args()
 
     print(COPYRIGHT)
 
-    if args.clean:
-        print("[CLEAN] Removing exploit-db orphan references")
-        clean_db()
-    else:
-        if os.path.exists(DB) and os.path.isfile(DB):
-            print("[START] Updating database ...")
-        else:
-            print("[START] Creating database ...")
-        check_updates()
-        clean_temp()
+    msg = "[START] Creating database ..."
+    if os.path.isfile(DB):
+        msg = "[START] Updating database ..."
+    print(msg)
+    check_updates(args.metasploit)
+    clean_db()
+    clean_temp()

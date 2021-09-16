@@ -438,7 +438,7 @@ local function portaction (host, port)
       else
          stdnse.verbose(2, "Not found in DB")
          local nothing = true
-         local http_cpe, http_version = "nil"
+         local http_cpe, http_version = nil
          if shortport.http(host, port) then
             stdnse.verbose(2, "Reading HTTP header/body.")
             http_cpe, http_version = check_http(host, port)
@@ -460,8 +460,9 @@ local function portaction (host, port)
             vulns = {}
             table.insert(vulns, "No match found. If you think this could be an error, open an Issue in GitHub.")
             table.insert(vulns, "Attach the following information in the Issue:")
-            table.insert(vulns, fmt("\tnmap_cpe => %s\n\tnmap_version => %s\n\thttp_cpe => %s\n\thttp_version => %s",
-                                    port.version.cpe[1], port.version.version,
+            table.insert(vulns, fmt("\tnmap_cpe => %s\n\tnmap_version => %s",
+                                    port.version.cpe[1], port.version.version))
+            table.insert(vulns, fmt("\thttp_cpe => %s\n\thttp_version => %s",
                                     http_cpe, http_version))
          end
       end
