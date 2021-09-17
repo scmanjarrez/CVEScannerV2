@@ -173,23 +173,44 @@ local function timestamp ()
 end
 
 
-local function log_exploit (vuln)
+local function log_exploits (vuln)
    log("[+] \tid: %s", vuln)
    local cur = registry.conn:execute(
       fmt([[
-          SELECT referenced.exploit_id, exploits.name, exploits.metasploit
-          FROM referenced
-          INNER JOIN exploits ON referenced.exploit_id = exploits.exploit_id
-          WHERE referenced.cve_id = '%s'
+          SELECT exploits.exploit_id, exploits.name
+          FROM referenced_exploit
+          INNER JOIN exploits ON referenced_exploit.exploit_id = exploits.exploit_id
+          WHERE referenced_exploit.cve_id = '%s'
           ]],
           vuln)
    )
-   local exploit, name, metasploit = cur:fetch()
-   while exploit do
-      log("[*] \t\texploit_name: %s", name)
-      log("[*] \t\texploit_url: https://www.exploit-db.com/exploits/%s", exploit)
-      log("[*] \t\tmetasploit_name: %s", metasploit ~= nil and metasploit or "-")
-      exploit, name, metasploit = cur:fetch()
+   local exploit, name = cur:fetch()
+   if exploit then
+      log("[-] \t\tExploitDB:")
+      while exploit do
+         log("[!] \t\t\tname: %s", name)
+         log("[*] \t\t\tid: %s", exploit)
+         log("[*] \t\t\turl: https://www.exploit-db.com/exploits/%s", exploit)
+         exploit, name = cur:fetch()
+      end
+   end
+
+   cur = registry.conn:execute(
+      fmt([[
+          SELECT metasploits.name
+          FROM referenced_metasploit
+          INNER JOIN metasploits ON referenced_metasploit.metasploit_id = metasploits.metasploit_id
+          WHERE referenced_metasploit.cve_id = '%s'
+          ]],
+          vuln)
+   )
+   name = cur:fetch()
+   if name then
+      log("[-] \t\tMetasploit:")
+      while name do
+         log("[!] \t\t\tname: %s", name)
+         name = cur:fetch()
+      end
    end
 end
 
@@ -202,10 +223,8 @@ local function vulnerabilities (product, version, vupdate, multiple)
       cur = registry.conn:execute(
          fmt([[
               SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
-              (SELECT EXISTS (SELECT 1 FROM referenced WHERE cve_id = affected.cve_id)) AS ExploitDB,
-              (SELECT EXISTS (SELECT 1 FROM exploits as ex
-              INNER JOIN referenced AS rf ON rf.exploit_id = ex.exploit_id
-              WHERE rf.cve_id = affected.cve_id AND ex.metasploit IS NOT NULL)) AS Metasploit
+              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = affected.cve_id)) as edb,
+              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = affected.cve_id)) as msf
               FROM products
               INNER JOIN affected ON products.product_id = affected.product_id
               INNER JOIN cves ON affected.cve_id = cves.cve_id
@@ -222,10 +241,8 @@ local function vulnerabilities (product, version, vupdate, multiple)
       cur = registry.conn:execute(
          fmt([[
               SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
-              (SELECT EXISTS (SELECT 1 FROM referenced WHERE cve_id = affected.cve_id)) AS ExploitDB,
-              (SELECT EXISTS (SELECT 1 FROM exploits as ex
-              INNER JOIN referenced AS ref ON ref.exploit_id = ex.exploit_id
-              WHERE ref.cve_id = affected.cve_id AND ex.metasploit IS NOT NULL)) AS Metasploit
+              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = affected.cve_id)) as edb,
+              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = affected.cve_id)) as msf
               FROM products
               INNER JOIN affected ON products.product_id = affected.product_id
               INNER JOIN cves ON affected.cve_id = cves.cve_id
@@ -258,11 +275,11 @@ local function vulnerabilities (product, version, vupdate, multiple)
    table.insert(output, #sorted)
    local counter = 0
    for _, value in ipairs(sorted) do
-      log_exploit(value[1])
+      log_exploits(value[1])
       if counter < tonumber(maxcve_arg) then
          table.insert(output,
                       fmt(
-                         "\t%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
+                         "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
                          value[1], value[2],
                          value[3] and value[3] or "-",
                          value[4] == 1 and "Yes" or "No",
@@ -416,7 +433,7 @@ local function analyze_product (port, product, version, vupdate, from, to)
       table.insert(vulns, 5, fmt("cves: %d", nvulns))
       table.insert(vulns, 6,
                    fmt(
-                      "\t%-15s\t%-5s\t%-5s\t%-10s\t%-10s",
+                      "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
                       "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
                    )
       )
