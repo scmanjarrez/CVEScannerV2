@@ -246,11 +246,12 @@ exploit/metasploit related to CVEs.
 
 # Acknowledgement
 
-Based on [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner) script.
+- Based on [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner) script.
 
-Common server regexes and paths from [vulnersCom/nmap-vulners](https://github.com/vulnersCom/nmap-vulners).
+- Common server regexes and paths from [vulnersCom/nmap-vulners](https://github.com/vulnersCom/nmap-vulners).
 
-Metasploit-framework cache generated from msfconsole [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework).
+- Modules cache generated from [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework).
+  > Can be found in **~/.msf4/store/modules_metadata.json** after running **msfconsole**
 
 # License
     CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
