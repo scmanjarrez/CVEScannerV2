@@ -61,8 +61,6 @@ LAST_MOD = re.compile(r'lastModifiedDate:([\w\d:-]+).*?sha256:([\w\d]+)',
 EXPL_NAME = re.compile(r'https?://www.exploit-db.com/exploits/(\d+)')
 REF_CVE = re.compile(r'CVE-\d+-\d+')
 
-DB = 'cve.db'
-TMP_DIR = 'temp'
 NVD_URL = "https://nvd.nist.gov/feeds/json/cve/1.1/"
 NVD_NAME = "nvdcve-1.1-"
 EXPL_DB_URL = "https://www.exploit-db.com/exploits"
@@ -406,9 +404,9 @@ def bulk_insert_mreferenced(db, cves_metasploits):
         db.commit()
 
 
-def clean_db():
+def clean_db(args):
     print("[CLEAN] Removing exploit-db orphan references")
-    with closing(sql.connect(DB)) as db:
+    with closing(sql.connect(args.database)) as db:
         with closing(db.cursor()) as cur:
             cur.execute(
                 'DELETE FROM referenced_exploit '
@@ -424,18 +422,20 @@ def clean_db():
             db.commit()
 
 
-def clean_temp():
-    if os.path.exists(TMP_DIR) and os.path.isdir(TMP_DIR):
-        print("[CLEAN] Removing temporary files")
-        try:
-            shutil.rmtree(TMP_DIR)
-        except FileNotFoundError:
-            pass
+def clean_temp(args):
+    if not args.noclean:
+        if os.path.exists(args.temp) and os.path.isdir(args.temp):
+            print("[CLEAN] Removing temporary files")
+            try:
+                shutil.rmtree(args.temp)
+            except FileNotFoundError:
+                pass
 
 
 class PopulateDBThread(Thread):
-    def __init__(self, finished, new_year, in_queue, out_queue):
+    def __init__(self, database, finished, new_year, in_queue, out_queue):
         Thread.__init__(self)
+        self.database = database
         self.finished = finished
         self.new_year = new_year
         self.iqueue = in_queue
@@ -453,7 +453,7 @@ class PopulateDBThread(Thread):
         self.datalist = {k: [] for k in self.execmany}
 
     def run(self):
-        with closing(sql.connect(DB)) as db:
+        with closing(sql.connect(self.database)) as db:
             create_db(db)
             while True:
                 if not self.iqueue.empty():
@@ -506,16 +506,17 @@ def parse_node(node):
         return [split(cpe['cpe23Uri']) for cpe in node['cpe_match']]
 
 
-def check_updates(msf_cache):
-    with closing(sql.connect(DB)) as db:
+def check_updates(args):
+    with closing(sql.connect(args.database)) as db:
         years = range(2002, datetime.datetime.now().year + 1)
 
         popu_finished = Event()
         popu_new_year = Event()
         popu_iqueue = Queue()
         popu_oqueue = Queue()
-        popu_thread = PopulateDBThread(popu_finished, popu_new_year,
-                                       popu_iqueue, popu_oqueue)
+        popu_thread = PopulateDBThread(args.database, popu_finished,
+                                       popu_new_year, popu_iqueue,
+                                       popu_oqueue)
         popu_thread.start()
         time.sleep(1)
 
@@ -529,13 +530,13 @@ def check_updates(msf_cache):
             if last_update == cached_upd:
                 update = False
 
-            tmpfile = f'{TMP_DIR}/{NVD_NAME}{year}.json'
+            tmpfile = f'{args.temp}/{NVD_NAME}{year}.json'
             if update:
                 try:
-                    os.makedirs(TMP_DIR, exist_ok=True)
+                    os.makedirs(args.temp, exist_ok=True)
                 except PermissionError:
                     print(f"[ERROR] Insufficient permission "
-                          f"to create \"{TMP_DIR}\" directory.")
+                          f"to create \"{args.temp}\" directory.")
                     sys.exit(-1)
 
                 tmpurl = f'{NVD_URL}{NVD_NAME}{year}.json.zip'
@@ -551,7 +552,7 @@ def check_updates(msf_cache):
 
                     with zipfile.ZipFile(f'{tmpfile}.zip', 'r') as zf:
                         try:
-                            zf.extractall(TMP_DIR)
+                            zf.extractall(args.temp)
                         except ValueError:
                             print("[ERROR] Unexpected close.")
                             sys.exit(-1)
@@ -645,14 +646,14 @@ def check_updates(msf_cache):
             else:
                 print(f"[CHECK] Year {year}: Already in DB ... skipping")
 
-        if not os.path.isfile(msf_cache):
-            print("[MTSPL] Metasploit cache file missing")
+        if not os.path.isfile(args.metasploit):
+            print("[Error] Metasploit cache file missing")
         else:
-            with open(msf_cache, 'r') as f:
+            with open(args.metasploit, 'r') as f:
                 cache = json.load(f)
 
             with alive_bar(len(cache),
-                           title="[MTSPL] Reading MSF cache:") as bar:
+                           title="[PARSE] Reading Metastploit cache:") as bar:
                 for meta in cache:
                     name = cache[meta]['fullname']
                     if not exploit_in_db(db, name, msf=True):
@@ -684,18 +685,30 @@ if __name__ == "__main__":
     config_handler.set_global(bar='classic', spinner='classic')
     parser = argparse.ArgumentParser(description="Tool to generate cve.db.")
 
+    parser.add_argument('-d', '--database',
+                        default='cve.db',
+                        help="Database generated.")
+
     parser.add_argument('-m', '--metasploit',
-                        default='msf_cache.json',
+                        default='modules_cache_msf.json',
                         help="Metasploit cache file.")
+
+    parser.add_argument('-t', '--temp',
+                        default='temp',
+                        help="Temporary download directory.")
+
+    parser.add_argument('-nc', '--noclean',
+                        action='store_true',
+                        help="Do not remove temporary directory.")
 
     args = parser.parse_args()
 
     print(COPYRIGHT)
 
     msg = "[START] Creating database ..."
-    if os.path.isfile(DB):
+    if os.path.isfile(args.database):
         msg = "[START] Updating database ..."
     print(msg)
-    check_updates(args.metasploit)
-    clean_db()
-    clean_temp()
+    check_updates(args)
+    clean_db(args)
+    clean_temp(args)

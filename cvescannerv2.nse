@@ -371,7 +371,7 @@ end
 local function check_http (host, port)
    for _, path in pairs(registry.path['path']) do
       for _, ext in pairs(registry.path['extension']) do
-         local file = "/" .. path .. "." .. ext
+         local file = "/" .. path .. ext
          local resp = http.get(host, port, file)
          if not resp.status then
             stdnse.verbose(2, fmt("Error processing request http://%s:%s/%s => %s",
