@@ -1,5 +1,5 @@
 # Description
-Nmap script that searches for probable vulnerabilities based on services discovered in open ports.
+Nmap script that provides information about probable vulnerabilities based on discovered services.
 
 # Requirements
 - luasql
@@ -10,39 +10,49 @@ Nmap script that searches for probable vulnerabilities based on services discove
 ### Prelaunch
 In order to execute **cvescannerv2** script, it is necessary to generate the CVEs database.
 
-The script **database.py** generates the database **cve.db** with all the required information.
-It may take some time due to the high amount of vulnerabilities.
+The script **database.py** generates **cve.db** with the required information.
+
+> A semi-updated **database** is **uploaded** as .sql files in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)** repository.
 
 `pip install -r requirements.txt`
 
 `python database.py`
 
-**Note:** A semi-updated database is uploaded as .sql file in
-[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB) repository.
-
 ### Optional
-Script **cvescannerv2.nse** can be placed in Nmap default script directory to execute
-from anywhere.
+Script **cvescannerv2.nse** can be placed in Nmap default script directory for global execution.
 
-- Linux location can be:
+- Linux and OSX default script locations:
   - /usr/local/share/nmap/scripts/
-  - /usr/share/nmap/scripts
+  - /usr/share/nmap/scripts/
+  - /opt/local/share/nmap/scripts/
+  - /usr/local/Cellar/nmap/<i>&lt;version&gt;</i>/share/nmap/scripts/
 
-- Windows location can be:
+- Windows default script locations:
   - C:\Program Files\Nmap\Scripts
   - %APPDATA%\nmap
 
 ### Launch
-After database has been created, it is necessary to specify the script to launch.
+After database has been created, it is necessary to specify the script.
 
 `nmap -sV <target_ip> --script=cvescannerv2.nse`
-> If **cvescannerv2.nse** file was placed in Nmap default script directory
+> **cvescannerv2.nse** placed in Nmap script directory
 
 `nmap -sV <target_ip> --script=./cvescannerv2.nse`
-> If **cvescannerv2.nse** file is in the current working directory
+> **cvescannerv2.nse** placed in the working directory
 
-**Note**: cvescannerv2.nse can accept the following script args: db, log, maxcve, path and regex. If
-no arg received, default values are used.
+**Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path and regex.
+<details>
+    <summary><b>script-args default values</b></summary>
+
+    db: cve.db
+    log: cvescannerv2.log
+    maxcve: 10
+    path: http-paths-vulnerscom.json
+    regex: http-regex-vulnerscom.json
+</details>
+
+<details>
+    <summary><b>script-args examples</b></summary>
 
 ```bash
 nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db
@@ -51,8 +61,10 @@ nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args maxcve=10
 nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args path=http-paths-vulnerscom.json
 nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args regex=http-regex-vulnerscom.json
 
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db,log=cvescannerv2.log
+nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db,log=cvescannerv2.log,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
 ```
+
+</details>
 
 # Output
 Nmap will show all CVEs related to every service-version discovered.
