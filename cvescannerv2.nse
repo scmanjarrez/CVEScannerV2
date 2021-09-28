@@ -497,11 +497,13 @@ local function portaction (host, port)
             if http_cpe then
                product, version, vupdate, from, to = cpe_info(http_cpe,
                                                               http_version)
-               vulns = analyze_product(port, product, version, vupdate, from, to)
-               stdnse.verbose(2, fmt("Found in DB: %s | Vulns: %s",
-                                     vulns ~= nil, vulns and #vulns - 6))
-               if vulns then
-                  nothing = false
+               if product then
+                   vulns = analyze_product(port, product, version, vupdate, from, to)
+                   stdnse.verbose(2, fmt("Found in DB: %s | Vulns: %s",
+                                         vulns ~= nil, vulns and #vulns - 6))
+                   if vulns then
+                      nothing = false
+                   end
                end
             end
          end
