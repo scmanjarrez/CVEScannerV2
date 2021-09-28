@@ -174,8 +174,17 @@ end
 
 
 local function log_exploits (vuln)
-   log("[+] \tid: %s", vuln)
    local cur = registry.conn:execute(
+      fmt([[
+          SELECT cvss_v2, cvss_v3
+          FROM cves
+          WHERE cve_id = '%s'
+          ]],
+          vuln)
+   )
+   local cvssv2, cvssv3 = cur:fetch()
+   log("[+] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2, cvssv3)
+   cur = registry.conn:execute(
       fmt([[
           SELECT exploits.exploit_id, exploits.name
           FROM referenced_exploit
@@ -217,9 +226,33 @@ end
 
 local function vulnerabilities (product, version, vupdate, multiple)
    local cur = nil
+   local vulns = {}
+
+   -- Search vulnerabilities affecting multiple versions, which includes this one
+   cur = registry.conn:execute(
+      fmt([[
+           SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
+           (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = multiaffected.cve_id)) as edb,
+           (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = multiaffected.cve_id)) as msf
+           FROM multiaffected
+           INNER JOIN cves ON multiaffected.cve_id = cves.cve_id
+           WHERE product_id =
+           (SELECT product_id FROM products WHERE product = '%s' AND version = '*')
+           AND (IFNULL(versionStartIncluding, '0') < '%s' OR IFNULL(versionStartIncluding, '0') LIKE '%s')
+           AND (IFNULL(versionStartExcluding, '0') < '%s')
+           AND (IFNULL(versionEndIncluding, '9999') > '%s' OR IFNULL(versionEndIncluding, '9999') LIKE '%s')
+           AND (IFNULL(versionEndExcluding, '9999') > '%s')
+           ]],
+           product, version, version, version, version, version, version)
+   )
+   local vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
+   while vuln do
+      vulns[vuln] = {CVSSV2 = cvssv2, CVSSV3 = cvssv3, ExploitDB = exploitdb, Metasploit = metasploit}
+      vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
+   end
+
+   -- Search vulnerabilities affecting this version
    if not multiple then
-      -- Query CVE, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
-      -- by product and version
       cur = registry.conn:execute(
          fmt([[
               SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
@@ -236,8 +269,7 @@ local function vulnerabilities (product, version, vupdate, multiple)
               product, version, vupdate)
       )
    else
-      -- Query CVE_ID, CVSSv2, CVSSv3, Exist_Exploits, Exist_Metasploit
-      -- by product and multiple versions
+      -- Search vulnerabilities affecting a range of versions
       cur = registry.conn:execute(
          fmt([[
               SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
@@ -254,8 +286,8 @@ local function vulnerabilities (product, version, vupdate, multiple)
               product, version, version, vupdate, vupdate)
       )
    end
-   local vulns = {}
-   local vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
+
+   vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
    while vuln do
       vulns[vuln] = {CVSSV2 = cvssv2, CVSSV3 = cvssv3, ExploitDB = exploitdb, Metasploit = metasploit}
       vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()

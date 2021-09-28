@@ -61,6 +61,8 @@ LAST_MOD = re.compile(r'lastModifiedDate:([\w\d:-]+).*?sha256:([\w\d]+)',
 EXPL_NAME = re.compile(r'https?://www.exploit-db.com/exploits/(\d+)')
 REF_CVE = re.compile(r'CVE-\d+-\d+')
 
+VER_TAG = ('versionStartIncluding', 'versionStartExcluding',
+           'versionEndIncluding', 'versionEndExcluding')
 NVD_URL = "https://nvd.nist.gov/feeds/json/cve/1.1/"
 NVD_NAME = "nvdcve-1.1-"
 EXPL_DB_URL = "https://www.exploit-db.com/exploits"
@@ -124,6 +126,22 @@ def create_db(db):
                 FOREIGN KEY (product_id)
                     REFERENCES products (product_id),
                 PRIMARY KEY (cve_id, product_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS multiaffected (
+                cve_id TEXT,
+                product_id INT,
+                versionStartIncluding TEXT,
+                versionStartExcluding TEXT,
+                versionEndIncluding TEXT,
+                versionEndExcluding TEXT,
+                FOREIGN KEY (cve_id)
+                    REFERENCES cves (cve_id),
+                FOREIGN KEY (product_id)
+                    REFERENCES products (product_id),
+                PRIMARY KEY (cve_id, product_id,
+                             versionStartIncluding, versionStartExcluding,
+                             versionEndIncluding, versionEndExcluding)
             );
 
             CREATE TABLE IF NOT EXISTS referenced_exploit (
@@ -327,15 +345,15 @@ def product_is_affected(db, cve, vendor, product, version, update):
             'SELECT EXISTS '
             '('
             'SELECT 1 FROM affected '
-            'WHERE product_id = '
+            'WHERE cve_id = ? '
+            'AND product_id = '
             '('
             'SELECT product_id FROM products '
             'WHERE vendor = ? AND product = ? '
             'AND version = ? AND version_update = ?'
-            ') '
-            'AND cve_id = ?'
+            ')'
             ')',
-            [vendor, product, version, update, cve])
+            [cve, vendor, product, version, update])
         return cur.fetchone()[0]
 
 
@@ -352,6 +370,45 @@ def bulk_insert_affected(db, cves_products):
             ')'
             ')',
             cves_products)
+        db.commit()
+
+
+def product_is_multiaffected(db, cve, vendor, product,
+                             start_inc, start_exc, end_inc, end_exc):
+    with closing(db.cursor()) as cur:
+        cur.execute(
+            'SELECT EXISTS '
+            '('
+            'SELECT 1 FROM multiaffected '
+            'WHERE cve_id = ? '
+            'AND product_id = '
+            '('
+            'SELECT product_id FROM products '
+            'WHERE vendor = ? AND product = ? '
+            'AND version = "*"'
+            ') '
+            'AND versionStartIncluding = ? '
+            'AND versionStartExcluding = ? '
+            'AND versionEndIncluding = ? '
+            'AND versionEndExcluding = ?'
+            ')',
+            [cve, vendor, product, start_inc, start_exc, end_inc, end_exc])
+        return cur.fetchone()[0]
+
+
+def bulk_insert_multiaffected(db, cves_products_versions):
+    with closing(db.cursor()) as cur:
+        cur.executemany(
+            'INSERT or IGNORE INTO multiaffected '
+            'VALUES '
+            '(?, '
+            '('
+            'SELECT product_id FROM products '
+            'WHERE vendor = ? AND product = ? '
+            'AND version = "*"'
+            '), '
+            '?, ?, ?, ?)',
+            cves_products_versions)
         db.commit()
 
 
@@ -445,10 +502,11 @@ class PopulateDBThread(Thread):
             1: bulk_update_cve,
             2: bulk_insert_product,
             3: bulk_insert_affected,
-            4: bulk_insert_exploits,
-            5: bulk_insert_ereferenced,
-            6: bulk_insert_metasploits,
-            7: bulk_insert_mreferenced
+            4: bulk_insert_multiaffected,
+            5: bulk_insert_exploits,
+            6: bulk_insert_ereferenced,
+            7: bulk_insert_metasploits,
+            8: bulk_insert_mreferenced
         }
         self.datalist = {k: [] for k in self.execmany}
 
@@ -492,8 +550,12 @@ def exploit_batch(exploits):
         yield exploits[i:i + BATCH]
 
 
+def _norm(string):
+    return string.replace('\\', '')
+
+
 def split(cpe23uri):
-    return CPE.search(cpe23uri.replace('\\', '')).groups()
+    return CPE.search(_norm(cpe23uri)).groups()
 
 
 def parse_node(node):
@@ -503,7 +565,9 @@ def parse_node(node):
             ret += parse_node(child)
         return ret
     else:
-        return [split(cpe['cpe23Uri']) for cpe in node['cpe_match']]
+        return [(split(cpe['cpe23Uri']),
+                 [_norm(cpe[vt]) if vt in cpe else None for vt in VER_TAG])
+                for cpe in node['cpe_match']]
 
 
 def check_updates(args):
@@ -605,7 +669,7 @@ def check_updates(args):
                             for node in nodes:
                                 products = parse_node(node)
                                 for (ptype, vend,
-                                     prod, vers, vupd) in products:
+                                     prod, vers, vupd), tags in products:
                                     if ptype == 'a':
                                         if not product_in_db(
                                                 db, vend, prod,
@@ -613,12 +677,23 @@ def check_updates(args):
                                             popu_iqueue.put(
                                                 (2, (vend, prod,
                                                      vers, vupd)))
-                                        if not product_is_affected(
-                                                db, cve_id,
-                                                vend, prod, vers, vupd):
-                                            popu_iqueue.put(
-                                                (3, (cve_id, vend,
-                                                     prod, vers, vupd)))
+                                        if all(t is None
+                                               for t in tags) and vers != '*':
+                                            if not product_is_affected(
+                                                    db, cve_id,
+                                                    vend, prod, vers, vupd):
+                                                popu_iqueue.put(
+                                                    (3, (cve_id, vend,
+                                                         prod, vers, vupd)))
+                                        else:
+                                            if not product_is_multiaffected(
+                                                    db, cve_id, vend, prod,
+                                                    tags[0], tags[1],
+                                                    tags[2], tags[3]):
+                                                popu_iqueue.put(
+                                                    (4, (cve_id, vend, prod,
+                                                         tags[0], tags[1],
+                                                         tags[2], tags[3])))
 
                             references = (cve_item['cve']
                                           ['references']['reference_data'])
@@ -632,11 +707,11 @@ def check_updates(args):
                                         if not exploit_in_db(
                                                 db, exploit):
                                             popu_iqueue.put(
-                                                (4, (exploit,)))
+                                                (5, (exploit,)))
                                         if not cve_is_referenced(
                                                 db, cve_id, exploit):
                                             popu_iqueue.put(
-                                                (5, (cve_id, exploit)))
+                                                (6, (cve_id, exploit)))
                         bar()
                 popu_new_year.set()
                 with alive_bar(1, title=f"[STORE] Year {year}:") as bar:
@@ -657,11 +732,11 @@ def check_updates(args):
                 for meta in cache:
                     name = cache[meta]['fullname']
                     if not exploit_in_db(db, name, msf=True):
-                        popu_iqueue.put((6, (name,)))
+                        popu_iqueue.put((7, (name,)))
                     for ref in cache[meta]['references']:
                         match = REF_CVE.match(ref)
                         if match and cve_in_db(db, ref):
-                            popu_iqueue.put((7, (ref, name)))
+                            popu_iqueue.put((8, (ref, name)))
                     bar()
                 popu_new_year.set()
         with alive_bar(1, title="[AWAIT] Populate threads") as bar:
