@@ -242,6 +242,7 @@ local function vulnerabilities (product, version, vupdate, multiple)
            AND (IFNULL(versionStartExcluding, '0') < '%s')
            AND (IFNULL(versionEndIncluding, '9999') > '%s' OR IFNULL(versionEndIncluding, '9999') LIKE '%s')
            AND (IFNULL(versionEndExcluding, '9999') > '%s')
+           GROUP BY multiaffected.cve_id
            ]],
            product, version, version, version, version, version, version)
    )
