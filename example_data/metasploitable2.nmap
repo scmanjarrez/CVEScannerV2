@@ -1,6 +1,6 @@
-# Nmap 7.92 scan initiated Fri Sep  3 12:00:07 2021 as: nmap -sV --script=./cvescannerv2.nse --script-args log=metasploitable2.log -oA metasploitable2 172.16.2.131
+# Nmap 7.92 scan initiated Wed Sep 29 12:24:01 2021 as: nmap -sV --script=./cvescannerv2.nse --script-args log=metasploitable2.log -oA metasploitable2 172.16.2.131
 Nmap scan report for 172.16.2.131
-Host is up (0.0015s latency).
+Host is up (0.0016s latency).
 Not shown: 977 closed tcp ports (conn-refused)
 PORT     STATE SERVICE     VERSION
 21/tcp   open  ftp         vsftpd 2.3.4
@@ -10,20 +10,26 @@ PORT     STATE SERVICE     VERSION
 |   version: 2.3.4
 |   vupdate: *
 |   cves: 1
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|_  	CVE-2011-2523  	10.0 	9.8  	No        	No        
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|_  	CVE-2011-2523       	10.0 	9.8  	No        	No        
 22/tcp   open  ssh         OpenSSH 4.7p1 Debian 8ubuntu1 (protocol 2.0)
 | cvescannerv2: 
 |   source: nvd.nist.gov
 |   product: openssh
 |   version: 4.7p1
 |   vupdate: *
-|   cves: 4
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2010-4478  	7.5  	-    	No        	No        
-|   	CVE-2017-15906 	5.0  	5.3  	No        	No        
-|   	CVE-2010-4755  	4.0  	-    	No        	No        
-|_  	CVE-2008-5161  	2.6  	-    	No        	No        
+|   cves: 34
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2008-3844       	9.3  	-    	No        	No        
+|   	CVE-2015-5600       	8.5  	-    	No        	No        
+|   	CVE-2016-6515       	7.8  	7.5  	Yes       	No        
+|   	CVE-2014-1692       	7.5  	-    	No        	No        
+|   	CVE-2010-4478       	7.5  	-    	No        	No        
+|   	CVE-2016-1908       	7.5  	9.8  	No        	No        
+|   	CVE-2016-10009      	7.5  	7.3  	Yes       	No        
+|   	CVE-2015-8325       	7.2  	7.8  	No        	No        
+|   	CVE-2016-10012      	7.2  	7.8  	No        	No        
+|_  	CVE-2016-10010      	6.9  	7.0  	Yes       	No        
 23/tcp   open  telnet      Linux telnetd
 25/tcp   open  smtp        Postfix smtpd
 53/tcp   open  domain      ISC BIND 9.4.2
@@ -32,36 +38,36 @@ PORT     STATE SERVICE     VERSION
 |   product: bind
 |   version: 9.4.2
 |   vupdate: *
-|   cves: 24
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2012-1667  	8.5  	-    	No        	No        
-|   	CVE-2012-5166  	7.8  	-    	No        	No        
-|   	CVE-2012-3817  	7.8  	-    	No        	No        
-|   	CVE-2012-4244  	7.8  	-    	No        	No        
-|   	CVE-2014-8500  	7.8  	-    	No        	No        
-|   	CVE-2010-0382  	7.6  	-    	No        	No        
-|   	CVE-2015-8461  	7.1  	-    	No        	No        
-|   	CVE-2009-0025  	6.8  	-    	No        	No        
-|   	CVE-2015-8704  	6.8  	6.5  	No        	No        
-|_  	CVE-2015-8705  	6.6  	7.0  	No        	No        
+|   cves: 39
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2008-0122       	10.0 	-    	No        	No        
+|   	CVE-2012-1667       	8.5  	-    	No        	No        
+|   	CVE-2014-8500       	7.8  	-    	No        	No        
+|   	CVE-2012-3817       	7.8  	-    	No        	No        
+|   	CVE-2012-4244       	7.8  	-    	No        	No        
+|   	CVE-2016-2776       	7.8  	7.5  	Yes       	Yes       
+|   	CVE-2015-5722       	7.8  	-    	No        	No        
+|   	CVE-2015-5477       	7.8  	-    	Yes       	Yes       
+|   	CVE-2012-5166       	7.8  	-    	No        	No        
+|_  	CVE-2010-0382       	7.6  	-    	No        	No        
 80/tcp   open  http        Apache httpd 2.2.8 ((Ubuntu) DAV/2)
 | cvescannerv2: 
 |   source: nvd.nist.gov
 |   product: http_server
 |   version: 2.2.8
 |   vupdate: *
-|   cves: 32
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2010-0425  	10.0 	-    	Yes       	No        
-|   	CVE-2011-3192  	7.8  	-    	Yes       	No        
-|   	CVE-2013-2249  	7.5  	-    	No        	No        
-|   	CVE-2009-1891  	7.1  	-    	No        	No        
-|   	CVE-2009-1890  	7.1  	-    	No        	No        
-|   	CVE-2012-0883  	6.9  	-    	No        	No        
-|   	CVE-2013-1862  	5.1  	-    	No        	No        
-|   	CVE-2014-0098  	5.0  	-    	No        	No        
-|   	CVE-2010-1452  	5.0  	-    	No        	No        
-|_  	CVE-2013-6438  	5.0  	-    	No        	No        
+|   cves: 59
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2010-0425       	10.0 	-    	Yes       	Yes       
+|   	CVE-2011-3192       	7.8  	-    	Yes       	Yes       
+|   	CVE-2007-4723       	7.5  	-    	No        	No        
+|   	CVE-2021-40438      	7.5  	9.8  	No        	No        
+|   	CVE-2013-4365       	7.5  	-    	No        	No        
+|   	CVE-2013-2249       	7.5  	-    	No        	No        
+|   	CVE-2011-2688       	7.5  	-    	No        	No        
+|   	CVE-2009-1890       	7.1  	-    	No        	No        
+|   	CVE-2009-1891       	7.1  	-    	No        	No        
+|_  	CVE-2012-0883       	6.9  	-    	No        	No        
 |_http-server-header: Apache/2.2.8 (Ubuntu) DAV/2
 111/tcp  open  rpcbind     2 (RPC #100000)
 | rpcinfo: 
@@ -70,12 +76,12 @@ PORT     STATE SERVICE     VERSION
 |   100000  2            111/udp   rpcbind
 |   100003  2,3,4       2049/tcp   nfs
 |   100003  2,3,4       2049/udp   nfs
-|   100005  1,2,3      51461/udp   mountd
-|   100005  1,2,3      59218/tcp   mountd
-|   100021  1,3,4      33173/udp   nlockmgr
-|   100021  1,3,4      48033/tcp   nlockmgr
-|   100024  1          33910/tcp   status
-|_  100024  1          60294/udp   status
+|   100005  1,2,3      49370/tcp   mountd
+|   100005  1,2,3      56301/udp   mountd
+|   100021  1,3,4      52471/tcp   nlockmgr
+|   100021  1,3,4      55103/udp   nlockmgr
+|   100024  1          34238/udp   status
+|_  100024  1          39067/tcp   status
 139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
 | cvescannerv2: 
 |   source: nvd.nist.gov
@@ -83,17 +89,17 @@ PORT     STATE SERVICE     VERSION
 |   version: 3.X - 4.X
 |   vupdate: *
 |   cves: 91
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2012-1182  	10.0 	-    	No        	No        
-|   	CVE-2004-1154  	10.0 	-    	No        	No        
-|   	CVE-2004-0600  	10.0 	-    	No        	No        
-|   	CVE-2004-0882  	10.0 	-    	No        	No        
-|   	CVE-2007-2446  	10.0 	-    	No        	No        
-|   	CVE-2015-0240  	10.0 	-    	Yes       	No        
-|   	CVE-2017-7494  	10.0 	9.8  	Yes       	Yes       
-|   	CVE-2007-5398  	9.3  	-    	No        	No        
-|   	CVE-2007-6015  	9.3  	-    	No        	No        
-|_  	CVE-2009-1886  	9.3  	-    	No        	No        
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2007-2446       	10.0 	-    	No        	Yes       
+|   	CVE-2015-0240       	10.0 	-    	Yes       	Yes       
+|   	CVE-2004-0600       	10.0 	-    	No        	No        
+|   	CVE-2004-1154       	10.0 	-    	No        	No        
+|   	CVE-2004-0882       	10.0 	-    	No        	No        
+|   	CVE-2012-1182       	10.0 	-    	No        	Yes       
+|   	CVE-2017-7494       	10.0 	9.8  	Yes       	Yes       
+|   	CVE-2007-4572       	9.3  	-    	No        	No        
+|   	CVE-2007-6015       	9.3  	-    	No        	No        
+|_  	CVE-2007-5398       	9.3  	-    	No        	No        
 445/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
 | cvescannerv2: 
 |   source: nvd.nist.gov
@@ -101,17 +107,17 @@ PORT     STATE SERVICE     VERSION
 |   version: 3.X - 4.X
 |   vupdate: *
 |   cves: 91
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2012-1182  	10.0 	-    	No        	No        
-|   	CVE-2004-1154  	10.0 	-    	No        	No        
-|   	CVE-2004-0600  	10.0 	-    	No        	No        
-|   	CVE-2004-0882  	10.0 	-    	No        	No        
-|   	CVE-2007-2446  	10.0 	-    	No        	No        
-|   	CVE-2015-0240  	10.0 	-    	Yes       	No        
-|   	CVE-2017-7494  	10.0 	9.8  	Yes       	Yes       
-|   	CVE-2007-5398  	9.3  	-    	No        	No        
-|   	CVE-2007-6015  	9.3  	-    	No        	No        
-|_  	CVE-2009-1886  	9.3  	-    	No        	No        
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2007-2446       	10.0 	-    	No        	Yes       
+|   	CVE-2015-0240       	10.0 	-    	Yes       	Yes       
+|   	CVE-2004-0600       	10.0 	-    	No        	No        
+|   	CVE-2004-1154       	10.0 	-    	No        	No        
+|   	CVE-2004-0882       	10.0 	-    	No        	No        
+|   	CVE-2012-1182       	10.0 	-    	No        	Yes       
+|   	CVE-2017-7494       	10.0 	9.8  	Yes       	Yes       
+|   	CVE-2007-4572       	9.3  	-    	No        	No        
+|   	CVE-2007-6015       	9.3  	-    	No        	No        
+|_  	CVE-2007-5398       	9.3  	-    	No        	No        
 512/tcp  open  exec?
 513/tcp  open  login
 514/tcp  open  shell?
@@ -127,46 +133,54 @@ PORT     STATE SERVICE     VERSION
 |   product: proftpd
 |   version: 1.3.1
 |   vupdate: *
-|   cves: 10
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2011-4130  	9.0  	-    	No        	No        
-|   	CVE-2009-0542  	7.5  	-    	Yes       	No        
-|   	CVE-2010-3867  	7.1  	-    	No        	No        
-|   	CVE-2009-0543  	6.8  	-    	No        	No        
-|   	CVE-2008-4242  	6.8  	-    	No        	No        
-|   	CVE-2010-4652  	6.8  	-    	No        	No        
-|   	CVE-2009-3639  	5.8  	-    	No        	No        
-|   	CVE-2011-1137  	5.0  	-    	Yes       	No        
-|   	CVE-2008-7265  	4.0  	-    	No        	No        
-|_  	CVE-2012-6095  	1.2  	-    	No        	No        
+|   cves: 11
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2011-4130       	9.0  	-    	No        	No        
+|   	CVE-2001-0027       	7.5  	-    	No        	No        
+|   	CVE-2009-0542       	7.5  	-    	Yes       	No        
+|   	CVE-2010-3867       	7.1  	-    	No        	No        
+|   	CVE-2010-4652       	6.8  	-    	No        	No        
+|   	CVE-2009-0543       	6.8  	-    	No        	No        
+|   	CVE-2008-4242       	6.8  	-    	No        	No        
+|   	CVE-2009-3639       	5.8  	-    	No        	No        
+|   	CVE-2011-1137       	5.0  	-    	Yes       	No        
+|_  	CVE-2008-7265       	4.0  	-    	No        	No        
 3306/tcp open  mysql       MySQL 5.0.51a-3ubuntu5
 | cvescannerv2: 
 |   source: nvd.nist.gov
 |   product: mysql
 |   version: 5.0.51
 |   vupdate: a
-|   cves: 2
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2010-3682  	4.0  	-    	No        	No        
-|_  	CVE-2010-3677  	4.0  	-    	No        	No        
+|   cves: 371
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2012-3163       	9.0  	-    	No        	No        
+|   	CVE-2020-14878      	7.7  	8.0  	No        	No        
+|   	CVE-2009-4484       	7.5  	-    	No        	Yes       
+|   	CVE-2020-14760      	7.5  	5.5  	No        	No        
+|   	CVE-2012-3158       	7.5  	-    	No        	No        
+|   	CVE-2015-4819       	7.2  	-    	No        	No        
+|   	CVE-2013-0384       	6.8  	-    	No        	No        
+|   	CVE-2016-3518       	6.8  	6.5  	No        	No        
+|   	CVE-2020-14814      	6.8  	4.9  	No        	No        
+|_  	CVE-2012-1735       	6.8  	-    	No        	No        
 5432/tcp open  postgresql  PostgreSQL DB 8.3.0 - 8.3.7
 | cvescannerv2: 
 |   source: nvd.nist.gov
 |   product: postgresql
 |   version: 8.3
 |   vupdate: *
-|   cves: 19
-|   	CVE ID         	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2013-1903  	10.0 	-    	No        	No        
-|   	CVE-2013-1902  	10.0 	-    	No        	No        
-|   	CVE-2010-1447  	8.5  	-    	No        	No        
-|   	CVE-2010-1169  	8.5  	-    	No        	No        
-|   	CVE-2009-3231  	6.8  	-    	No        	No        
-|   	CVE-2012-0868  	6.8  	-    	No        	No        
-|   	CVE-2013-0255  	6.8  	-    	No        	No        
-|   	CVE-2013-4422  	6.8  	-    	No        	No        
-|   	CVE-2012-0866  	6.5  	-    	No        	No        
-|_  	CVE-2010-4015  	6.5  	-    	No        	No        
+|   cves: 54
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2013-1902       	10.0 	-    	No        	No        
+|   	CVE-2013-1903       	10.0 	-    	No        	No        
+|   	CVE-2016-7048       	9.3  	8.1  	No        	No        
+|   	CVE-2016-0766       	9.0  	8.8  	No        	No        
+|   	CVE-2010-1447       	8.5  	-    	No        	No        
+|   	CVE-2010-1169       	8.5  	-    	No        	No        
+|   	CVE-2015-0244       	7.5  	9.8  	No        	No        
+|   	CVE-2015-3166       	7.5  	9.8  	No        	No        
+|   	CVE-2019-10211      	7.5  	9.8  	No        	No        
+|_  	CVE-2009-2943       	7.5  	-    	No        	No        
 5900/tcp open  vnc         VNC (protocol 3.3)
 6000/tcp open  X11         (access denied)
 6667/tcp open  irc         UnrealIRCd
@@ -174,12 +188,16 @@ PORT     STATE SERVICE     VERSION
 8180/tcp open  http        Apache Tomcat/Coyote JSP engine 1.1
 | cvescannerv2: 
 |   No match found. If you think this could be an error, open an Issue in GitHub.
-|_  Attach the following information in the Issue: cpe => cpe:/a:apache:coyote_http_connector:1.1 | version => 1.1.
+|   Attach the following information in the Issue:
+|   	nmap_cpe => cpe:/a:apache:coyote_http_connector:1.1
+| 	nmap_version => 1.1
+|   	http_cpe => cpe:/a:apache:tomcat
+|_	http_version => 1.1
 |_http-server-header: Apache-Coyote/1.1
 1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port514-TCP:V=7.92%I=7%D=9/3%Time=6131F227%P=x86_64-redhat-linux-gnu%r(
-SF:NULL,26,"\x01Host\x20address\x20mismatch\x20for\x20172\.16\.2\.1\n");
+SF-Port514-TCP:V=7.92%I=7%D=9/29%Time=61543EC2%P=x86_64-redhat-linux-gnu%r
+SF:(NULL,26,"\x01Host\x20address\x20mismatch\x20for\x20172\.16\.2\.1\n");
 Service Info: Hosts:  metasploitable.localdomain, irc.Metasploitable.LAN; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-# Nmap done at Fri Sep  3 12:01:14 2021 -- 1 IP address (1 host up) scanned in 67.06 seconds
+# Nmap done at Wed Sep 29 12:25:12 2021 -- 1 IP address (1 host up) scanned in 70.53 seconds

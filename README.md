@@ -8,15 +8,13 @@ Nmap script that provides information about probable vulnerabilities based on di
 
 # Run
 ### Prelaunch
-In order to execute **cvescannerv2** script, it is necessary to generate the CVEs database.
+In order to execute **cvescannerv2.nse** script, it is mandatory to generate CVEs database.
 
 The script **database.py** generates **cve.db** with the required information.
 
-> A semi-updated **database** is **uploaded** as .sql files in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)** repository.
-
-`pip install -r requirements.txt`
-
-`python database.py`
+- `pip install -r requirements.txt`
+- `python database.py`
+> **Note:** For your convinience, a semi-updated database is offered as .sql format in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)**.
 
 ### Optional
 Script **cvescannerv2.nse** can be placed in Nmap default script directory for global execution.
@@ -34,11 +32,11 @@ Script **cvescannerv2.nse** can be placed in Nmap default script directory for g
 ### Launch
 After database has been created, it is necessary to specify the script.
 
-`nmap -sV <target_ip> --script=cvescannerv2.nse`
-> **cvescannerv2.nse** placed in Nmap script directory
+- `nmap -sV <target_ip> --script=cvescannerv2.nse`
+  > **cvescannerv2.nse** placed in Nmap script directory
 
-`nmap -sV <target_ip> --script=./cvescannerv2.nse`
-> **cvescannerv2.nse** placed in the working directory
+- `nmap -sV <target_ip> --script=./cvescannerv2.nse`
+  > **cvescannerv2.nse** placed in the working directory
 
 **Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path and regex.
 <details>
@@ -73,42 +71,42 @@ Nmap will show all CVEs related to every service-version discovered.
     <summary><b>cvescannerv2.nse output</b></summary>
 
     PORT      STATE    SERVICE        VERSION
-    53/tcp    open     domain         ISC BIND 9.4.2
+    53/tcp   open  domain      ISC BIND 9.4.2
     | cvescannerv2:
     |   source: nvd.nist.gov
     |   product: bind
     |   version: 9.4.2
     |   vupdate: *
-    |   cves: 24
-    |       CVE ID          CVSSv2  CVSSv3  ExploitDB       Metasploit
-    |       CVE-2012-1667   8.5     -       No              No
-    |       CVE-2012-3817   7.8     -       No              No
-    |       CVE-2014-8500   7.8     -       No              No
-    |       CVE-2012-4244   7.8     -       No              No
-    |       CVE-2012-5166   7.8     -       No              No
-    |       CVE-2010-0382   7.6     -       No              No
-    |       CVE-2015-8461   7.1     -       No              No
-    |       CVE-2009-0025   6.8     -       No              No
-    |       CVE-2015-8704   6.8     6.5     No              No
-    |_      CVE-2015-8705   6.6     7.0     No              No
-    445/tcp   open     netbios-ssn    Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+    |   cves: 39
+    |       CVE ID                  CVSSv2  CVSSv3  ExploitDB       Metasploit
+    |       CVE-2008-0122           10.0    -       No              No
+    |       CVE-2012-1667           8.5     -       No              No
+    |       CVE-2014-8500           7.8     -       No              No
+    |       CVE-2012-3817           7.8     -       No              No
+    |       CVE-2012-4244           7.8     -       No              No
+    |       CVE-2016-2776           7.8     7.5     Yes             Yes
+    |       CVE-2015-5722           7.8     -       No              No
+    |       CVE-2015-5477           7.8     -       Yes             Yes
+    |       CVE-2012-5166           7.8     -       No              No
+    |_      CVE-2010-0382           7.6     -       No              No
+    139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
     | cvescannerv2:
     |   source: nvd.nist.gov
     |   product: samba
     |   version: 3.X - 4.X
     |   vupdate: *
     |   cves: 91
-    |       CVE ID          CVSSv2  CVSSv3  ExploitDB       Metasploit
-    |       CVE-2017-7494   10.0    9.8     Yes             Yes
-    |       CVE-2012-1182   10.0    -       No              No
-    |       CVE-2004-0882   10.0    -       No              No
-    |       CVE-2004-0600   10.0    -       No              No
-    |       CVE-2007-2446   10.0    -       No              No
-    |       CVE-2015-0240   10.0    -       Yes             No
-    |       CVE-2004-1154   10.0    -       No              No
-    |       CVE-2007-6015   9.3     -       No              No
-    |       CVE-2009-1886   9.3     -       No              No
-    |_      CVE-2007-5398   9.3     -       No              No
+    |       CVE ID                  CVSSv2  CVSSv3  ExploitDB       Metasploit
+    |       CVE-2007-2446           10.0    -       No              Yes
+    |       CVE-2015-0240           10.0    -       Yes             Yes
+    |       CVE-2004-0600           10.0    -       No              No
+    |       CVE-2004-1154           10.0    -       No              No
+    |       CVE-2004-0882           10.0    -       No              No
+    |       CVE-2012-1182           10.0    -       No              Yes
+    |       CVE-2017-7494           10.0    9.8     Yes             Yes
+    |       CVE-2007-4572           9.3     -       No              No
+    |       CVE-2007-6015           9.3     -       No              No
+    |_      CVE-2007-5398           9.3     -       No              No
     ...
     ...
 </details>
@@ -123,138 +121,126 @@ exploit/metasploit related to CVEs.
     ############## 2021-08-20 14:56:37 ##############
     #################################################
 
-    [+] product: bind
-    [+] version: 9.4.2
+    [+] product: openssh
+    [+] version: 7.1
     [+] vupdate: *
-    [+] cves: 24
-    [+] 	id: CVE-2012-1667
-    [+] 	id: CVE-2012-3817
-    [+] 	id: CVE-2014-8500
-    [+] 	id: CVE-2012-5166
-    [+] 	id: CVE-2012-4244
-    [+] 	id: CVE-2010-0382
-    [+] 	id: CVE-2015-8461
-    [+] 	id: CVE-2015-8704
-    [+] 	id: CVE-2009-0025
-    [+] 	id: CVE-2015-8705
-    [+] 	id: CVE-2010-3614
-    [+] 	id: CVE-2016-2848
-    [+] 	id: CVE-2009-0265
-    [+] 	id: CVE-2015-8000
-    [+] 	id: CVE-2011-1910
+    [+] cves: 25
+    [+]     id: CVE-2008-3844       cvss_v2: 9.3    cvss_v3: nil
+    [+]     id: CVE-2016-8858       cvss_v2: 7.8    cvss_v3: 7.5
+    [+]     id: CVE-2016-6515       cvss_v2: 7.8    cvss_v3: 7.5
+    [-]         ExploitDB:
+    [!]             name: OpenSSH 7.2 - Denial of Service
+    [*]             id: 40888
+    [*]             url: https://www.exploit-db.com/exploits/40888
+    [+]     id: CVE-2016-1908       cvss_v2: 7.5    cvss_v3: 9.8
+    [+]     id: CVE-2016-10009      cvss_v2: 7.5    cvss_v3: 7.3
+    [-]         ExploitDB:
+    [!]             name: OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading
+    [*]             id: 40963
+    [*]             url: https://www.exploit-db.com/exploits/40963
+    [+]     id: CVE-2016-10012      cvss_v2: 7.2    cvss_v3: 7.8
+    [+]     id: CVE-2015-8325       cvss_v2: 7.2    cvss_v3: 7.8
+    [+]     id: CVE-2016-10010      cvss_v2: 6.9    cvss_v3: 7.0
+    [-]         ExploitDB:
+    [!]             name: OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation
+    [*]             id: 40962
+    [*]             url: https://www.exploit-db.com/exploits/40962
     ...
     ...
     [+] product: mysql
-    [+] version: 5.0.51
-    [+] vupdate: a
-    [+] cves: 2
-    [+] 	id: CVE-2010-3677
-    [+] 	id: CVE-2010-3682
-    [+] product: http_server
-    [+] version: 2.2.8
+    [+] version: 5.5.20
     [+] vupdate: *
-    [+] cves: 32
-    [+] 	id: CVE-2010-0425
-    [-] 		ExploitDB:
-    [!] 			name: Apache 2.2.14 mod_isapi - Dangling Pointer Remote SYSTEM
-    [*] 			id: 11650
-    [*] 			url: https://www.exploit-db.com/exploits/11650
-    [-] 		Metasploit:
-    [!] 			name: auxiliary/dos/http/apache_mod_isapi
-    [+] 	id: CVE-2011-3192
-    [-] 		ExploitDB:
-    [!] 			name: Apache - Remote Memory Exhaustion (Denial of Service)
-    [*] 			id: 17696
-    [*] 			url: https://www.exploit-db.com/exploits/17696
-    [-] 		Metasploit:
-    [!] 			name: auxiliary/dos/http/apache_range_dos
-    [+] 	id: CVE-2013-2249
-    [+] 	id: CVE-2009-1891
-    [+] 	id: CVE-2009-1890
-    [+] 	id: CVE-2012-0883
-    [+] 	id: CVE-2013-1862
-    [+] 	id: CVE-2010-0408
-    [+] 	id: CVE-2014-0098
-    [+] 	id: CVE-2013-6438
-    [+] 	id: CVE-2014-0231
-    [+] 	id: CVE-2010-1452
-    [+] 	id: CVE-2008-2364
-    [+] 	id: CVE-2011-3368
-    [-] 		ExploitDB:
-    [!] 			name: Apache mod_proxy - Reverse Proxy Exposure
-    [*] 			id: 17969
-    [*] 			url: https://www.exploit-db.com/exploits/17969
-    [-] 		Metasploit:
-    [!] 			name: auxiliary/scanner/http/rewrite_proxy_bypass
-    [+] 	id: CVE-2009-2699
-    [+] 	id: CVE-2007-6750
-    [-] 		Metasploit:
-    [!] 			name: auxiliary/dos/http/slowloris
-    [+] 	id: CVE-2009-1195
-    [+] 	id: CVE-2012-0031
-    [+] 	id: CVE-2011-3607
+    [+] cves: 541
+    [+]     id: CVE-2012-2750       cvss_v2: 10.0   cvss_v3: nil
+    [+]     id: CVE-2016-6662       cvss_v2: 10.0   cvss_v3: 9.8
+    [-]         ExploitDB:
+    [!]             name: MySQL / MariaDB / PerconaDB 5.5.51/5.6.32/5.7.14 - Code Execution / Privilege Escalation
+    [*]             id: 40360
+    [*]             url: https://www.exploit-db.com/exploits/40360
+    [+]     id: CVE-2012-3163       cvss_v2: 9.0    cvss_v3: nil
+    [+]     id: CVE-2020-14878      cvss_v2: 7.7    cvss_v3: 8.0
+    [+]     id: CVE-2014-0001       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2018-2562       cvss_v2: 7.5    cvss_v3: 7.1
+    [+]     id: CVE-2012-0882       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2012-0553       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2020-14760      cvss_v2: 7.5    cvss_v3: 5.5
+    [+]     id: CVE-2014-6491       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2014-6500       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2015-0411       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2013-1492       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2012-3158       cvss_v2: 7.5    cvss_v3: nil
+    [+]     id: CVE-2015-4819       cvss_v2: 7.2    cvss_v3: nil
+    [+]     id: CVE-2016-0546       cvss_v2: 7.2    cvss_v3: nil
+    [+]     id: CVE-2016-3471       cvss_v2: 7.1    cvss_v3: 7.5
+    [+]     id: CVE-2016-6664       cvss_v2: 6.9    cvss_v3: 7.0
+    [-]         ExploitDB:
+    [!]             name: MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'root' System User Privilege Escalation
+    [*]             id: 40679
+    [*]             url: https://www.exploit-db.com/exploits/40679
     ...
     ...
     [+] product: samba
     [+] version: 3.X - 4.X
     [+] vupdate: *
     [+] cves: 91
-    [+] 	id: CVE-2004-1154
-    [+] 	id: CVE-2007-2446
-    [-] 		Metasploit:
-    [!] 			name: auxiliary/dos/samba/lsa_addprivs_heap
-    [!] 			name: auxiliary/dos/samba/lsa_transnames_heap
-    [!] 			name: exploit/linux/samba/lsa_transnames_heap
-    [!] 			name: exploit/osx/samba/lsa_transnames_heap
-    [!] 			name: exploit/solaris/samba/lsa_transnames_heap
-    [+] 	id: CVE-2012-1182
-    [-] 		Metasploit:
-    [!] 			name: exploit/linux/samba/setinfopolicy_heap
-    [+] 	id: CVE-2015-0240
-    [-] 		ExploitDB:
-    [!] 			name: Samba < 3.6.2 (x86) - Denial of Service (PoC)
-    [*] 			id: 36741
-    [*] 			url: https://www.exploit-db.com/exploits/36741
-    [-] 		Metasploit:
-    [!] 			name: auxiliary/scanner/smb/smb_uninit_cred
-    [+] 	id: CVE-2004-0882
-    [+] 	id: CVE-2017-7494
-    [-] 		ExploitDB:
-    [!] 			name: Samba 3.5.0 - Remote Code Execution
-    [*] 			id: 42060
-    [*] 			url: https://www.exploit-db.com/exploits/42060
-    [!] 			name: Samba 3.5.0 < 4.4.14/4.5.10/4.6.4 - 'is_known_pipename()' Arbitrary Module Load (Metasploit)
-    [*] 			id: 42084
-    [*] 			url: https://www.exploit-db.com/exploits/42084
-    [-] 		Metasploit:
-    [!] 			name: exploit/linux/samba/is_known_pipename
-    [+] 	id: CVE-2004-0600
-    [+] 	id: CVE-2007-4572
-    [+] 	id: CVE-2007-5398
+    [+]     id: CVE-2007-2446       cvss_v2: 10.0   cvss_v3: nil
+    [-]         Metasploit:
+    [!]             name: auxiliary/dos/samba/lsa_addprivs_heap
+    [!]             name: auxiliary/dos/samba/lsa_transnames_heap
+    [!]             name: exploit/linux/samba/lsa_transnames_heap
+    [!]             name: exploit/osx/samba/lsa_transnames_heap
+    [!]             name: exploit/solaris/samba/lsa_transnames_heap
+    [+]     id: CVE-2015-0240       cvss_v2: 10.0   cvss_v3: nil
+    [-]         ExploitDB:
+    [!]             name: Samba < 3.6.2 (x86) - Denial of Service (PoC)
+    [*]             id: 36741
+    [*]             url: https://www.exploit-db.com/exploits/36741
+    [-]         Metasploit:
+    [!]             name: auxiliary/scanner/smb/smb_uninit_cred
+    [+]     id: CVE-2004-0600       cvss_v2: 10.0   cvss_v3: nil
+    [+]     id: CVE-2004-1154       cvss_v2: 10.0   cvss_v3: nil
+    [+]     id: CVE-2004-0882       cvss_v2: 10.0   cvss_v3: nil
+    [+]     id: CVE-2012-1182       cvss_v2: 10.0   cvss_v3: nil
+    [-]         Metasploit:
+    [!]             name: exploit/linux/samba/setinfopolicy_heap
+    [+]     id: CVE-2017-7494       cvss_v2: 10.0   cvss_v3: 9.8
+    [-]         ExploitDB:
+    [!]             name: Samba 3.5.0 - Remote Code Execution
+    [*]             id: 42060
+    [*]             url: https://www.exploit-db.com/exploits/42060
+    [!]             name: Samba 3.5.0 < 4.4.14/4.5.10/4.6.4 - 'is_known_pipename()' Arbitrary Module Load (Metasploit)
+    [*]             id: 42084
+    [*]             url: https://www.exploit-db.com/exploits/42084
+    [-]         Metasploit:
+    [!]             name: exploit/linux/samba/is_known_pipename
+    [+]     id: CVE-2007-4572       cvss_v2: 9.3    cvss_v3: nil
+    [+]     id: CVE-2007-6015       cvss_v2: 9.3    cvss_v3: nil
+    [+]     id: CVE-2007-5398       cvss_v2: 9.3    cvss_v3: nil
+    [+]     id: CVE-2009-1886       cvss_v2: 9.3    cvss_v3: nil
+    [+]     id: CVE-2010-0728       cvss_v2: 8.5    cvss_v3: nil
+    [+]     id: CVE-2014-8143       cvss_v2: 8.5    cvss_v3: nil
+    [+]     id: CVE-2008-4314       cvss_v2: 8.5    cvss_v3: nil
     ...
     ...
 </details>
 
+### Example outputs
+You can find in **example_data** the output of the script for metasploitable2 and metasploitable3 machines.
 
+# Errors and fixes
+- Error due to block of your IP by the exploit-db WAF.
+  > Connection timeout/error during CRAWL phase when executing **database.py**
 
-# Errors, causes and fixes
-> Connection timeout/error during CRAWL phase when executing **database.py**
-- Error caused by exploit-db WAF, your IP is flagged as DoS.
+  > **Fix:** Wait 15 minutes before launching the **database.py** script again.
 
-**Fix:** Wait 15 minutes before launching the **database.py** script again.
+- Error due to missing library (luasql).
+  > cvescannerv2.nse:54: module 'luasql.sqlite3' not found:<br>
+  > NSE failed to find nselib/luasql/sqlite3.lua in search paths.<br>
+  > ...
 
-<br>
-
-> cvescannerv2.nse:54: module 'luasql.sqlite3' not found:<br>
-> NSE failed to find nselib/luasql/sqlite3.lua in search paths.<br>
-> ...
-- Error caused because of missing luasql library.
-
-**Fix:** Install lua-sql-sqlite3 and create a symlink to Nmap search path.
-
-`sudo apt install lua-sql-sqlite3`
-
-`sudo ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua`
+  > **Fix:** Install lua-sql-sqlite3 and create a symlink to Nmap search path.<br>
+  > - `sudo apt install lua-sql-sqlite3`<br>
+  > - `sudo ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua`
 
 # Acknowledgement
 
