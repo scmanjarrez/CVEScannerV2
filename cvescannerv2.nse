@@ -46,7 +46,7 @@ CVEs information gathered from nvd.nist.gov.
 -- |       CVE-2019-13402   6.5      8.8      No          No
 -- |_      CVE-2016-3976    5.0      7.5      Yes         Yes
 --
---- Optional parameters
+--- Optional arguments
 -- maxcve: Limit the number of CVEs printed on screen (default 10)
 -- log: Change the log file (default cvescannerv2.log)
 -- db: Change the database file (default cve.db)
@@ -350,9 +350,9 @@ local function version_check (product, version)
       if not from and not to then
          return nil
       else
-         f1, f2 = from:match('([^%a]*)(.*)')
+         local f1, f2 = from:match('([^%a]*)(.*)')
          f2 = f2:gsub('[xX]', '%%')
-         t1, t2 = to:match('([^%a]*)(.*)')
+         local t1, t2 = to:match('([^%a]*)(.*)')
          t2 = t2:gsub('[xX]', '%%')
          return product, nil, nil, f1 .. f2, t1 .. t2
       end
@@ -408,10 +408,10 @@ local function check_http (host, port)
          local resp = http.get(host, port, file)
          if not resp.status then
             stdnse.verbose(2, fmt("Error processing request http://%s:%s/%s => %s",
-                                  host, port, file, response['status-line']))
+                                  host, port, file, resp['status-line']))
          else
             if #resp.rawheader > 0 then
-               for i, header in ipairs(resp.rawheader) do
+               for _, header in ipairs(resp.rawheader) do
                   local cpe, version = check_regex(header, 'header')
                   if cpe then
                      return cpe, version
@@ -488,7 +488,8 @@ local function portaction (host, port)
       else
          stdnse.verbose(2, "Not found in DB")
          local nothing = true
-         local http_cpe, http_version = nil
+         local http_cpe = nil
+         local http_version = nil
          if shortport.http(host, port) then
             stdnse.verbose(2, "Reading HTTP header/body.")
             http_cpe, http_version = check_http(host, port)
