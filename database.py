@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # database - Database generator.
 
 # Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.

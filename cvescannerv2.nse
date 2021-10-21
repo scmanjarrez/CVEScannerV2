@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- cvescannerv2 - NSE script.
 
 -- Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
