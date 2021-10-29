@@ -242,6 +242,29 @@ You can find in **example_data** the output of the script for metasploitable2 an
   > - `sudo apt install lua-sql-sqlite3`<br>
   > - `sudo ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua`
 
+# Technical details
+The current implementation take care of the following cases:
+
+- Nmap detection:
+  - Product _cpe_ **AND** _version_: we parse the cpe and
+    compare the product and version with the database, retrieving
+    results from vulnerabilities affecting the exact version (and vupdate)
+    and vulnerabilities that affect a range of versions, this one included.
+  - Product _cpe_ **AND** _version range_: we retrieve all vulnerabilities
+    that affect all versions between _version range_ (included).
+  - Product _cpe_ but **NO** _version_: we retrieve only vulnerabilities
+    that affect all versions of the product.
+  - If no vulnerabilities were found with the _cpe_ and _version_
+    returned from Nmap, we use the HTTP detection if port is http or ssl.
+  - **NO** product _cpe_: we use the HTTP detection  if port is http or ssl.
+
+- HTTP detection:
+  - We do an HTTP GET for every combination of _path_ and _extension_ in
+  **http-paths-vulnerscom.json**, comparing the request headers/body with
+  the regexes in **http-regexes-vulnerscom.json**.
+
+
+
 # Acknowledgement
 
 - Based on [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner) script.
@@ -250,6 +273,8 @@ You can find in **example_data** the output of the script for metasploitable2 an
 
 - Modules cache generated from [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework).
   > Can be found in **~/.msf4/store/modules_metadata.json** after running **msfconsole**
+
+- CVE information gathered from [nvd.nist.gov](https://nvd.nist.gov).
 
 # License
     CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
