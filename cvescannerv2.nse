@@ -79,6 +79,7 @@ local regex_arg = stdnse.get_script_args('regex') or 'http-regex-vulnerscom.json
 if not nmap.registry[SCRIPT_NAME] then
    nmap.registry[SCRIPT_NAME] = {
       conn = nil,
+      cache = nil,
       env = nil,
       logger = nil,
       path = nil,
@@ -130,11 +131,6 @@ local function timestamp ()
 end
 
 
-local function log (msg, ...)
-   registry.logger:write(fmt(msg .. "\n", ...))
-end
-
-
 local function correct_version (info)
    if not info.range then
       return info.ver,  info.vup
@@ -144,11 +140,43 @@ local function correct_version (info)
 end
 
 
-local function log_info (product, info)
+local function log (msg, ...)
+   registry.logger:write(fmt(msg .. "\n", ...))
+end
+
+
+local function log_separator ()
+   log(string.rep("-", 49))
+end
+
+
+local function log_info (host, port, product, info)
+   log("[*] host: %s", host.ip)
+   log("[*] port: %s", port.number)
+   log("[+] protocol: %s", port.protocol)
+   log("[+] service: %s", port.service)
    log("[+] product: %s", product)
    local v, vu = correct_version(info)
    log("[+] version: %s", v)
    log("[+] vupdate: %s", vu)
+end
+
+
+local function log_detection (dtype, status)
+   local extra = ''
+   if dtype ~= 'HTTP' and status == 'failed' then
+      extra = " Trying HTTP detection."
+   end
+   stdnse.verbose(2, fmt("%s detection %s.%s", dtype, status, extra))
+end
+
+
+local function check_http (cpe)
+   if not cpe then
+      log_detection("HTTP", "failed")
+   else
+      log_detection("HTTP", "worked")
+   end
 end
 
 
@@ -209,10 +237,10 @@ local function http_match (host, port)
    for _, path in pairs(registry.path['path']) do
       for _, ext in pairs(registry.path['extension']) do
          local file = "/" .. path .. ext
-         local resp = http.get(host, port, file)
+         local resp = http.get(host.ip, port.number, file)
          if not resp.status then
-            stdnse.verbose(2, fmt("Error processing request http://%s:%s/%s => %s",
-                                  host, port, file, resp['status-line']))
+            stdnse.verbose(2, fmt("Error processing request http://%s:%s%s => %s",
+                                  host.ip, port.number, file, resp['status-line']))
          else
             if #resp.rawheader > 0 then
                for _, header in ipairs(resp.rawheader) do
@@ -235,6 +263,12 @@ end
 
 
 local function version_parser (product, version)
+   if version then
+      -- remove Nmap comment of version
+      version = version:gsub('for_windows_', '')
+   end
+
+   -- if Nmap could not detect version, assume all versions and vupdates possible
    if empty(version) then
       return product, {ver = '*', vup = '*',
                        from = nil, to = nil,
@@ -253,7 +287,7 @@ local function version_parser (product, version)
    end
 
    -- if version matches patterns: 4.3 | 4.3.1 ...
-   p1, p2 = version:match('([0-9.]*)([^-]*).*')
+   p1, p2 = version:match('([%d.]*)(.*)')
    if not empty(p1) then
       if empty(p2) then
          p2 = '*'
@@ -384,7 +418,7 @@ local function dump_exploit (vuln)
       fmt(query('cve_score'), vuln)
    )
    local cvssv2, cvssv3 = cur:fetch()
-   log("[+] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2, cvssv3)
+   log("[-] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2, cvssv3)
 
    -- Dump exploits from Exploit-DB
    cur = registry.conn:execute(
@@ -392,11 +426,11 @@ local function dump_exploit (vuln)
    )
    local exploit, name = cur:fetch()
    if exploit then
-      log("[-] \t\tExploitDB:")
+      log("[!] \t\tExploitDB:")
       while exploit do
-         log("[!] \t\t\tname: %s", name)
-         log("[*] \t\t\tid: %s", exploit)
-         log("[*] \t\t\turl: https://www.exploit-db.com/exploits/%s", exploit)
+         log("[#] \t\t\tname: %s", name)
+         log("[#] \t\t\tid: %s", exploit)
+         log("[#] \t\t\turl: https://www.exploit-db.com/exploits/%s", exploit)
          exploit, name = cur:fetch()
       end
    end
@@ -407,9 +441,9 @@ local function dump_exploit (vuln)
    )
    name = cur:fetch()
    if name then
-      log("[-] \t\tMetasploit:")
+      log("[!] \t\tMetasploit:")
       while name do
-         log("[!] \t\t\tname: %s", name)
+         log("[#] \t\t\tname: %s", name)
          name = cur:fetch()
       end
    end
@@ -490,28 +524,37 @@ local function vulnerabilities (product, info)
       end
       cnt = cnt + 1
    end
+   log_separator()
    cur:close()
    return output
 end
 
 
-local function nmap_analysis (product, info)
-   log_info(product, info)
-   local vulns = vulnerabilities(product, info)
-   local nvulns = table.remove(vulns, 1)
-   if nvulns > 0 then
-      table.insert(vulns, 1, fmt("product: %s", product))
-      local v, vu = correct_version(info)
-      table.insert(vulns, 2, fmt("version: %s", v))
-      table.insert(vulns, 3, fmt("vupdate: %s", vu))
-      table.insert(vulns, 4, fmt("cves: %d", nvulns))
-      table.insert(vulns, 5,
-                   fmt(
-                      "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
-                      "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
-                   )
-      )
-      return vulns
+local function nmap_analysis (host, port, product, info)
+   log_info(host, port, product, info)
+   local v, vu = correct_version(info)
+   if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
+      local vulns = vulnerabilities(product, info)
+      local nvulns = table.remove(vulns, 1)
+      if nvulns > 0 then
+         table.insert(vulns, 1, fmt("product: %s", product))
+         table.insert(vulns, 2, fmt("version: %s", v))
+         table.insert(vulns, 3, fmt("vupdate: %s", vu))
+         table.insert(vulns, 4, fmt("cves: %d", nvulns))
+         table.insert(vulns, 5,
+                      fmt(
+                         "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
+                         "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
+                      )
+         )
+         stdnse.verbose(2, "Caching product-version-vupdate vulnerabilities.")
+         registry.cache[fmt('%s|%s|%s', product, v, vu)] = vulns
+         return vulns
+      end
+   else
+      log("[+] cves: cached")
+      stdnse.verbose(2, "Using cached product-version-vupdate vulnerabilities.")
+      return registry.cache[fmt('%s|%s|%s', product, v, vu)]
    end
 end
 
@@ -525,7 +568,7 @@ local function http_analysis (host, port)
                        http_cpe, http_version))
       if http_cpe then
          local product, info = cpe_parser(http_cpe, http_version)
-         local vulns = nmap_analysis(product, info)
+         local vulns = nmap_analysis(host, port, product, info)
          return vulns, http_cpe, http_version
       end
    end
@@ -559,6 +602,7 @@ preaction = function ()
    registry.conn = registry.env:connect(db_arg)
    registry.logger = io.open(log_arg, 'a')
    registry.time = os.date("%Y-%m-%d %H:%M:%S")
+   registry.cache = {}
    timestamp()
 end
 
@@ -569,35 +613,44 @@ portaction = function (host, port)
    local http_cpe = nil
    local http_version = nil
    if port.version.cpe[1] ~= nil then
-      stdnse.verbose(2, "Nmap version detection worked.")
+      log_detection("Nmap", "worked")
       local product, info = cpe_parser(port.version.cpe[1], port.version.version)
       stdnse.verbose(2,
                      fmt("Nmap detection: cpe => %s | version => %s",
                          port.version.cpe[1], port.version.version))
-      stdnse.verbose(2,
-                     fmtn("CVEScannerV2 detection: product => ${p} | " ..
-                         "version => ${v} | vupdate => ${vu} | " ..
-                         "range_from => ${f} | range_to => ${t}",
-                         {p = product, v = info.ver, vu = info.vup,
-                          f = info.from, t = info.to}))
-      vulns = nmap_analysis(product, info)
-      if not vulns then
-         stdnse.verbose(2, "No vulnerabilities found for detected version. Trying HTTP detection.")
-         vulns, http_cpe, http_version = http_analysis(host, port)
+      if info then
+         log_detection("CVEScannerV2", "worked")
+         stdnse.verbose(2,
+                        fmtn("CVEScannerV2 detection: product => ${p} | " ..
+                            "version => ${v} | vupdate => ${vu} | " ..
+                            "range_from => ${f} | range_to => ${t}",
+                            {p = product, v = info.ver, vu = info.vup,
+                             f = info.from, t = info.to}))
+         vulns = nmap_analysis(host, port, product, info)
+         if not vulns then
+            stdnse.verbose(2,
+                           "No vulnerabilities found for detected version. " ..
+                           "Trying HTTP detection.")
+            vulns, http_cpe, http_version = http_analysis(host, port)
+            check_http(http_cpe)
+         else
+            http_scan = false
+         end
       else
-         http_scan = false
+         log_detection("CVEScannerV2", "failed")
+         vulns, http_cpe, http_version = http_analysis(host, port)
+         check_http(http_cpe)
       end
    else
-      stdnse.verbose(2,
-                     "Nmap version detection did not work. " ..
-                     "Trying HTTP detection.")
+      log_detection("Nmap", "failed")
       vulns, http_cpe, http_version = http_analysis(host, port)
+      check_http(http_cpe)
    end
 
    if not vulns then
       vulns = {}
       table.insert(vulns,
-                   "No vulnerability found in DB. " ..
+                   "No vulnerabilities found in DB. " ..
                    "If you think this could be an error, open an Issue in GitHub.")
       table.insert(vulns, "Attach the following information in the Issue:")
       table.insert(vulns, fmt("\tnmap_service => %s\n" ..
