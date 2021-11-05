@@ -1,27 +1,19 @@
 {
     "header": {
-        "Allegro RomPager": {
-            "cpe": "cpe:/a:allegrosoft:rompager",
-            "regex": "Server:%s*Allegro%-Software%-RomPager[/%s]*([%d.]+)"
+        "Active Management Techonolgy Firmware": {
+            "cpe": "cpe:/o:intel:active_management_technology_firmware",
+            "regex": "Server:%s*Intel%(R%)%s*Active%s*Management%s*Technology%s*([%d.]+)"
         },
-        "AOLserver": {
+        "AOL Server": {
             "cpe": "cpe:/a:aol:aolserver",
             "regex": "Server:%s*AOLserver[/%s]*([%d.]+)"
         },
-        "Apache Cocoon": {
-            "cpe": "cpe:/a:apache:cocoon",
-            "regex": "X%-Cocoon%-Version:%s*([%d.]+)"
-        },
-        "Apache Tomcat": {
-            "cpe": "cpe:/a:apache:tomcat",
+        "AppWeb": {
+            "cpe": "cpe:/a:embedthis:appweb",
             "regex": [
-                "Server:%s*Apache%-Coyote[/%s]*([%d.]+)",
-                "X%-Powered%-By:%s*Tomcat%-([%d.]+)"
+                "Server:%s*Mbedthis%-Appweb[/%s]*([%d.]+)",
+                "Server:%s*Embedthis%-http[/%s]*([%d.]+)"
             ]
-        },
-        "Apache Traffic Server": {
-            "cpe": "cpe:/a:apache:traffic_server",
-            "regex": "Server:%s*ATS[/%s]*([%d.]+)"
         },
         "Artifactory": {
             "cpe": "cpe:/a:jfrog:artifactory",
@@ -34,7 +26,7 @@
                 "X%-AspNetMvc%-Version:%s*([%d.]+)"
             ]
         },
-        "Chamilo": {
+        "Chamilo LMS": {
             "cpe": "cpe:/a:chamilo:chamilo_lms",
             "regex": "X%-Powered%-By:%s*Chamilo%s*([%d.]+)"
         },
@@ -50,7 +42,19 @@
             "cpe": "cpe:/a:ckeditor:ckeditor",
             "regex": "CKEDITOR.*version:\"([%d.]+)\""
         },
-        "CompaqHTTPServer": {
+        "CMS": {
+            "cpe": "cpe:/a:danneo:cms",
+            "regex": "X%-Powered%-By:%s*CMS%s*Danneo%s*([%d.]+)"
+        },
+        "Cocoon": {
+            "cpe": "cpe:/a:apache:cocoon",
+            "regex": "X%-Cocoon%-Version:%s*([%d.]+)"
+        },
+        "Commerce Platform": {
+            "cpe": "cpe:/a:oracle:commerce_platform",
+            "regex": "X%-ATG%-Version:%s*ATGPlatform[/%s]*([%d.]+)"
+        },
+        "Compaq HTTP Server": {
             "cpe": "cpe:/a:compaq:compaqhttpserver",
             "regex": "Server:%s*CompaqHTTPServer[/%s]*([%d%.]+)"
         },
@@ -69,22 +73,11 @@
                 "X%-Powered%-By:%s*Perl%s*Dancer%s*([%d.]+)"
             ]
         },
-        "Danneo CMS": {
-            "cpe": "cpe:/a:danneo:cms",
-            "regex": "X%-Powered%-By:%s*CMS%s*Danneo%s*([%d.]+)"
-        },
-        "DirectAdmin": {
+        "Direct Admin": {
             "cpe": "cpe:/a:directadmin:directadmin",
             "regex": "Server:%s*DirectAdmin%s*Daemon%s*v([%d.]+)"
         },
-        "EmbedThis Appweb": {
-            "cpe": "cpe:/a:embedthis:appweb",
-            "regex": [
-                "Server:%s*Mbedthis%-Appweb[/%s]*([%d.]+)",
-                "Server:%s*Embedthis%-http[/%s]*([%d.]+)"
-            ]
-        },
-        "FlashCom": {
+        "Flash Communication Server": {
             "cpe": "cpe:/a:macromedia:flash_communication_server",
             "regex": "Server:%s*FlashCom[/%s]*([%d%.]+)"
         },
@@ -92,7 +85,7 @@
             "cpe": "cpe:/o:freebsd:freebsd",
             "regex": "Server:%s*FreeBSD%s*([%d.]+)"
         },
-        "GlassFish": {
+        "GlassFish Server": {
             "cpe": "cpe:/a:oracle:glassfish_server",
             "regex": [
                 "Server:%s*GlassFish[/%s]*([%d.]+)",
@@ -101,11 +94,7 @@
                 "Server:%s*GlassFish%s*Server%s*Open%s*Source%s*Edition[/%s]*([%d.]+)"
             ]
         },
-        "Google PageSpeed": {
-            "cpe": "cpe:/a:google:mod_pagespeed",
-            "regex": "X-Mod%-Pagespeed:%s*([%d.]+)"
-        },
-        "Grandstream": {
+        "GXV Device Firmware": {
             "cpe": "cpe:/o:grandstream:gxv_device_firmware",
             "regex": "Server:%s*Grandstream[/%s]*([%d%.]+)"
         },
@@ -113,25 +102,20 @@
             "cpe": "cpe:/a:facebook:hhvm",
             "regex": "X%-Powered%-By:%s*HHVM[/%s]*([%d.]+)"
         },
-        "HP iLO": {
+        "HTTP Server": {
+            "cpe": "cpe:/a:oracle:http_server",
+            "regex": "Server:%s*Oracle%-HTTP%-Server[/%s]*([%d.]+)"
+        },
+        "IIS": {
+            "cpe": "cpe:/a:microsoft:iis",
+            "regex": [
+                "Server:%s*IIS[/%s]*([%d.]+)",
+                "Server:%s*Microsoft%-IIS[/%s]*([%d.]+)"
+            ]
+        },
+        "Integrated Lights Out": {
             "cpe": "cpe:/o:hp:integrated_lights-out",
             "regex": "Server:%s*HP%-iLO%-Server[/%s]*([%d.]+)"
-        },
-        "IBM TeaLeaf": {
-            "cpe": "cpe:/a:ibm:tealeaf_consumer_experience",
-            "regex": "X%-TeaLeaf%-UIEventCapture%-Version:%s*([%d.]+)"
-        },
-        "IBM Tivoli": {
-            "cpe": "cpe:/a:ibm:tivoli_storage_manager",
-            "regex": "Server:%s*TSM_HTTP[/%s]*([%d.]+)"
-        },
-        "Intel AMT": {
-            "cpe": "cpe:/o:intel:active_management_technology_firmware",
-            "regex": "Server:%s*Intel%(R%)%s*Active%s*Management%s*Technology%s*([%d.]+)"
-        },
-        "JavaServer Faces": {
-            "cpe": "cpe:/a:oracle:mojarra",
-            "regex": "X%-Powered%-By:%s*JSF[/%s]*([%d.]+)"
         },
         "JBoss Community Application Server": {
             "cpe": "cpe:/a:redhat:jboss_community_application_server",
@@ -141,7 +125,7 @@
             "cpe": "cpe:/a:redhat:jboss_enterprise_web_server",
             "regex": "X%-Powered%-By:%s*JBossWeb%-([%d.]+)"
         },
-        "JBoss WildFly": {
+        "JBoss WildFly Application Server": {
             "cpe": "cpe:/a:redhat:jboss_wildfly_application_server",
             "regex": "Server:%s*WildFly[/%s]*([%d.]+)"
         },
@@ -162,28 +146,32 @@
             "cpe": "cpe:/a:ni:labview",
             "regex": "Server:%s*LabVIEW[/%s]*([%d%.]+)"
         },
-        "lighttpd": {
+        "LightHTTPd": {
             "cpe": "cpe:/a:lighttpd:lighttpd",
             "regex": "Server:%s*lighttpd[/%s]*([%d.]+)"
+        },
+        "Linux Enterprise Server": {
+            "cpe": "cpe:/o:suse:linux_enterprise_server",
+            "regex": [
+                "Server:%s*SUSE[/%s]*%-?([%d.]+)",
+                "X%-Powered%-By:%s*SUSE[/%s]*%-?([%d.]+)"
+            ]
         },
         "Lua": {
             "cpe": "cpe:/a:lua:lua",
             "regex": "X%-Powered%-By:%s*Lua%s*([%d.]+)"
         },
-        "Microsoft IIS": {
-            "cpe": "cpe:/a:microsoft:iis",
-            "regex": [
-                "Server:%s*IIS[/%s]*([%d.]+)",
-                "Server:%s*Microsoft%-IIS[/%s]*([%d.]+)"
-            ]
-        },
-        "mini_httpd": {
+        "Mini HTTPd": {
             "cpe": "cpe:/a:acme:mini_httpd",
             "regex": "Server:%s*mini_httpd[/%s]*([%d.]+)"
         },
         "MochiWeb": {
             "cpe": "cpe:/a:mochiweb_project:mochiweb",
             "regex": "Server:%s*MochiWeb[/%s]*([%d.]+)"
+        },
+        "Mod PageSpeed": {
+            "cpe": "cpe:/a:google:mod_pagespeed",
+            "regex": "X-Mod%-Pagespeed:%s*([%d.]+)"
         },
         "Mod Perl": {
             "cpe": "cpe:/a:apache:mod_perl",
@@ -218,7 +206,11 @@
                 "X%-Powered%-By:%s*mod_wsgi[/%s]*([%d.]+)"
             ]
         },
-        "Monkey HTTP Server": {
+        "Mojarra": {
+            "cpe": "cpe:/a:oracle:mojarra",
+            "regex": "X%-Powered%-By:%s*JSF[/%s]*([%d.]+)"
+        },
+        "Monkey HTTP Daemon": {
             "cpe": "cpe:/a:monkey-project:monkey_http_daemon",
             "regex": "Server:%s*Monkey[/%s]*([%d.]+)"
         },
@@ -229,17 +221,16 @@
                 "Server:%s*nginx%-reuseport[/%s]*([%d.]+)"
             ]
         },
-        "Oracle Commerce": {
-            "cpe": "cpe:/a:oracle:commerce_platform",
-            "regex": "X%-ATG%-Version:%s*ATGPlatform[/%s]*([%d.]+)"
-        },
-        "Oracle HTTP Server": {
-            "cpe": "cpe:/a:oracle:http_server",
-            "regex": "Server:%s*Oracle%-HTTP%-Server[/%s]*([%d.]+)"
-        },
         "Outlook Web Access": {
             "cpe": "cpe:/a:microsoft:outlook_web_access",
             "regex": "X%-OWA%-Version:%s*([%d.]+)"
+        },
+        "Passenger": {
+            "cpe": "cpe:/a:phusion:passenger",
+            "regex": [
+                "Server:%s*Phusion%s*Passenger%s*([%d.]+)",
+                "X%-Powered%-By:%s*Phusion%s*Passenger%s*([%d.]+)"
+            ]
         },
         "PHP": {
             "cpe": "cpe:/a:php:php",
@@ -248,12 +239,9 @@
                 "X%-Powered%-By:%s*php[/%s]*([%d.]+)"
             ]
         },
-        "Phusion Passenger": {
-            "cpe": "cpe:/a:phusion:passenger",
-            "regex": [
-                "Server:%s*Phusion%s*Passenger%s*([%d.]+)",
-                "X%-Powered%-By:%s*Phusion%s*Passenger%s*([%d.]+)"
-            ]
+        "RomPager": {
+            "cpe": "cpe:/a:allegrosoft:rompager",
+            "regex": "Server:%s*Allegro%-Software%-RomPager[/%s]*([%d.]+)"
         },
         "Ruby on Rails": {
             "cpe": "cpe:/a:rubyonrails:ruby_on_rails",
@@ -277,22 +265,38 @@
                 "Servlet%-engine:%s*SunOS(%s*[%d%.]+)?"
             ]
         },
-        "SUSE": {
-            "cpe": "cpe:/o:suse:linux_enterprise_server",
-            "regex": [
-                "Server:%s*SUSE[/%s]*%-?([%d.]+)",
-                "X%-Powered%-By:%s*SUSE[/%s]*%-?([%d.]+)"
-            ]
+        "TeaLeaf Consumer Experience": {
+            "cpe": "cpe:/a:ibm:tealeaf_consumer_experience",
+            "regex": "X%-TeaLeaf%-UIEventCapture%-Version:%s*([%d.]+)"
         },
-        "thttpd": {
+        "tHTTPd": {
             "cpe": "cpe:/a:acme_labs:thttpd",
             "regex": "Server:%s*thttpd[/%s]*([%d.]+)"
         },
-        "Tornado Server": {
+        "Tivoli Storage Manager": {
+            "cpe": "cpe:/a:ibm:tivoli_storage_manager",
+            "regex": "Server:%s*TSM_HTTP[/%s]*([%d.]+)"
+        },
+        "Tomcat": {
+            "cpe": "cpe:/a:apache:tomcat",
+            "regex": [
+                "Server:%s*Apache%-Coyote[/%s]*([%d.]+)",
+                "X%-Powered%-By:%s*Tomcat%-([%d.]+)"
+            ]
+        },
+        "Tornado": {
             "cpe": "cpe:/a:tornadoweb:tornado",
             "regex": "Server:%s*TornadoServer[/%s]*([%d.]+)"
         },
-        "Twisted Web": {
+        "Total Cache": {
+            "cpe": "cpe:/a:w3edge:total_cache",
+            "regex": "X%-Powered%-By:%s*W3%s*Total%s*Cache[/%s]*([%d.]+)"
+        },
+        "Traffic Server": {
+            "cpe": "cpe:/a:apache:traffic_server",
+            "regex": "Server:%s*ATS[/%s]*([%d.]+)"
+        },
+        "TwistedWeb": {
             "cpe": "cpe:/a:twistedmatrix:twistedweb",
             "regex": "Server:%s*TwistedWeb[/%s]*([%d.]+)"
         },
@@ -304,10 +308,6 @@
             "cpe": "cpe:/a:varnish-cache:varnish",
             "regex": "Via:%s*varnish%s*%(Varnish[/%s]*([%d.]+)%)"
         },
-        "W3 Total Cache": {
-            "cpe": "cpe:/a:w3edge:total_cache",
-            "regex": "X%-Powered%-By:%s*W3%s*Total%s*Cache[/%s]*([%d.]+)"
-        },
         "Xitami": {
             "cpe": "cpe:/a:imatix:xitami",
             "regex": "Server:%s*Xitami[/%s]*([%d.]+)"
@@ -318,20 +318,27 @@
         }
     },
     "body": {
+        ".Net Framework": {
+            "cpe": "cpe:/a:microsoft:.net_framework",
+            "regex": "Microsoft%s*%.NET%s*Framework%s*([%d.]+)"
+        },
         "AIOSEO Pack": {
             "cpe": "cpe:/a:semperfiwebdesign:all_in_one_seo_pack",
             "regex": "<!%-%-%s*All%s*in%s*One%s*SEO%s*Pack%s*([%d.]+) "
         },
-        "Apache Tomcat": {
-            "cpe": "cpe:/a:apache:tomcat",
-            "regex": [
-                "Apache%-Coyote[/%s]*([%d.]+)",
-                "Apache%s*Tomcat[/%s]*([%d.]+)"
-            ]
+        "Analytics Monitor Library": {
+            "cpe": "cpe:/a:telerik:analytics_monitor_library",
+            "regex": "<!%-%-%s*(20%d%d%.%d+%.%d+%.%d+)%s*%-%->"
         },
-        "Apache Subversion": {
-            "cpe": "cpe:/a:apache:subversion",
-            "regex": ">Apache%s*Subversion</a>%s+version%s+([%d.]+%s*%(r%d+%))"
+        "Application Server": {
+            "cpe": "cpe:/a:oracle:application_server",
+            "regex": [
+                "Oracle%s*Application%s*Server[/%s]*([%d%.]+)",
+                "Oracle9iAS[/%s]*([%d%.]+)",
+                "Oracle%-Application%-Server%-([%d.]+.*)",
+                "Oracle.Application.Server.10g[/%s]*([%d%.]+)",
+                "Oracle%s*Application%s*Server%s*Containers%s*for%s*J2EE%s*10g%s*%.([%d%.]+)%."
+            ]
         },
         "Artifactory": {
             "cpe": "cpe:/a:jfrog:artifactory",
@@ -343,15 +350,54 @@
                 "<span%s*class=\"version\">Artifactory%s*([%d.]+)"
             ]
         },
-        "Atlassian Bitbucket": {
+        "Banshee": {
+            "cpe": "cpe:/a:banshee-project:banshee",
+            "regex": "Built%s*upon%s*the%s*<a%s*href=\"[^>]+banshee%-php%.org/\">[a-z]+</a>v([%d.]+)"
+        },
+        "Bitbucket": {
             "cpe": "cpe:/a:atlassian:bitbucket",
             "regex": "<li>Atlassian%s*Bitbucket%s*<span%s*title=\"[a-z0-9]+\"%s*id=\"product%-version\"%s*data%-commitid=\"[a-z0-9]+\"%s*data%-system%-build%-number=\"[a-z0-9]+\">%s*v([%d.]+)<"
         },
-        "Atlassian Confluence": {
+        "BOA": {
+            "cpe": "cpe:/a:boa:boa",
+            "regex": "BOA[/%s]*([%d.]+)"
+        },
+        "Bugzilla": {
+            "cpe": "cpe:/a:mozilla:bugzilla",
+            "regex": "<span%s*id=\"information\"%s*class=\"header_addl_info\">version%s*([%d.]+)<"
+        },
+        "Business Solutions CRM": {
+            "cpe": "cpe:/a:microsoft:business_solutions_crm",
+            "regex": "var%s*APPLICATION_FULL_VERSION%s*=%s*'([%d.]+)';"
+        },
+        "Chamilo LMS": {
+            "cpe": "cpe:/a:chamilo:chamilo_lms",
+            "regex": "\">Chamilo%s*([%d.]+)</a>"
+        },
+        "Confluence": {
             "cpe": "cpe:/a:atlassian:confluence",
             "regex": "Powered%s*by%s*<a%s*href=[^>]+atlassian%.com/software/confluence[^>]+>Atlassian%s*Confluence</a>%s*([%d.]+)"
         },
-        "Atlassian FishEye": {
+        "Coppermine Photo Gallery": {
+            "cpe": "cpe:/a:coppermine-gallery:coppermine_photo_gallery",
+            "regex": "<!%-%-Coppermine%s*Photo%s*Gallery%s*([%d.]+)"
+        },
+        "Django": {
+            "cpe": "cpe:/a:djangoproject:django",
+            "regex": "powered%s*by%s*<a[^>]+>Django%s*([%d.]+)"
+        },
+        "Dojo": {
+            "cpe": "cpe:/a:dojotoolkit:dojo",
+            "regex": [
+                "([%d.]+)/dojo/dojo%.xd%.js",
+                "([%d.]+)/dojo/dojo%.js"
+            ]
+        },
+        "EmberJS": {
+            "cpe": "cpe:/a:emberjs:ember.js",
+            "regex": "Ember%.VERSION%s*=%s*[\"']([%..]+)[\"']"
+        },
+        "FishEye": {
             "cpe": "cpe:/a:atlassian:fisheye",
             "regex": [
                 "<title>Log%s*in%s*to%s*FishEye%s*and%s*Crucible%s*([%d.]+)</title>",
@@ -360,48 +406,9 @@
                 "<title>FishEye%s*([%d.]+)</title>"
             ]
         },
-        "Banshee": {
-            "cpe": "cpe:/a:banshee-project:banshee",
-            "regex": "Built%s*upon%s*the%s*<a%s*href=\"[^>]+banshee%-php%.org/\">[a-z]+</a>v([%d.]+)"
-        },
-        "BOA Web Server": {
-            "cpe": "cpe:/a:boa:boa",
-            "regex": "BOA[/%s]*([%d.]+)"
-        },
-        "Bugzilla": {
-            "cpe": "cpe:/a:mozilla:bugzilla",
-            "regex": "<span%s*id=\"information\"%s*class=\"header_addl_info\">version%s*([%d.]+)<"
-        },
-        "Chamilo": {
-            "cpe": "cpe:/a:chamilo:chamilo_lms",
-            "regex": "\">Chamilo%s*([%d.]+)</a>"
-        },
-        "Coppermine": {
-            "cpe": "cpe:/a:coppermine-gallery:coppermine_photo_gallery",
-            "regex": "<!%-%-Coppermine%s*Photo%s*Gallery%s*([%d.]+)"
-        },
-        "Django": {
-            "cpe": "cpe:/a:djangoproject:django",
-            "regex": "powered%s*by%s*<a[^>]+>Django%s*([%d.]+)"
-        },
-        "Dojo, script_0_0": {
-            "cpe": "cpe:/a:dojotoolkit:dojo",
-            "regex": [
-                "([%d.]+)/dojo/dojo%.xd%.js",
-                "([%d.]+)/dojo/dojo%.js"
-            ]
-        },
-        "Ember": {
-            "cpe": "cpe:/a:emberjs:ember.js",
-            "regex": "Ember%.VERSION%s*=%s*[\"']([%..]+)[\"']"
-        },
         "GlassFish Server": {
             "cpe": "cpe:/a:oracle:glassfish_server",
             "regex": "GlassFish%s*Server%s*Open%s*Source%s*Edition%s*([%d%.]+)"
-        },
-        "Google Web Toolkit (GWT)": {
-            "cpe": "cpe:/a:google:web_toolkit",
-            "regex": "%.gwt_version%s*=%s*\"([%d.]+)\""
         },
         "H2O": {
             "cpe": "cpe:/a:h2o_project:h2o",
@@ -410,9 +417,17 @@
                 "h2o[/%s]*([%d.]+)"
             ]
         },
-        "Igor Sysoev nginx": {
+        "Igor Sysoev Nginx": {
             "cpe": "cpe:/a:igor_sysoev:nginx",
             "regex": "nginx[/%s]*([%d.]+)"
+        },
+        "IIS": {
+            "cpe": "cpe:/a:microsoft:iis",
+            "regex": "Microsoft%-IIS[/%s]*([%d.]+)"
+        },
+        "iPlanet Web Server": {
+            "cpe": "cpe:/a:oracle:iplanet_web_server",
+            "regex": "Sun%-Java%-System%-Web%-Server[/%s]*([%d.]+.*)"
         },
         "Java Development Kit": {
             "cpe": "cpe:/a:oracle:jdk",
@@ -421,13 +436,6 @@
         "Java Runtime Environment": {
             "cpe": "cpe:/a:oracle:jre",
             "regex": "java[/%s]*([%d%.%.]+)"
-        },
-        "Java Server Faces": {
-            "cpe": "cpe:/a:oracle:mojarra",
-            "regex": [
-                "JSF[/%s]*([%d.]+)",
-                "%.JSF[/%s]*([%d.]+)"
-            ]
         },
         "JBoss": {
             "cpe": "cpe:/a:redhat:jboss",
@@ -479,7 +487,7 @@
                 "Liferay%s*Portal%s*Enterprise%s*Edition%s*([%d.]+)"
             ]
         },
-        "lighttpd": {
+        "LigHTTPd": {
             "cpe": "cpe:/a:lighttpd:lighttpd",
             "regex": "lighttpd[/%s]*([%d.]+)"
         },
@@ -495,25 +503,12 @@
             "cpe": "cpe:/a:modssl:mod_ssl",
             "regex": "mod_ssl[/%s]*([%d.]+)"
         },
-        "Microsoft .Net Framework": {
-            "cpe": "cpe:/a:microsoft:.net_framework",
-            "regex": "Microsoft%s*%.NET%s*Framework%s*([%d.]+)"
-        },
-        "Microsoft CRM": {
-            "cpe": "cpe:/a:microsoft:business_solutions_crm",
-            "regex": "var%s*APPLICATION_FULL_VERSION%s*=%s*'([%d.]+)';"
-        },
-        "Microsoft IIS": {
-            "cpe": "cpe:/a:microsoft:iis",
-            "regex": "Microsoft%-IIS[/%s]*([%d.]+)"
-        },
-        "Microsoft PowerPoint": {
-            "cpe": "cpe:/a:microsoft:powerpoint",
-            "regex": "<o:PresentationFormat>[^<]+</o:PresentationFormat>[^!]+<o:Slides>%d+</o:Slides>[^!]+<o:Version>([%d.]+)</o:Version>"
-        },
-        "Microsoft SharePoint": {
-            "cpe": "cpe:/a:microsoft:sharepoint",
-            "regex": "MicrosoftSharePointTeamServices:%s*([%d.]+)"
+        "Mojarra": {
+            "cpe": "cpe:/a:oracle:mojarra",
+            "regex": [
+                "JSF[/%s]*([%d.]+)",
+                "%.JSF[/%s]*([%d.]+)"
+            ]
         },
         "Nexpose": {
             "cpe": "cpe:/a:rapid7:nexpose",
@@ -523,38 +518,21 @@
             "cpe": "cpe:/a:imagely:nextgen_gallery",
             "regex": "<!%-%-%s*<meta%s*name=\"NextGEN\"%s*version=\"([%d.]+)\"[/%s]*>%s*%-%->"
         },
-        "OpenCms": {
+        "OpenCMS": {
             "cpe": "cpe:/a:alkacon:opencms",
             "regex": "OpenCms[/%s]*([%d.]+)"
         },
-        "Oracle Application Server": {
-            "cpe": "cpe:/a:oracle:application_server",
-            "regex": [
-                "Oracle%s*Application%s*Server[/%s]*([%d%.]+)",
-                "Oracle9iAS[/%s]*([%d%.]+)",
-                "Oracle%-Application%-Server%-([%d.]+.*)",
-                "Oracle.Application.Server.10g[/%s]*([%d%.]+)",
-                "Oracle%s*Application%s*Server%s*Containers%s*for%s*J2EE%s*10g%s*%.([%d%.]+)%."
-            ]
-        },
-        "Oracle iPlanet": {
-            "cpe": "cpe:/a:oracle:iplanet_web_server",
-            "regex": "Sun%-Java%-System%-Web%-Server[/%s]*([%d.]+.*)"
-        },
-        "Oracle OpenSSO": {
+        "OpenSSO": {
             "cpe": "cpe:/a:oracle:opensso",
             "regex": "Oracle%s*OpenSSO%s*([%d.]+.*)"
         },
-        "Oracle Weblogic": {
-            "cpe": "cpe:/a:oracle:weblogic_server",
-            "regex": [
-                "WebLogic%s*([%d%.]+)",
-                "WebLogic%s*Server%s*([%d%.]+)"
-            ]
-        },
-        "Orion": {
+        "Orion Core Services": {
             "cpe": "cpe:/a:solarwinds:orion_core_services",
             "regex": "Orion[/%s]*([%d.]+)"
+        },
+        "Passenger": {
+            "cpe": "cpe:/a:phusion:passenger",
+            "regex": "Phusion%s*Passenger%s*%([a-zA-Z_/]+%)%s*([%d.]+)"
         },
         "PHP": {
             "cpe": "cpe:/a:php:php",
@@ -564,9 +542,13 @@
             "cpe": "cpe:/a:phpmyadmin:phpmyadmin",
             "regex": "%s*%|%s*phpMyAdmin%s*([%d.]+)<%/title>"
         },
-        "Phusion Passenger": {
-            "cpe": "cpe:/a:phusion:passenger",
-            "regex": "Phusion%s*Passenger%s*%([a-zA-Z_/]+%)%s*([%d.]+)"
+        "PowerPoint": {
+            "cpe": "cpe:/a:microsoft:powerpoint",
+            "regex": "<o:PresentationFormat>[^<]+</o:PresentationFormat>[^!]+<o:Slides>%d+</o:Slides>[^!]+<o:Version>([%d.]+)</o:Version>"
+        },
+        "SharePoint": {
+            "cpe": "cpe:/a:microsoft:sharepoint",
+            "regex": "MicrosoftSharePointTeamServices:%s*([%d.]+)"
         },
         "Splunk": {
             "cpe": "cpe:/a:splunk:splunk",
@@ -575,19 +557,26 @@
                 "<p%s*class=\"footer\">&copy;%s*[%-%d]+%s*Splunk%s*Inc%.%s*Splunk%s*([%d%.]+)[^<]*</p>"
             ]
         },
-        "Squid Cache": {
+        "Squid": {
             "cpe": "cpe:/a:squid-cache:squid",
             "regex": "squid[/%s]*([%d.]+)"
+        },
+        "Subversion": {
+            "cpe": "cpe:/a:apache:subversion",
+            "regex": ">Apache%s*Subversion</a>%s+version%s+([%d.]+%s*%(r%d+%))"
         },
         "TeamCity": {
             "cpe": "cpe:/a:jetbrains:teamcity",
             "regex": "<span%s*class=\"versionTag\"><span%s*class=\"vWord\">Version</span>%s*([%d%.]+)"
         },
-        "Telerik": {
-            "cpe": "cpe:/a:telerik:analytics_monitor_library",
-            "regex": "<!%-%-%s*(20%d%d%.%d+%.%d+%.%d+)%s*%-%->"
+        "Tomcat": {
+            "cpe": "cpe:/a:apache:tomcat",
+            "regex": [
+                "Apache%-Coyote[/%s]*([%d.]+)",
+                "Apache%s*Tomcat[/%s]*([%d.]+)"
+            ]
         },
-        "Tornado Server": {
+        "Tornado": {
             "cpe": "cpe:/a:tornadoweb:tornado",
             "regex": "TornadoServer[/%s]*([%d.]+)"
         },
@@ -595,9 +584,20 @@
             "cpe": "cpe:/a:edgewall_software:trac",
             "regex": "Powered%s*by%s*<a%s*href=\"[^\"]*\"><strong>Trac[%s/]([%d.]+)"
         },
-        "Varnish Cache": {
+        "Varnish": {
             "cpe": "cpe:/a:varnish-cache:varnish",
             "regex": "Varnish[/%s]*([%d.]+)"
+        },
+        "Web Toolkit": {
+            "cpe": "cpe:/a:google:web_toolkit",
+            "regex": "%.gwt_version%s*=%s*\"([%d.]+)\""
+        },
+        "Weblogic Server": {
+            "cpe": "cpe:/a:oracle:weblogic_server",
+            "regex": [
+                "WebLogic%s*([%d%.]+)",
+                "WebLogic%s*Server%s*([%d%.]+)"
+            ]
         },
         "WooCommerce": {
             "cpe": "cpe:/a:woocommerce:woocommerce",
@@ -607,16 +607,16 @@
                 "<link%s*rel='[^']+'%s*id='woocommerce%-general%-css'%s*href='https?://[^/]+/wp%-content/plugins/woocommerce/assets/css/woocommerce%.css?ver=([%d.]+)'"
             ]
         },
-        "XAMPP": {
-            "cpe": "cpe:/a:apache_friends:xampp",
-            "regex": "<title>XAMPP%s*Version%s*([%d%.]+)</title>"
-        },
-        "Yoast SEO": {
+        "WordPress SEO": {
             "cpe": "cpe:/a:yoast:wordpress_seo",
             "regex": [
                 "<!%-%-%s*This%s*site%s*is%s*optimized%s*with%s*the%s*Yoast%s*WordPress%s*SEO%s*plugin%s*v([%d.]+)%s*%-",
                 "<!%-%-%s*This%s*site%s*is%s*optimized%s*with%s*the%s*Yoast%s*SEO%s*plugin%s*v([%d.]+)%s*%-"
             ]
+        },
+        "XAMPP": {
+            "cpe": "cpe:/a:apache_friends:xampp",
+            "regex": "<title>XAMPP%s*Version%s*([%d%.]+)</title>"
         }
     }
 }

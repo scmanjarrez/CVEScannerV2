@@ -746,16 +746,17 @@ def check_updates(args):
             popu_thread.join()
             bar()
 
-        exploits = exploits_in_db(db)
-        if len(exploits) > 0:
-            expl_generator = exploit_batch(exploits)
-            with ThreadPoolExecutor(max_workers=THREADS) as executor:
-                with alive_bar(len(exploits)//BATCH+1,
-                               title="[CRAWL] Exploit names") as bar:
-                    for batch in expl_generator:
-                        results = executor.map(scrape_title, batch)
-                        bulk_update_exploit_name(db, list(results))
-                        bar()
+        if not args.noscrape:
+            exploits = exploits_in_db(db)
+            if len(exploits) > 0:
+                expl_generator = exploit_batch(exploits)
+                with ThreadPoolExecutor(max_workers=THREADS) as executor:
+                    with alive_bar(len(exploits)//BATCH+1,
+                                   title="[CRAWL] Exploit names") as bar:
+                        for batch in expl_generator:
+                            results = executor.map(scrape_title, batch)
+                            bulk_update_exploit_name(db, list(results))
+                            bar()
 
 
 if __name__ == "__main__":
@@ -773,6 +774,10 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--temp',
                         default='temp',
                         help="Temporary download directory.")
+
+    parser.add_argument('-ns', '--noscrape',
+                        action='store_true',
+                        help="Do not scrape exploit-db.")
 
     parser.add_argument('-nc', '--noclean',
                         action='store_true',

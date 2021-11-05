@@ -133,9 +133,9 @@ end
 
 local function correct_version (info)
    if not info.range then
-      return info.ver,  info.vup
+      return info.ver, info.vup
    else
-      return info.from .. "- ".. info.to, "*"
+      return info.from .. " - ".. info.to, "*"
    end
 end
 
@@ -237,7 +237,8 @@ local function http_match (host, port)
    for _, path in pairs(registry.path['path']) do
       for _, ext in pairs(registry.path['extension']) do
          local file = "/" .. path .. ext
-         local resp = http.get(host.ip, port.number, file)
+         local resp = http.get(host.ip, port.number, file, {timeout = 30,
+                                                            bypass_cache = true})
          if not resp.status then
             stdnse.verbose(2, fmt("Error processing request http://%s:%s%s => %s",
                                   host.ip, port.number, file, resp['status-line']))
@@ -276,7 +277,7 @@ local function version_parser (product, version)
    end
 
    -- if version matches patterns: 3.x - 4.x | 3.3.x - 3.4.x ...
-   local p1, p2 = version:match('([^-]*)%s*-%s*([^-]*)')
+   local p1, p2 = version:match('([^-]*)%s+-%s+([^-]*)')
    if not empty(p1) and not empty(p2) then
       local f1, f2 = p1:match('([^%a]*)(.*)')
       local t1, t2 = p2:match('([^%a]*)(.*)')
@@ -286,8 +287,8 @@ local function version_parser (product, version)
                        empty = false, range = true}
    end
 
-   -- if version matches patterns: 4.3 | 4.3.1 ...
-   p1, p2 = version:match('([%d.]*)(.*)')
+   -- if version matches patterns: 4.3 | 4.3p1 | 4.3.1sp1 ...
+   p1, p2 = version:match('([%d.]*)([^-]*)')
    if not empty(p1) then
       if empty(p2) then
          p2 = '*'
@@ -418,7 +419,7 @@ local function dump_exploit (vuln)
       fmt(query('cve_score'), vuln)
    )
    local cvssv2, cvssv3 = cur:fetch()
-   log("[-] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2, cvssv3)
+   log("[-] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2, cvssv3 or "-")
 
    -- Dump exploits from Exploit-DB
    cur = registry.conn:execute(
@@ -516,7 +517,7 @@ local function vulnerabilities (product, info)
                       fmt(
                          "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
                          value[1],
-                         value[2], value[3] and value[3] or "-",
+                         value[2], value[3] or "-",
                          value[4] == 1 and "Yes" or "No",
                          value[5] == 1 and "Yes" or "No"
                       )
@@ -553,6 +554,7 @@ local function nmap_analysis (host, port, product, info)
       end
    else
       log("[+] cves: cached")
+      log_separator()
       stdnse.verbose(2, "Using cached product-version-vupdate vulnerabilities.")
       return registry.cache[fmt('%s|%s|%s', product, v, vu)]
    end

@@ -1,0 +1,961 @@
+#################################################
+############## 2021-11-05 13:54:55 ##############
+#################################################
+
+[*] host: 172.16.2.131
+[*] port: 139
+[+] protocol: tcp
+[+] service: netbios-ssn
+[+] product: samba
+[+] version: 3.X - 4.X
+[+] vupdate: *
+[+] cves: 91
+[-] 	id: CVE-2004-0600     	cvss_v2: 10.0 	cvss_v3: -    
+[-] 	id: CVE-2015-0240     	cvss_v2: 10.0 	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: Samba < 3.6.2 (x86) - Denial of Service (PoC)
+[#] 			id: 36741
+[#] 			url: https://www.exploit-db.com/exploits/36741
+[!] 		Metasploit:
+[#] 			name: auxiliary/scanner/smb/smb_uninit_cred
+[-] 	id: CVE-2004-0882     	cvss_v2: 10.0 	cvss_v3: -    
+[-] 	id: CVE-2004-1154     	cvss_v2: 10.0 	cvss_v3: -    
+[-] 	id: CVE-2012-1182     	cvss_v2: 10.0 	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: exploit/linux/samba/setinfopolicy_heap
+[-] 	id: CVE-2007-2446     	cvss_v2: 10.0 	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/samba/lsa_addprivs_heap
+[#] 			name: auxiliary/dos/samba/lsa_transnames_heap
+[#] 			name: exploit/linux/samba/lsa_transnames_heap
+[#] 			name: exploit/osx/samba/lsa_transnames_heap
+[#] 			name: exploit/solaris/samba/lsa_transnames_heap
+[-] 	id: CVE-2017-7494     	cvss_v2: 10.0 	cvss_v3: 9.8  
+[!] 		ExploitDB:
+[#] 			name: Samba 3.5.0 - Remote Code Execution
+[#] 			id: 42060
+[#] 			url: https://www.exploit-db.com/exploits/42060
+[#] 			name: Samba 3.5.0 < 4.4.14/4.5.10/4.6.4 - 'is_known_pipename()' Arbitrary Module Load (Metasploit)
+[#] 			id: 42084
+[#] 			url: https://www.exploit-db.com/exploits/42084
+[!] 		Metasploit:
+[#] 			name: exploit/linux/samba/is_known_pipename
+[-] 	id: CVE-2007-5398     	cvss_v2: 9.3  	cvss_v3: -    
+[-] 	id: CVE-2009-1886     	cvss_v2: 9.3  	cvss_v3: -    
+[-] 	id: CVE-2007-4572     	cvss_v2: 9.3  	cvss_v3: -    
+[-] 	id: CVE-2007-6015     	cvss_v2: 9.3  	cvss_v3: -    
+[-] 	id: CVE-2008-4314     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2014-8143     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2010-0728     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2013-4408     	cvss_v2: 8.3  	cvss_v3: -    
+[-] 	id: CVE-2012-0870     	cvss_v2: 7.9  	cvss_v3: -    
+[-] 	id: CVE-2014-3560     	cvss_v2: 7.9  	cvss_v3: -    
+[-] 	id: CVE-2004-0082     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2004-0815     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2008-1105     	cvss_v2: 7.5  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: Samba 3.0.29 (Client) - 'receive_smb_raw()' Buffer Overflow (PoC)
+[#] 			id: 5712
+[#] 			url: https://www.exploit-db.com/exploits/5712
+[-] 	id: CVE-2007-0454     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2010-3069     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2010-2063     	cvss_v2: 7.5  	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: exploit/linux/samba/chain_reply
+[-] 	id: CVE-2004-0186     	cvss_v2: 7.2  	cvss_v3: -    
+[-] 	id: CVE-2007-2444     	cvss_v2: 7.2  	cvss_v3: -    
+[-] 	id: CVE-2007-4138     	cvss_v2: 6.9  	cvss_v3: -    
+[-] 	id: CVE-2007-0452     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2011-2522     	cvss_v2: 6.8  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: SWAT Samba Web Administration Tool - Cross-Site Request Forgery
+[#] 			id: 17577
+[#] 			url: https://www.exploit-db.com/exploits/17577
+[-] 	id: CVE-2016-2118     	cvss_v2: 6.8  	cvss_v3: 7.5  
+[-] 	id: CVE-2016-2119     	cvss_v2: 6.8  	cvss_v3: 7.5  
+[-] 	id: CVE-2017-9461     	cvss_v2: 6.8  	cvss_v3: 6.5  
+[-] 	id: CVE-2012-2111     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2019-10197    	cvss_v2: 6.4  	cvss_v3: 9.1  
+[-] 	id: CVE-2004-2546     	cvss_v2: 6.4  	cvss_v3: -    
+[-] 	id: CVE-2009-0022     	cvss_v2: 6.3  	cvss_v3: -    
+[-] 	id: CVE-2015-8467     	cvss_v2: 6.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2017-2619     	cvss_v2: 6.0  	cvss_v3: 7.5  
+[!] 		ExploitDB:
+[#] 			name: Samba 4.5.2 - Symlink Race Permits Opening Files Outside Share Directory
+[#] 			id: 41740
+[#] 			url: https://www.exploit-db.com/exploits/41740
+[-] 	id: CVE-2009-2813     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2007-2447     	cvss_v2: 6.0  	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: exploit/multi/samba/usermap_script
+[-] 	id: CVE-2013-1863     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2013-6442     	cvss_v2: 5.8  	cvss_v3: -    
+[-] 	id: CVE-2016-2113     	cvss_v2: 5.8  	cvss_v3: 7.4  
+[-] 	id: CVE-2013-0213     	cvss_v2: 5.1  	cvss_v3: -    
+[-] 	id: CVE-2013-0214     	cvss_v2: 5.1  	cvss_v3: -    
+[-] 	id: CVE-2015-5330     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2004-0930     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2006-3403     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2013-4496     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2010-1635     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2011-0719     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2010-1642     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2015-7540     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2015-5252     	cvss_v2: 5.0  	cvss_v3: 7.2  
+[-] 	id: CVE-2004-0808     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2012-0817     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2014-0239     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2015-3223     	cvss_v2: 5.0  	cvss_v3: 5.3  
+[-] 	id: CVE-2004-0807     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2015-5299     	cvss_v2: 5.0  	cvss_v3: 5.3  
+[-] 	id: CVE-2013-4124     	cvss_v2: 5.0  	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/samba/read_nttrans_ea_list
+[-] 	id: CVE-2004-0686     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2016-0771     	cvss_v2: 4.9  	cvss_v3: 5.9  
+[-] 	id: CVE-2007-0453     	cvss_v2: 4.6  	cvss_v3: -    
+[-] 	id: CVE-2010-0787     	cvss_v2: 4.4  	cvss_v3: -    
+[-] 	id: CVE-2016-2111     	cvss_v2: 4.3  	cvss_v3: 6.3  
+[-] 	id: CVE-2016-2112     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2015-5370     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2016-2114     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2015-5296     	cvss_v2: 4.3  	cvss_v3: 5.4  
+[-] 	id: CVE-2016-2110     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2016-2115     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2018-1139     	cvss_v2: 4.3  	cvss_v3: 8.1  
+[-] 	id: CVE-2013-0454     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-7560     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-4475     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-2126     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2009-2906     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-6150     	cvss_v2: 3.6  	cvss_v3: -    
+[-] 	id: CVE-2010-0926     	cvss_v2: 3.5  	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: auxiliary/admin/smb/samba_symlink_traversal
+[-] 	id: CVE-2014-0178     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-0172     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2014-0244     	cvss_v2: 3.3  	cvss_v3: -    
+[-] 	id: CVE-2014-3493     	cvss_v2: 2.7  	cvss_v3: -    
+[-] 	id: CVE-2011-2694     	cvss_v2: 2.6  	cvss_v3: -    
+[-] 	id: CVE-2010-0547     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2008-3789     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2011-3585     	cvss_v2: 1.9  	cvss_v3: 4.7  
+[-] 	id: CVE-2009-2948     	cvss_v2: 1.9  	cvss_v3: -    
+[-] 	id: CVE-2013-4476     	cvss_v2: 1.2  	cvss_v3: -    
+[-] 	id: CVE-2011-2724     	cvss_v2: 1.2  	cvss_v3: -    
+[-] 	id: CVE-2006-1059     	cvss_v2: 1.2  	cvss_v3: -    
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 22
+[+] protocol: tcp
+[+] service: ssh
+[+] product: openssh
+[+] version: 4.7
+[+] vupdate: p1
+[+] cves: 35
+[-] 	id: CVE-2008-3844     	cvss_v2: 9.3  	cvss_v3: -    
+[-] 	id: CVE-2015-5600     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2016-6515     	cvss_v2: 7.8  	cvss_v3: 7.5  
+[!] 		ExploitDB:
+[#] 			name: OpenSSH 7.2 - Denial of Service
+[#] 			id: 40888
+[#] 			url: https://www.exploit-db.com/exploits/40888
+[-] 	id: CVE-2010-4478     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2016-1908     	cvss_v2: 7.5  	cvss_v3: 9.8  
+[-] 	id: CVE-2016-10009    	cvss_v2: 7.5  	cvss_v3: 7.3  
+[!] 		ExploitDB:
+[#] 			name: OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading
+[#] 			id: 40963
+[#] 			url: https://www.exploit-db.com/exploits/40963
+[-] 	id: CVE-2014-1692     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2015-8325     	cvss_v2: 7.2  	cvss_v3: 7.8  
+[-] 	id: CVE-2016-10012    	cvss_v2: 7.2  	cvss_v3: 7.8  
+[-] 	id: CVE-2015-6564     	cvss_v2: 6.9  	cvss_v3: -    
+[-] 	id: CVE-2016-10010    	cvss_v2: 6.9  	cvss_v3: 7.0  
+[!] 		ExploitDB:
+[#] 			name: OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation
+[#] 			id: 40962
+[#] 			url: https://www.exploit-db.com/exploits/40962
+[-] 	id: CVE-2020-15778    	cvss_v2: 6.8  	cvss_v3: 7.8  
+[-] 	id: CVE-2014-2653     	cvss_v2: 5.8  	cvss_v3: -    
+[-] 	id: CVE-2014-2532     	cvss_v2: 5.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-6111     	cvss_v2: 5.8  	cvss_v3: 5.9  
+[!] 		ExploitDB:
+[#] 			name: SCP Client - Multiple Vulnerabilities (SSHtranger Things)
+[#] 			id: 46193
+[#] 			url: https://www.exploit-db.com/exploits/46193
+[-] 	id: CVE-2016-3115     	cvss_v2: 5.5  	cvss_v3: 6.4  
+[!] 		ExploitDB:
+[#] 			name: OpenSSH 7.2p1 - (Authenticated) xauth Command Injection
+[#] 			id: 39569
+[#] 			url: https://www.exploit-db.com/exploits/39569
+[-] 	id: CVE-2018-15473    	cvss_v2: 5.0  	cvss_v3: 5.3  
+[!] 		ExploitDB:
+[#] 			name: OpenSSH 2.3 < 7.7 - Username Enumeration (PoC)
+[#] 			id: 45210
+[#] 			url: https://www.exploit-db.com/exploits/45210
+[#] 			name: OpenSSH 2.3 < 7.7 - Username Enumeration
+[#] 			id: 45233
+[#] 			url: https://www.exploit-db.com/exploits/45233
+[#] 			name: OpenSSH < 7.7 - User Enumeration (2)
+[#] 			id: 45939
+[#] 			url: https://www.exploit-db.com/exploits/45939
+[!] 		Metasploit:
+[#] 			name: auxiliary/scanner/ssh/ssh_enumusers
+[-] 	id: CVE-2010-5107     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2017-15906    	cvss_v2: 5.0  	cvss_v3: 5.3  
+[-] 	id: CVE-2016-10708    	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2016-6210     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[!] 		ExploitDB:
+[#] 			name: OpenSSHd 7.2p2 - Username Enumeration
+[#] 			id: 40113
+[#] 			url: https://www.exploit-db.com/exploits/40113
+[#] 			name: OpenSSH 7.2p2 - Username Enumeration
+[#] 			id: 40136
+[#] 			url: https://www.exploit-db.com/exploits/40136
+[!] 		Metasploit:
+[#] 			name: auxiliary/scanner/ssh/ssh_enumusers
+[-] 	id: CVE-2016-20012    	cvss_v2: 4.3  	cvss_v3: 5.3  
+[-] 	id: CVE-2007-2768     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2015-5352     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2010-4755     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-6109     	cvss_v2: 4.0  	cvss_v3: 6.8  
+[-] 	id: CVE-2019-6110     	cvss_v2: 4.0  	cvss_v3: 6.8  
+[!] 		ExploitDB:
+[#] 			name: SCP Client - Multiple Vulnerabilities (SSHtranger Things)
+[#] 			id: 46193
+[#] 			url: https://www.exploit-db.com/exploits/46193
+[-] 	id: CVE-2012-0814     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2011-5000     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2008-5161     	cvss_v2: 2.6  	cvss_v3: -    
+[-] 	id: CVE-2018-20685    	cvss_v2: 2.6  	cvss_v3: 5.3  
+[-] 	id: CVE-2016-10011    	cvss_v2: 2.1  	cvss_v3: 5.5  
+[-] 	id: CVE-2011-4327     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2015-6563     	cvss_v2: 1.9  	cvss_v3: -    
+[-] 	id: CVE-2008-3259     	cvss_v2: 1.2  	cvss_v3: -    
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 8180
+[+] protocol: tcp
+[+] service: http
+[+] product: coyote_http_connector
+[+] version: 1.1
+[+] vupdate: *
+[+] cves: 0
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 23
+[+] protocol: tcp
+[+] service: telnet
+[+] product: linux_kernel
+[+] version: *
+[+] vupdate: *
+[+] cves: 0
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 25
+[+] protocol: tcp
+[+] service: smtp
+[+] product: postfix
+[+] version: *
+[+] vupdate: *
+[+] cves: 0
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 80
+[+] protocol: tcp
+[+] service: http
+[+] product: http_server
+[+] version: 2.2.8
+[+] vupdate: *
+[+] cves: 60
+[-] 	id: CVE-2010-0425     	cvss_v2: 10.0 	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: Apache 2.2.14 mod_isapi - Dangling Pointer Remote SYSTEM
+[#] 			id: 11650
+[#] 			url: https://www.exploit-db.com/exploits/11650
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/http/apache_mod_isapi
+[-] 	id: CVE-2011-3192     	cvss_v2: 7.8  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: Apache - Remote Memory Exhaustion (Denial of Service)
+[#] 			id: 17696
+[#] 			url: https://www.exploit-db.com/exploits/17696
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/http/apache_range_dos
+[-] 	id: CVE-2011-2688     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2007-4723     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2013-4365     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2021-39275    	cvss_v2: 7.5  	cvss_v3: 9.8  
+[-] 	id: CVE-2013-2249     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2021-40438    	cvss_v2: 7.5  	cvss_v3: 9.8  
+[-] 	id: CVE-2009-1890     	cvss_v2: 7.1  	cvss_v3: -    
+[-] 	id: CVE-2009-1891     	cvss_v2: 7.1  	cvss_v3: -    
+[-] 	id: CVE-2012-0883     	cvss_v2: 6.9  	cvss_v3: -    
+[-] 	id: CVE-2014-0226     	cvss_v2: 6.8  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: Apache 2.4.7 mod_status - Scoreboard Handling Race Condition
+[#] 			id: 34133
+[#] 			url: https://www.exploit-db.com/exploits/34133
+[-] 	id: CVE-2021-32786    	cvss_v2: 5.8  	cvss_v3: 6.1  
+[-] 	id: CVE-2013-1862     	cvss_v2: 5.1  	cvss_v3: -    
+[-] 	id: CVE-2016-5387     	cvss_v2: 5.1  	cvss_v3: 8.1  
+[-] 	id: CVE-2011-3368     	cvss_v2: 5.0  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: Apache mod_proxy - Reverse Proxy Exposure
+[#] 			id: 17969
+[#] 			url: https://www.exploit-db.com/exploits/17969
+[!] 		Metasploit:
+[#] 			name: auxiliary/scanner/http/rewrite_proxy_bypass
+[-] 	id: CVE-2012-4001     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2010-1452     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2008-2364     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2014-0098     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2015-3183     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2007-6750     	cvss_v2: 5.0  	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/http/slowloris
+[-] 	id: CVE-2014-0231     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2012-3526     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2018-1303     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2009-2699     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2010-0408     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2013-2765     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2013-6438     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2021-34798    	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2009-2299     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2015-0228     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2009-1195     	cvss_v2: 4.9  	cvss_v3: -    
+[-] 	id: CVE-2012-0031     	cvss_v2: 4.6  	cvss_v3: -    
+[-] 	id: CVE-2011-3607     	cvss_v2: 4.4  	cvss_v3: -    
+[-] 	id: CVE-2012-4360     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2012-0053     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2011-4317     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2021-32785    	cvss_v2: 4.3  	cvss_v3: 7.5  
+[-] 	id: CVE-2016-4975     	cvss_v2: 4.3  	cvss_v3: 6.1  
+[-] 	id: CVE-2018-1302     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2013-0942     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2018-1301     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2013-1896     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2014-0118     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2021-32791    	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2012-4558     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2011-3348     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2021-32792    	cvss_v2: 4.3  	cvss_v3: 6.1  
+[-] 	id: CVE-2012-3499     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2011-3639     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2011-0419     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2011-1176     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2010-0434     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2008-2939     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2016-8612     	cvss_v2: 3.3  	cvss_v3: 4.3  
+[-] 	id: CVE-2009-0796     	cvss_v2: 2.6  	cvss_v3: -    
+[-] 	id: CVE-2012-2687     	cvss_v2: 2.6  	cvss_v3: -    
+[-] 	id: CVE-2013-0941     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2011-4415     	cvss_v2: 1.2  	cvss_v3: -    
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 3306
+[+] protocol: tcp
+[+] service: mysql
+[+] product: mysql
+[+] version: 5.0.51
+[+] vupdate: a
+[+] cves: 374
+[-] 	id: CVE-2012-3163     	cvss_v2: 9.0  	cvss_v3: -    
+[-] 	id: CVE-2009-2446     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2020-14878    	cvss_v2: 7.7  	cvss_v3: 8.0  
+[-] 	id: CVE-2009-4484     	cvss_v2: 7.5  	cvss_v3: -    
+[!] 		Metasploit:
+[#] 			name: exploit/linux/mysql/mysql_yassl_getname
+[-] 	id: CVE-2012-3158     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2020-14760    	cvss_v2: 7.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2015-4819     	cvss_v2: 7.2  	cvss_v3: -    
+[-] 	id: CVE-2020-14869    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14852    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14873    	cvss_v2: 6.8  	cvss_v3: 4.4  
+[-] 	id: CVE-2020-14839    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14866    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14830    	cvss_v2: 6.8  	cvss_v3: 6.5  
+[-] 	id: CVE-2020-14861    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-2395     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2016-3495     	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-0386     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-0384     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2020-14809    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-3177     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2019-2834     	cvss_v2: 6.8  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-5882     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2012-5060     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2020-14870    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2016-0504     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-0389     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2020-14845    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14814    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14846    	cvss_v2: 6.8  	cvss_v3: 6.5  
+[-] 	id: CVE-2020-14868    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14891    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-1703     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2016-3518     	cvss_v2: 6.8  	cvss_v3: 6.5  
+[-] 	id: CVE-2020-14829    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14837    	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2830     	cvss_v2: 6.8  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-1735     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-5860     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-0385     	cvss_v2: 6.6  	cvss_v3: -    
+[-] 	id: CVE-2020-14828    	cvss_v2: 6.5  	cvss_v3: 7.2  
+[-] 	id: CVE-2020-14663    	cvss_v2: 6.5  	cvss_v3: 7.2  
+[-] 	id: CVE-2014-2444     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2015-2617     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2013-1521     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2014-4258     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2020-14697    	cvss_v2: 6.5  	cvss_v3: 7.2  
+[-] 	id: CVE-2014-2484     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2012-4414     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2020-14678    	cvss_v2: 6.5  	cvss_v3: 7.2  
+[-] 	id: CVE-2012-3147     	cvss_v2: 6.4  	cvss_v3: -    
+[-] 	id: CVE-2013-1552     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2013-1531     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2014-2436     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2013-2378     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2013-2375     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3798     	cvss_v2: 5.8  	cvss_v3: -    
+[-] 	id: CVE-2014-6489     	cvss_v2: 5.5  	cvss_v3: -    
+[-] 	id: CVE-2018-3195     	cvss_v2: 5.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2019-2436     	cvss_v2: 5.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2014-4260     	cvss_v2: 5.5  	cvss_v3: -    
+[-] 	id: CVE-2020-14643    	cvss_v2: 5.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2017-10365    	cvss_v2: 5.5  	cvss_v3: 3.8  
+[-] 	id: CVE-2019-2800     	cvss_v2: 5.5  	cvss_v3: 7.1  
+[-] 	id: CVE-2020-14651    	cvss_v2: 5.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2017-3455     	cvss_v2: 5.5  	cvss_v3: 5.4  
+[-] 	id: CVE-2019-2731     	cvss_v2: 5.5  	cvss_v3: 5.4  
+[-] 	id: CVE-2017-3454     	cvss_v2: 5.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2019-2822     	cvss_v2: 5.1  	cvss_v3: 7.5  
+[-] 	id: CVE-2020-1967     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2012-1702     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3801     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2013-1570     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2016-3588     	cvss_v2: 4.9  	cvss_v3: 5.9  
+[-] 	id: CVE-2021-2356     	cvss_v2: 4.9  	cvss_v3: 5.9  
+[-] 	id: CVE-2008-4097     	cvss_v2: 4.6  	cvss_v3: -    
+[-] 	id: CVE-2013-1523     	cvss_v2: 4.6  	cvss_v3: -    
+[-] 	id: CVE-2016-5625     	cvss_v2: 4.4  	cvss_v3: 7.0  
+[-] 	id: CVE-2013-0383     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2017-3467     	cvss_v2: 4.3  	cvss_v3: 3.7  
+[-] 	id: CVE-2018-0735     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2020-1971     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2016-0594     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2017-3650     	cvss_v2: 4.3  	cvss_v3: 3.7  
+[-] 	id: CVE-2015-3152     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2014-0433     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2012-1697     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2815     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2808     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2811     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2810     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-3182     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-3839     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-5436     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-0583     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2802     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2785     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-4800     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2780     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2803     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2789     	cvss_v2: 4.0  	cvss_v3: 2.7  
+[-] 	id: CVE-2012-1756     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-5442     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2539     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14591    	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-5881     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-4233     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3808     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2826     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-3640     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14575    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14860    	cvss_v2: 4.0  	cvss_v3: 2.7  
+[-] 	id: CVE-2018-3067     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-0432     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3071     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2798     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2016-5628     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14586    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-3646     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2016-5632     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14568    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14553    	cvss_v2: 4.0  	cvss_v3: 4.3  
+[-] 	id: CVE-2016-0616     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-4905     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-0423     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-0384     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-2494     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2009-4019     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-4756     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-4772     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3460     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2016-5624     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-3802     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-5633     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-4207     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-2435     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3783     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3804     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3642     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-0402     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-3004     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2017-3458     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2879     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-3063     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-1512     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-1696     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-0438     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2020-14576    	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-3807     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-4730     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-0368     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-10296    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2016-0611     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-0412     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-5631     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-3078     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-4816     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-0595     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3795     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-5894     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-6520     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-1689     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2752     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-10284    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2502     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2495     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-2419     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-0401     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3285     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-5891     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2533     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2012-1705     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-2389     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3073     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2016-3440     	cvss_v2: 4.0  	cvss_v3: 7.7  
+[-] 	id: CVE-2018-3279     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-3082     	cvss_v2: 4.0  	cvss_v3: 2.7  
+[-] 	id: CVE-2013-5786     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3256     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2018-3080     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-0367     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3186     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-3079     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-3251     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-2759     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-10320    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14559    	cvss_v2: 4.0  	cvss_v3: 4.3  
+[-] 	id: CVE-2016-5441     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14614    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-1690     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3794     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-1688     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3638     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-3644     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14597    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-0439     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3145     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-1532     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-10311    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-3809     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-4904     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3805     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3286     	cvss_v2: 4.0  	cvss_v3: 4.3  
+[-] 	id: CVE-2018-3280     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-3452     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2012-3180     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-3166     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-2392     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2021-2226     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2812     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2012-3150     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3257     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2013-2376     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-2442     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2746     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2017-3465     	cvss_v2: 4.0  	cvss_v3: 4.3  
+[-] 	id: CVE-2014-4238     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3203     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2017-10165    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-0500     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-4866     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-5635     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14680    	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2015-4862     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2020-14619    	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2016-5437     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2795     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2017-3457     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-2434     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3061     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-1757     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-0503     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3075     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-0405     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-0572     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3639     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2755     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-4833     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2016-5634     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-0578     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2784     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-1734     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2801     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-3793     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3643     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-3796     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2015-0508     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-10167    	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2016-3424     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2018-3212     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-6564     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2010-3677     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-0371     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-3144     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-10313    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2017-3645     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-0386     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-1526     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2530     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-0540     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3137     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2014-2450     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2796     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-0409     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2494     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14654    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2015-2611     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2020-14624    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14620    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14702    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14631    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14656    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-0574     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2019-2747     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2012-3173     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2020-14623    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2019-2757     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-1555     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2020-14567    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2020-14893    	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2013-5767     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2010-3682     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2013-3806     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2017-3459     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2016-0503     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2018-3170     	cvss_v2: 4.0  	cvss_v3: 4.9  
+[-] 	id: CVE-2014-4240     	cvss_v2: 3.6  	cvss_v3: -    
+[-] 	id: CVE-2014-6474     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-1511     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2015-2567     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2012-3197     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2016-0651     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2016-0663     	cvss_v2: 3.5  	cvss_v3: 4.7  
+[-] 	id: CVE-2015-4761     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2010-2008     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2016-8290     	cvss_v2: 3.5  	cvss_v3: 4.4  
+[-] 	id: CVE-2017-3468     	cvss_v2: 3.5  	cvss_v3: 3.1  
+[-] 	id: CVE-2016-0653     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2013-1548     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2017-3243     	cvss_v2: 3.5  	cvss_v3: 4.4  
+[-] 	id: CVE-2015-4769     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2017-3320     	cvss_v2: 3.5  	cvss_v3: 2.4  
+[-] 	id: CVE-2015-2639     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2015-4890     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2012-3149     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-3811     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2014-2451     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2015-0506     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2016-0610     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2018-3074     	cvss_v2: 3.5  	cvss_v3: 5.3  
+[-] 	id: CVE-2015-4895     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-3810     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-2381     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-1567     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2019-2741     	cvss_v2: 3.5  	cvss_v3: 5.3  
+[-] 	id: CVE-2016-8287     	cvss_v2: 3.5  	cvss_v3: 4.5  
+[-] 	id: CVE-2019-2814     	cvss_v2: 3.5  	cvss_v3: 2.2  
+[-] 	id: CVE-2018-2767     	cvss_v2: 3.5  	cvss_v3: 3.1  
+[-] 	id: CVE-2016-0656     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2016-0652     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2013-1566     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2015-4791     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2017-3529     	cvss_v2: 3.5  	cvss_v3: 5.3  
+[-] 	id: CVE-2016-0658     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2014-2438     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2017-3319     	cvss_v2: 3.5  	cvss_v3: 3.1  
+[-] 	id: CVE-2017-3637     	cvss_v2: 3.5  	cvss_v3: 5.3  
+[-] 	id: CVE-2016-0654     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2016-0657     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2015-4771     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2019-2743     	cvss_v2: 3.5  	cvss_v3: 5.3  
+[-] 	id: CVE-2016-0662     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2013-5793     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2014-0427     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2013-3812     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2014-0431     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2015-2641     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2014-0437     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2012-3156     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2014-2430     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2015-0385     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2012-5096     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2016-8286     	cvss_v2: 3.5  	cvss_v3: 3.1  
+[-] 	id: CVE-2016-0659     	cvss_v2: 3.5  	cvss_v3: 5.5  
+[-] 	id: CVE-2015-0507     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2016-8289     	cvss_v2: 3.3  	cvss_v3: 4.7  
+[-] 	id: CVE-2014-0393     	cvss_v2: 3.3  	cvss_v3: -    
+[-] 	id: CVE-2014-4214     	cvss_v2: 3.3  	cvss_v3: -    
+[-] 	id: CVE-2013-2391     	cvss_v2: 3.0  	cvss_v3: -    
+[-] 	id: CVE-2016-0607     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2015-2566     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2015-0511     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2014-0420     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2014-4243     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2014-0430     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2016-0667     	cvss_v2: 2.8  	cvss_v3: 4.4  
+[-] 	id: CVE-2013-1506     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2014-2432     	cvss_v2: 2.8  	cvss_v3: -    
+[-] 	id: CVE-2014-2431     	cvss_v2: 2.6  	cvss_v3: -    
+[-] 	id: CVE-2013-5908     	cvss_v2: 2.6  	cvss_v3: -    
+[-] 	id: CVE-2020-15358    	cvss_v2: 2.1  	cvss_v3: 5.5  
+[-] 	id: CVE-2015-2661     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2015-4910     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2013-5770     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2012-4452     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2012-3160     	cvss_v2: 2.1  	cvss_v3: -    
+[-] 	id: CVE-2018-3084     	cvss_v2: 1.9  	cvss_v3: 2.8  
+[-] 	id: CVE-2019-2535     	cvss_v2: 1.9  	cvss_v3: 4.1  
+[-] 	id: CVE-2015-4766     	cvss_v2: 1.9  	cvss_v3: -    
+[-] 	id: CVE-2015-4767     	cvss_v2: 1.7  	cvss_v3: -    
+[-] 	id: CVE-2015-0498     	cvss_v2: 1.7  	cvss_v3: -    
+[-] 	id: CVE-2013-1502     	cvss_v2: 1.5  	cvss_v3: -    
+[-] 	id: CVE-2016-5443     	cvss_v2: 1.2  	cvss_v3: 4.7  
+[-] 	id: CVE-2019-2513     	cvss_v2: 1.2  	cvss_v3: 2.5  
+[-] 	id: CVE-2019-2536     	cvss_v2: 1.2  	cvss_v3: 5.0  
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 5432
+[+] protocol: tcp
+[+] service: postgresql
+[+] product: postgresql
+[+] version: 8.3
+[+] vupdate: *
+[+] cves: 54
+[-] 	id: CVE-2013-1902     	cvss_v2: 10.0 	cvss_v3: -    
+[-] 	id: CVE-2013-1903     	cvss_v2: 10.0 	cvss_v3: -    
+[-] 	id: CVE-2016-7048     	cvss_v2: 9.3  	cvss_v3: 8.1  
+[-] 	id: CVE-2016-0766     	cvss_v2: 9.0  	cvss_v3: 8.8  
+[-] 	id: CVE-2010-1447     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2010-1169     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2015-3166     	cvss_v2: 7.5  	cvss_v3: 9.8  
+[-] 	id: CVE-2009-2943     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2019-10211    	cvss_v2: 7.5  	cvss_v3: 9.8  
+[-] 	id: CVE-2015-0244     	cvss_v2: 7.5  	cvss_v3: 9.8  
+[-] 	id: CVE-2017-14798    	cvss_v2: 6.9  	cvss_v3: 7.0  
+[!] 		ExploitDB:
+[#] 			name: PostgreSQL 9.4-0.5.3 - Privilege Escalation
+[#] 			id: 45184
+[#] 			url: https://www.exploit-db.com/exploits/45184
+[-] 	id: CVE-2009-3231     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-4422     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-0255     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2012-0868     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2020-25694    	cvss_v2: 6.8  	cvss_v3: 8.1  
+[-] 	id: CVE-2014-0063     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2014-0064     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2014-0061     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2010-4015     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2015-0243     	cvss_v2: 6.5  	cvss_v3: 8.8  
+[-] 	id: CVE-2014-0065     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2016-5423     	cvss_v2: 6.5  	cvss_v3: 8.3  
+[-] 	id: CVE-2015-0242     	cvss_v2: 6.5  	cvss_v3: 8.8  
+[-] 	id: CVE-2012-0866     	cvss_v2: 6.5  	cvss_v3: -    
+[-] 	id: CVE-2020-25695    	cvss_v2: 6.5  	cvss_v3: 8.8  
+[-] 	id: CVE-2015-0241     	cvss_v2: 6.5  	cvss_v3: 8.8  
+[-] 	id: CVE-2015-5289     	cvss_v2: 6.4  	cvss_v3: -    
+[-] 	id: CVE-2015-5288     	cvss_v2: 6.4  	cvss_v3: -    
+[-] 	id: CVE-2018-1115     	cvss_v2: 6.4  	cvss_v3: 9.1  
+[-] 	id: CVE-2010-3781     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2010-3433     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2010-1170     	cvss_v2: 6.0  	cvss_v3: -    
+[-] 	id: CVE-2010-1975     	cvss_v2: 5.5  	cvss_v3: -    
+[-] 	id: CVE-2016-0773     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2015-3167     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2016-0768     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2017-7484     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2012-3488     	cvss_v2: 4.9  	cvss_v3: -    
+[-] 	id: CVE-2014-0062     	cvss_v2: 4.9  	cvss_v3: -    
+[-] 	id: CVE-2016-5424     	cvss_v2: 4.6  	cvss_v3: 7.1  
+[-] 	id: CVE-2014-0067     	cvss_v2: 4.6  	cvss_v3: -    
+[-] 	id: CVE-2015-3165     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2012-2143     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2019-10127    	cvss_v2: 4.3  	cvss_v3: 8.8  
+[-] 	id: CVE-2019-10128    	cvss_v2: 4.1  	cvss_v3: 7.8  
+[-] 	id: CVE-2014-0066     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2009-3229     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-0060     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2014-8161     	cvss_v2: 4.0  	cvss_v3: 4.3  
+[-] 	id: CVE-2012-3489     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-2655     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2010-0733     	cvss_v2: 3.5  	cvss_v3: -    
+[-] 	id: CVE-2019-10210    	cvss_v2: 1.9  	cvss_v3: 7.0  
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 6667
+[+] protocol: tcp
+[+] service: irc
+[+] product: unrealircd
+[+] version: *
+[+] vupdate: *
+[+] cves: 0
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 53
+[+] protocol: tcp
+[+] service: domain
+[+] product: bind
+[+] version: 9.4.2
+[+] vupdate: *
+[+] cves: 39
+[-] 	id: CVE-2008-0122     	cvss_v2: 10.0 	cvss_v3: -    
+[-] 	id: CVE-2012-1667     	cvss_v2: 8.5  	cvss_v3: -    
+[-] 	id: CVE-2014-8500     	cvss_v2: 7.8  	cvss_v3: -    
+[-] 	id: CVE-2015-5722     	cvss_v2: 7.8  	cvss_v3: -    
+[-] 	id: CVE-2015-5477     	cvss_v2: 7.8  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: ISC BIND 9 - TKEY (PoC)
+[#] 			id: 37721
+[#] 			url: https://www.exploit-db.com/exploits/37721
+[#] 			name: ISC BIND 9 - TKEY Remote Denial of Service (PoC)
+[#] 			id: 37723
+[#] 			url: https://www.exploit-db.com/exploits/37723
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/dns/bind_tkey
+[-] 	id: CVE-2012-5166     	cvss_v2: 7.8  	cvss_v3: -    
+[-] 	id: CVE-2016-2776     	cvss_v2: 7.8  	cvss_v3: 7.5  
+[!] 		ExploitDB:
+[#] 			name: ISC BIND 9 - Denial of Service
+[#] 			id: 40453
+[#] 			url: https://www.exploit-db.com/exploits/40453
+[!] 		Metasploit:
+[#] 			name: auxiliary/dos/dns/bind_tsig
+[-] 	id: CVE-2012-4244     	cvss_v2: 7.8  	cvss_v3: -    
+[-] 	id: CVE-2012-3817     	cvss_v2: 7.8  	cvss_v3: -    
+[-] 	id: CVE-2010-0382     	cvss_v2: 7.6  	cvss_v3: -    
+[-] 	id: CVE-2017-3141     	cvss_v2: 7.2  	cvss_v3: 7.8  
+[!] 		ExploitDB:
+[#] 			name: BIND 9.10.5 - Unquoted Service Path Privilege Escalation
+[#] 			id: 42121
+[#] 			url: https://www.exploit-db.com/exploits/42121
+[-] 	id: CVE-2015-8461     	cvss_v2: 7.1  	cvss_v3: -    
+[-] 	id: CVE-2015-5986     	cvss_v2: 7.1  	cvss_v3: -    
+[-] 	id: CVE-2015-8704     	cvss_v2: 6.8  	cvss_v3: 6.5  
+[-] 	id: CVE-2009-0025     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2015-8705     	cvss_v2: 6.6  	cvss_v3: 7.0  
+[-] 	id: CVE-2010-3614     	cvss_v2: 6.4  	cvss_v3: -    
+[-] 	id: CVE-2016-9444     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2019-6470     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2017-3145     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2015-8000     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2011-1910     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2016-8864     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2011-4313     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2016-9131     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2009-0265     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2012-1033     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2016-1286     	cvss_v2: 5.0  	cvss_v3: 8.6  
+[-] 	id: CVE-2016-2848     	cvss_v2: 5.0  	cvss_v3: 7.5  
+[-] 	id: CVE-2010-0097     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2017-3143     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2010-3762     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2017-3142     	cvss_v2: 4.3  	cvss_v3: 3.7  
+[-] 	id: CVE-2009-0696     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2016-1285     	cvss_v2: 4.3  	cvss_v3: 6.8  
+[-] 	id: CVE-2016-2775     	cvss_v2: 4.3  	cvss_v3: 5.9  
+[-] 	id: CVE-2016-6170     	cvss_v2: 4.0  	cvss_v3: 6.5  
+[-] 	id: CVE-2010-0290     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2009-4022     	cvss_v2: 2.6  	cvss_v3: -    
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 21
+[+] protocol: tcp
+[+] service: ftp
+[+] product: vsftpd
+[+] version: 2.3.4
+[+] vupdate: *
+[+] cves: 1
+[-] 	id: CVE-2011-2523     	cvss_v2: 10.0 	cvss_v3: 9.8  
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 2121
+[+] protocol: tcp
+[+] service: ftp
+[+] product: proftpd
+[+] version: 1.3.1
+[+] vupdate: *
+[+] cves: 11
+[-] 	id: CVE-2011-4130     	cvss_v2: 9.0  	cvss_v3: -    
+[-] 	id: CVE-2009-0542     	cvss_v2: 7.5  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: ProFTPd - 'mod_mysql' Authentication Bypass
+[#] 			id: 8037
+[#] 			url: https://www.exploit-db.com/exploits/8037
+[-] 	id: CVE-2001-0027     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2010-3867     	cvss_v2: 7.1  	cvss_v3: -    
+[-] 	id: CVE-2008-4242     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2009-0543     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2010-4652     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2009-3639     	cvss_v2: 5.8  	cvss_v3: -    
+[-] 	id: CVE-2011-1137     	cvss_v2: 5.0  	cvss_v3: -    
+[!] 		ExploitDB:
+[#] 			name: ProFTPd - 'mod_sftp' Integer Overflow Denial of Service (PoC)
+[#] 			id: 16129
+[#] 			url: https://www.exploit-db.com/exploits/16129
+[-] 	id: CVE-2008-7265     	cvss_v2: 4.0  	cvss_v3: -    
+[-] 	id: CVE-2012-6095     	cvss_v2: 1.2  	cvss_v3: -    
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 445
+[+] protocol: tcp
+[+] service: netbios-ssn
+[+] product: samba
+[+] version: 3.X - 4.X
+[+] vupdate: *
+[+] cves: cached
+-------------------------------------------------
+[*] host: 172.16.2.131
+[*] port: 8180
+[+] protocol: tcp
+[+] service: http
+[+] product: tomcat
+[+] version: 1.1
+[+] vupdate: *
+[+] cves: 20
+[-] 	id: CVE-2013-2185     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2002-0493     	cvss_v2: 7.5  	cvss_v3: -    
+[-] 	id: CVE-2020-8022     	cvss_v2: 7.2  	cvss_v3: 7.8  
+[-] 	id: CVE-2013-6357     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-4444     	cvss_v2: 6.8  	cvss_v3: -    
+[-] 	id: CVE-2013-4286     	cvss_v2: 5.8  	cvss_v3: -    
+[-] 	id: CVE-2014-0075     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2000-1210     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2008-0128     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2001-0590     	cvss_v2: 5.0  	cvss_v3: -    
+[-] 	id: CVE-2007-2449     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2006-7196     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2014-0099     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2014-0119     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2005-4838     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2013-4590     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2013-4322     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2014-0096     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2009-2696     	cvss_v2: 4.3  	cvss_v3: -    
+[-] 	id: CVE-2007-1358     	cvss_v2: 2.6  	cvss_v3: -    
+-------------------------------------------------
+
