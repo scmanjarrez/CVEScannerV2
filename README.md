@@ -1,6 +1,14 @@
 # Description
 Nmap script that provides information about probable vulnerabilities based on discovered services.
 
+**Contents:**
+  - [Run](#run)
+  - [Output](#output)
+  - [Errors and fixes](#errors-and-fixes)
+  - [Technical details](#technical-details)
+  - [Acknowledgement](#acknowledgement)
+  - [License](#license)
+
 # Requirements
 - luasql
 - nmap
@@ -71,42 +79,42 @@ Nmap will show all CVEs related to every service-version discovered.
     <summary><b>cvescannerv2.nse output</b></summary>
 
     PORT      STATE    SERVICE        VERSION
-    53/tcp   open  domain      ISC BIND 9.4.2
+    22/tcp    open  ssh                  OpenSSH 7.1 (protocol 2.0)
     | cvescannerv2:
-    |   source: nvd.nist.gov
-    |   product: bind
-    |   version: 9.4.2
+    |   product: openssh
+    |   version: 7.1
     |   vupdate: *
-    |   cves: 39
-    |       CVE ID                  CVSSv2  CVSSv3  ExploitDB       Metasploit
-    |       CVE-2008-0122           10.0    -       No              No
-    |       CVE-2012-1667           8.5     -       No              No
-    |       CVE-2014-8500           7.8     -       No              No
-    |       CVE-2012-3817           7.8     -       No              No
-    |       CVE-2012-4244           7.8     -       No              No
-    |       CVE-2016-2776           7.8     7.5     Yes             Yes
-    |       CVE-2015-5722           7.8     -       No              No
-    |       CVE-2015-5477           7.8     -       Yes             Yes
-    |       CVE-2012-5166           7.8     -       No              No
-    |_      CVE-2010-0382           7.6     -       No              No
-    139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+    |   cves: 27
+    |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+    |   	CVE-2008-3844       	9.3  	-    	No        	No
+    |   	CVE-2016-8858       	7.8  	7.5  	No        	No
+    |   	CVE-2016-6515       	7.8  	7.5  	Yes       	No
+    |   	CVE-2016-1908       	7.5  	9.8  	No        	No
+    |   	CVE-2016-10009      	7.5  	7.3  	Yes       	No
+    |   	CVE-2015-8325       	7.2  	7.8  	No        	No
+    |   	CVE-2016-10012      	7.2  	7.8  	No        	No
+    |   	CVE-2016-10010      	6.9  	7.0  	Yes       	No
+    |   	CVE-2020-15778      	6.8  	7.8  	No        	No
+    |_  	CVE-2019-6111       	5.8  	5.9  	Yes       	No
+    ...
+    ...
+    3306/tcp  open  mysql                MySQL 5.5.20-log
     | cvescannerv2:
-    |   source: nvd.nist.gov
-    |   product: samba
-    |   version: 3.X - 4.X
+    |   product: mysql
+    |   version: 5.5.20
     |   vupdate: *
-    |   cves: 91
-    |       CVE ID                  CVSSv2  CVSSv3  ExploitDB       Metasploit
-    |       CVE-2007-2446           10.0    -       No              Yes
-    |       CVE-2015-0240           10.0    -       Yes             Yes
-    |       CVE-2004-0600           10.0    -       No              No
-    |       CVE-2004-1154           10.0    -       No              No
-    |       CVE-2004-0882           10.0    -       No              No
-    |       CVE-2012-1182           10.0    -       No              Yes
-    |       CVE-2017-7494           10.0    9.8     Yes             Yes
-    |       CVE-2007-4572           9.3     -       No              No
-    |       CVE-2007-6015           9.3     -       No              No
-    |_      CVE-2007-5398           9.3     -       No              No
+    |   cves: 541
+    |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+    |   	CVE-2012-2750       	10.0 	-    	No        	No
+    |   	CVE-2016-6662       	10.0 	9.8  	Yes       	No
+    |   	CVE-2012-3163       	9.0  	-    	No        	No
+    |   	CVE-2020-14878      	7.7  	8.0  	No        	No
+    |   	CVE-2013-1492       	7.5  	-    	No        	No
+    |   	CVE-2014-0001       	7.5  	-    	No        	No
+    |   	CVE-2018-2562       	7.5  	7.1  	No        	No
+    |   	CVE-2014-6500       	7.5  	-    	No        	No
+    |   	CVE-2014-6491       	7.5  	-    	No        	No
+    |_  	CVE-2012-0553       	7.5  	-    	No        	No
     ...
     ...
 </details>
@@ -118,108 +126,76 @@ exploit/metasploit related to CVEs.
     <summary><b>cvescannerv2.log dump</b></summary>
 
     #################################################
-    ############## 2021-08-20 14:56:37 ##############
+    ############## 2021-11-05 14:01:01 ##############
     #################################################
 
+    [*] host: 172.16.2.132
+    [*] port: 22
+    [+] protocol: tcp
+    [+] service: ssh
     [+] product: openssh
     [+] version: 7.1
     [+] vupdate: *
-    [+] cves: 25
-    [+]     id: CVE-2008-3844       cvss_v2: 9.3    cvss_v3: nil
-    [+]     id: CVE-2016-8858       cvss_v2: 7.8    cvss_v3: 7.5
-    [+]     id: CVE-2016-6515       cvss_v2: 7.8    cvss_v3: 7.5
-    [-]         ExploitDB:
-    [!]             name: OpenSSH 7.2 - Denial of Service
-    [*]             id: 40888
-    [*]             url: https://www.exploit-db.com/exploits/40888
-    [+]     id: CVE-2016-1908       cvss_v2: 7.5    cvss_v3: 9.8
-    [+]     id: CVE-2016-10009      cvss_v2: 7.5    cvss_v3: 7.3
-    [-]         ExploitDB:
-    [!]             name: OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading
-    [*]             id: 40963
-    [*]             url: https://www.exploit-db.com/exploits/40963
-    [+]     id: CVE-2016-10012      cvss_v2: 7.2    cvss_v3: 7.8
-    [+]     id: CVE-2015-8325       cvss_v2: 7.2    cvss_v3: 7.8
-    [+]     id: CVE-2016-10010      cvss_v2: 6.9    cvss_v3: 7.0
-    [-]         ExploitDB:
-    [!]             name: OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation
-    [*]             id: 40962
-    [*]             url: https://www.exploit-db.com/exploits/40962
+    [+] cves: 27
+    [-] 	id: CVE-2008-3844     	cvss_v2: 9.3  	cvss_v3: -
+    [-] 	id: CVE-2016-8858     	cvss_v2: 7.8  	cvss_v3: 7.5
+    [-] 	id: CVE-2016-6515     	cvss_v2: 7.8  	cvss_v3: 7.5
+    [!] 		ExploitDB:
+    [#] 			name: OpenSSH 7.2 - Denial of Service
+    [#] 			id: 40888
+    [#] 			url: https://www.exploit-db.com/exploits/40888
+    [-] 	id: CVE-2016-1908     	cvss_v2: 7.5  	cvss_v3: 9.8
+    [-] 	id: CVE-2016-10009    	cvss_v2: 7.5  	cvss_v3: 7.3
+    [!] 		ExploitDB:
+    [#] 			name: OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading
+    [#] 			id: 40963
+    [#] 			url: https://www.exploit-db.com/exploits/40963
+    [-] 	id: CVE-2015-8325     	cvss_v2: 7.2  	cvss_v3: 7.8
+    [-] 	id: CVE-2016-10012    	cvss_v2: 7.2  	cvss_v3: 7.8
+    [-] 	id: CVE-2016-10010    	cvss_v2: 6.9  	cvss_v3: 7.0
+    [!] 		ExploitDB:
+    [#] 			name: OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation
+    [#] 			id: 40962
+    [#] 			url: https://www.exploit-db.com/exploits/40962
+    [-] 	id: CVE-2020-15778    	cvss_v2: 6.8  	cvss_v3: 7.8
     ...
     ...
+    -------------------------------------------------
+    [*] host: 172.16.2.132
+    [*] port: 3306
+    [+] protocol: tcp
+    [+] service: mysql
     [+] product: mysql
     [+] version: 5.5.20
     [+] vupdate: *
     [+] cves: 541
-    [+]     id: CVE-2012-2750       cvss_v2: 10.0   cvss_v3: nil
-    [+]     id: CVE-2016-6662       cvss_v2: 10.0   cvss_v3: 9.8
-    [-]         ExploitDB:
-    [!]             name: MySQL / MariaDB / PerconaDB 5.5.51/5.6.32/5.7.14 - Code Execution / Privilege Escalation
-    [*]             id: 40360
-    [*]             url: https://www.exploit-db.com/exploits/40360
-    [+]     id: CVE-2012-3163       cvss_v2: 9.0    cvss_v3: nil
-    [+]     id: CVE-2020-14878      cvss_v2: 7.7    cvss_v3: 8.0
-    [+]     id: CVE-2014-0001       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2018-2562       cvss_v2: 7.5    cvss_v3: 7.1
-    [+]     id: CVE-2012-0882       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2012-0553       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2020-14760      cvss_v2: 7.5    cvss_v3: 5.5
-    [+]     id: CVE-2014-6491       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2014-6500       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2015-0411       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2013-1492       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2012-3158       cvss_v2: 7.5    cvss_v3: nil
-    [+]     id: CVE-2015-4819       cvss_v2: 7.2    cvss_v3: nil
-    [+]     id: CVE-2016-0546       cvss_v2: 7.2    cvss_v3: nil
-    [+]     id: CVE-2016-3471       cvss_v2: 7.1    cvss_v3: 7.5
-    [+]     id: CVE-2016-6664       cvss_v2: 6.9    cvss_v3: 7.0
-    [-]         ExploitDB:
-    [!]             name: MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'root' System User Privilege Escalation
-    [*]             id: 40679
-    [*]             url: https://www.exploit-db.com/exploits/40679
-    ...
-    ...
-    [+] product: samba
-    [+] version: 3.X - 4.X
-    [+] vupdate: *
-    [+] cves: 91
-    [+]     id: CVE-2007-2446       cvss_v2: 10.0   cvss_v3: nil
-    [-]         Metasploit:
-    [!]             name: auxiliary/dos/samba/lsa_addprivs_heap
-    [!]             name: auxiliary/dos/samba/lsa_transnames_heap
-    [!]             name: exploit/linux/samba/lsa_transnames_heap
-    [!]             name: exploit/osx/samba/lsa_transnames_heap
-    [!]             name: exploit/solaris/samba/lsa_transnames_heap
-    [+]     id: CVE-2015-0240       cvss_v2: 10.0   cvss_v3: nil
-    [-]         ExploitDB:
-    [!]             name: Samba < 3.6.2 (x86) - Denial of Service (PoC)
-    [*]             id: 36741
-    [*]             url: https://www.exploit-db.com/exploits/36741
-    [-]         Metasploit:
-    [!]             name: auxiliary/scanner/smb/smb_uninit_cred
-    [+]     id: CVE-2004-0600       cvss_v2: 10.0   cvss_v3: nil
-    [+]     id: CVE-2004-1154       cvss_v2: 10.0   cvss_v3: nil
-    [+]     id: CVE-2004-0882       cvss_v2: 10.0   cvss_v3: nil
-    [+]     id: CVE-2012-1182       cvss_v2: 10.0   cvss_v3: nil
-    [-]         Metasploit:
-    [!]             name: exploit/linux/samba/setinfopolicy_heap
-    [+]     id: CVE-2017-7494       cvss_v2: 10.0   cvss_v3: 9.8
-    [-]         ExploitDB:
-    [!]             name: Samba 3.5.0 - Remote Code Execution
-    [*]             id: 42060
-    [*]             url: https://www.exploit-db.com/exploits/42060
-    [!]             name: Samba 3.5.0 < 4.4.14/4.5.10/4.6.4 - 'is_known_pipename()' Arbitrary Module Load (Metasploit)
-    [*]             id: 42084
-    [*]             url: https://www.exploit-db.com/exploits/42084
-    [-]         Metasploit:
-    [!]             name: exploit/linux/samba/is_known_pipename
-    [+]     id: CVE-2007-4572       cvss_v2: 9.3    cvss_v3: nil
-    [+]     id: CVE-2007-6015       cvss_v2: 9.3    cvss_v3: nil
-    [+]     id: CVE-2007-5398       cvss_v2: 9.3    cvss_v3: nil
-    [+]     id: CVE-2009-1886       cvss_v2: 9.3    cvss_v3: nil
-    [+]     id: CVE-2010-0728       cvss_v2: 8.5    cvss_v3: nil
-    [+]     id: CVE-2014-8143       cvss_v2: 8.5    cvss_v3: nil
-    [+]     id: CVE-2008-4314       cvss_v2: 8.5    cvss_v3: nil
+    [-] 	id: CVE-2012-2750     	cvss_v2: 10.0 	cvss_v3: -
+    [-] 	id: CVE-2016-6662     	cvss_v2: 10.0 	cvss_v3: 9.8
+    [!] 		ExploitDB:
+    [#] 			name: MySQL / MariaDB / PerconaDB 5.5.51/5.6.32/5.7.14 - Code Execution / Privilege Escalation
+    [#] 			id: 40360
+    [#] 			url: https://www.exploit-db.com/exploits/40360
+    [-] 	id: CVE-2012-3163     	cvss_v2: 9.0  	cvss_v3: -
+    [-] 	id: CVE-2020-14878    	cvss_v2: 7.7  	cvss_v3: 8.0
+    [-] 	id: CVE-2013-1492     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2014-0001     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2018-2562     	cvss_v2: 7.5  	cvss_v3: 7.1
+    [-] 	id: CVE-2014-6500     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2014-6491     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2012-0553     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2012-0882     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2012-3158     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2020-14760    	cvss_v2: 7.5  	cvss_v3: 5.5
+    [-] 	id: CVE-2015-0411     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2016-0546     	cvss_v2: 7.2  	cvss_v3: -
+    [-] 	id: CVE-2015-4819     	cvss_v2: 7.2  	cvss_v3: -
+    [-] 	id: CVE-2016-3471     	cvss_v2: 7.1  	cvss_v3: 7.5
+    [-] 	id: CVE-2016-6664     	cvss_v2: 6.9  	cvss_v3: 7.0
+    [!] 		ExploitDB:
+    [#] 			name: MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'root' System User Privilege Escalation
+    [#] 			id: 40679
+    [#] 			url: https://www.exploit-db.com/exploits/40679
+    [-] 	id: CVE-2020-14866    	cvss_v2: 6.8  	cvss_v3: 4.9
     ...
     ...
 </details>
