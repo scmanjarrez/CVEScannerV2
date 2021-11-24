@@ -61,6 +61,7 @@ CVEs information gathered from nvd.nist.gov.
 
 categories = {"discovery", "version", "safe"}
 author = "Sergio Chica"
+version = "2.0"
 
 local http = require 'http'
 local json = require 'json'
@@ -128,6 +129,7 @@ local function timestamp ()
           registry.time))
    stdnse.verbose(1, fmt("Timestamp: %s", registry.time))
    stdnse.verbose(1, fmt("CVE data source: %s", "nvd.nist.gov"))
+   stdnse.verbose(1, fmt("Script version: %s", version))
 end
 
 

@@ -37,14 +37,13 @@ Script **cvescannerv2.nse** can be placed in Nmap default script directory for g
   - C:\Program Files\Nmap\Scripts
   - %APPDATA%\nmap
 
+> It's recommended to create a **symbolic link**, so changes in repository are reflected
+> in global script.
+
 ### Launch
 After database has been created, it is necessary to specify the script.
 
-- `nmap -sV <target_ip> --script=cvescannerv2.nse`
-  > **cvescannerv2.nse** placed in Nmap script directory
-
-- `nmap -sV <target_ip> --script=./cvescannerv2.nse`
-  > **cvescannerv2.nse** placed in the working directory
+- `nmap -sV <target_ip> --script cvescannerv2`
 
 **Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path and regex.
 <details>
@@ -61,13 +60,13 @@ After database has been created, it is necessary to specify the script.
     <summary><b>script-args examples</b></summary>
 
 ```bash
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args log=cvescannerv2.log
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args maxcve=10
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args path=http-paths-vulnerscom.json
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args regex=http-regex-vulnerscom.json
+nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db
+nmap -sV <target_ip> --script cvescannerv2 --script-args log=cvescannerv2.log
+nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=10
+nmap -sV <target_ip> --script cvescannerv2 --script-args path=http-paths-vulnerscom.json
+nmap -sV <target_ip> --script cvescannerv2 --script-args regex=http-regex-vulnerscom.json
 
-nmap -sV <target_ip> --script=./cvescannerv2.nse --script-args db=cve.db,log=cvescannerv2.log,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
+nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
 ```
 
 </details>
