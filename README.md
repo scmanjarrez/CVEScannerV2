@@ -258,4 +258,4 @@ The current implementation take care of the following cases:
     This is free software, and you are welcome to redistribute it
     under certain conditions; check below for details.
 
-[LICENSE](https://github.com/scmanjarrez/CVEScannerV2/blob/master/LICENSE)
+[LICENSE](LICENSE)
