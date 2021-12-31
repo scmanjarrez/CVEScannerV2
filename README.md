@@ -2,12 +2,43 @@
 Nmap script that provides information about probable vulnerabilities based on discovered services.
 
 **Contents:**
+  - [Technical details](#technical-details)
+  - [Requirements](#requirements)
   - [Run](#run)
+    - [Pre-launch](#pre-launch)
+      - [Optional](#optional)
+    - [Launch](#launch)
   - [Output](#output)
   - [Errors and fixes](#errors-and-fixes)
-  - [Technical details](#technical-details)
+    - [Blocked IP](#blocked-ip)
+    - [Missing luasql](#missing-luasql)
   - [Acknowledgement](#acknowledgement)
   - [License](#license)
+
+
+# Technical details
+The current implementation take care of the following cases:
+
+- Nmap detection:
+  - _Product cpe_ **AND** _version_: vulnerabilities affecting _version_ and
+    vulnerabilities affecting a range of versions that include _version_.
+  - _Product cpe_ **AND** _version range_: vulnerabilities affecting versions
+    between _version range_ (included).
+  - _product cpe_ but **NO** _version_: vulnerabilities that affect
+    every version of the product.
+  - If no vulnerabilities were found with _product cpe_ and _version_
+    returned from Nmap, HTTP detection is used.
+  - **NO** product _cpe_: HTTP detection is used.
+
+- HTTP detection:
+  - Used only if port matches HTTP/SSL.
+  - An HTTP GET request is sent for every combination of _path_
+    and _extension_ in **http-paths-vulnerscom.json**, comparing
+    the request headers/body with the regexes in
+    **http-regex-vulnerscom.json**.
+
+> Nmap library shortport is used to detect if port matches HTTP/SSL.
+
 
 # Requirements
 - luasql
@@ -15,17 +46,20 @@ Nmap script that provides information about probable vulnerabilities based on di
 - python
 
 # Run
-### Prelaunch
-In order to execute **cvescannerv2.nse** script, it is mandatory to generate CVEs database.
+## Pre-launch
+In order to execute **cvescannerv2.nse**, CVEs database must be present.
 
 The script **database.py** generates **cve.db** with the required information.
 
-- `pip install -r requirements.txt`
-- `python database.py`
-> **Note:** For your convinience, a semi-updated database is offered as .sql format in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)**.
+```bash
+$ pip install -r requirements.txt
+$ python database.py
+```
+
+> **Note:** For your convenience, a semi-updated database is offered as .sql format in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)**.
 
 ### Optional
-Script **cvescannerv2.nse** can be placed in Nmap default script directory for global execution.
+**cvescannerv2.nse** can be placed in Nmap default script directory for global execution.
 
 - Linux and OSX default script locations:
   - /usr/local/share/nmap/scripts/
@@ -40,8 +74,8 @@ Script **cvescannerv2.nse** can be placed in Nmap default script directory for g
 > It's recommended to create a **symbolic link**, so changes in repository are reflected
 > in global script.
 
-### Launch
-After database has been created, it is necessary to specify the script.
+## Launch
+After database has been created, call the script:
 
 - `nmap -sV <target_ip> --script cvescannerv2`
 
@@ -60,19 +94,19 @@ After database has been created, it is necessary to specify the script.
     <summary><b>script-args examples</b></summary>
 
 ```bash
-nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db
-nmap -sV <target_ip> --script cvescannerv2 --script-args log=cvescannerv2.log
-nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=10
-nmap -sV <target_ip> --script cvescannerv2 --script-args path=http-paths-vulnerscom.json
-nmap -sV <target_ip> --script cvescannerv2 --script-args regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args log=cvescannerv2.log
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=10
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args path=http-paths-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args regex=http-regex-vulnerscom.json
 
-nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
 ```
 
 </details>
 
 # Output
-Nmap will show all CVEs related to every service-version discovered.
+CVEScannerV2 will show all CVEs related to every _service-version_ discovered.
 
 <details>
     <summary><b>cvescannerv2.nse output</b></summary>
@@ -118,8 +152,7 @@ Nmap will show all CVEs related to every service-version discovered.
     ...
 </details>
 
-Also, a log file **cvescannerv2.log** will be generated, with every
-exploit/metasploit related to CVEs.
+Log file **cvescannerv2.log** contains every _exploit/metasploit_ found.
 
 <details>
     <summary><b>cvescannerv2.log dump</b></summary>
@@ -199,46 +232,25 @@ exploit/metasploit related to CVEs.
     ...
 </details>
 
-### Example outputs
-You can find in **example_data** the output of the script for metasploitable2 and metasploitable3 machines.
+> You can find the output from metasploitable2 and metasploitable3 in **example_data**.
 
 # Errors and fixes
-- Error due to block of your IP by the exploit-db WAF.
-  > Connection timeout/error during CRAWL phase when executing **database.py**
+## Blocked IP
+> Connection timeout/error during CRAWL phase (**database.py**)
 
-  > **Fix:** Wait 15 minutes before launching the **database.py** script again.
+**Fix:** Wait 15 minutes before re-running **database.py**.
 
-- Error due to missing library (luasql).
-  > cvescannerv2.nse:54: module 'luasql.sqlite3' not found:<br>
-  > NSE failed to find nselib/luasql/sqlite3.lua in search paths.<br>
-  > ...
+## Missing luasql
+> cvescannerv2.nse:54: module 'luasql.sqlite3' not found:<br>
+> NSE failed to find nselib/luasql/sqlite3.lua in search paths.<br>
+> ...
 
-  > **Fix:** Install lua-sql-sqlite3 and create a symlink to Nmap search path.<br>
-  > - `sudo apt install lua-sql-sqlite3`<br>
-  > - `sudo ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua`
-
-# Technical details
-The current implementation take care of the following cases:
-
-- Nmap detection:
-  - Product _cpe_ **AND** _version_: we parse the cpe and
-    compare the product and version with the database, retrieving
-    results from vulnerabilities affecting the exact version (and vupdate)
-    and vulnerabilities that affect a range of versions, this one included.
-  - Product _cpe_ **AND** _version range_: we retrieve all vulnerabilities
-    that affect all versions between _version range_ (included).
-  - Product _cpe_ but **NO** _version_: we retrieve only vulnerabilities
-    that affect all versions of the product.
-  - If no vulnerabilities were found with the _cpe_ and _version_
-    returned from Nmap, we use the HTTP detection if port is http or ssl.
-  - **NO** product _cpe_: we use the HTTP detection  if port is http or ssl.
-
-- HTTP detection:
-  - We do an HTTP GET for every combination of _path_ and _extension_ in
-  **http-paths-vulnerscom.json**, comparing the request headers/body with
-  the regexes in **http-regexes-vulnerscom.json**.
-
-
+**Fix:** Install lua-sql-sqlite3 and create a symlink to Nmap search path.
+```bash
+$ apt install lua-sql-sqlite3
+$ ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua
+```
+> Above command may require super user permissions.
 
 # Acknowledgement
 
@@ -252,7 +264,7 @@ The current implementation take care of the following cases:
 - CVE information gathered from [nvd.nist.gov](https://nvd.nist.gov).
 
 # License
-    CVEScannerV2  Copyright (C) 2021 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+    CVEScannerV2  Copyright (C) 2022 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
     Universidad Carlos III de Madrid.
     This program comes with ABSOLUTELY NO WARRANTY; for details check below.
     This is free software, and you are welcome to redistribute it
