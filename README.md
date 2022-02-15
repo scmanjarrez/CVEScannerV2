@@ -12,7 +12,7 @@ Nmap script that provides information about probable vulnerabilities based on di
   - [Errors and fixes](#errors-and-fixes)
     - [Blocked IP](#blocked-ip)
     - [Missing luasql](#missing-luasql)
-  - [Acknowledgement](#acknowledgement)
+  - [Acknowledgements](#acknowledgements)
   - [License](#license)
 
 
@@ -252,7 +252,10 @@ $ ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua
 ```
 > Above command may require super user permissions.
 
-# Acknowledgement
+# Acknowledgements
+**This work has been supported by National R&D Project TEC2017-84197-C4-1-R and by
+the Comunidad de Madrid project CYNAMON P2018/TCS-4566 and co-financed by European
+Structural Funds (ESF and FEDER)**
 
 - Based on [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner) script.
 
