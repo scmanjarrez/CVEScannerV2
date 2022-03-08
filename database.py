@@ -624,7 +624,7 @@ def check_updates(args):
                             sys.exit(-1)
                     bar()
 
-                with open(tmpfile, 'r') as f:
+                with open(tmpfile, 'r', encoding='utf8') as f:
                     data = json.load(f)
 
                 with alive_bar(len(data['CVE_Items']),
@@ -726,7 +726,7 @@ def check_updates(args):
         if not os.path.isfile(args.metasploit):
             print("[Error] Metasploit cache file missing")
         else:
-            with open(args.metasploit, 'r') as f:
+            with open(args.metasploit, 'r', encoding='utf8') as f:
                 cache = json.load(f)
 
             with alive_bar(len(cache),
