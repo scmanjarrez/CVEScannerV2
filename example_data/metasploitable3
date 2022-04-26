@@ -1,6 +1,6 @@
-# Nmap 7.92 scan initiated Fri Nov  5 14:01:01 2021 as: nmap -sV -n --script=./cvescannerv2.nse --script-args log=metasploitable3.log -oN metasploitable3 172.16.2.132
-Nmap scan report for 172.16.2.132
-Host is up (0.00025s latency).
+# Nmap 7.92 scan initiated Tue Apr 26 12:27:36 2022 as: nmap -sV -n --script cvescannerv2 --script-args log=metasploitable3.log,json=metasploitable3.json -oN metasploitable3 192.168.45.129
+Nmap scan report for 192.168.45.129
+Host is up (0.00030s latency).
 Not shown: 980 closed tcp ports (conn-refused)
 PORT      STATE SERVICE              VERSION
 22/tcp    open  ssh                  OpenSSH 7.1 (protocol 2.0)
@@ -8,15 +8,15 @@ PORT      STATE SERVICE              VERSION
 |   product: openssh
 |   version: 7.1
 |   vupdate: *
-|   cves: 27
+|   cves: 28
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
 |   	CVE-2008-3844       	9.3  	-    	No        	No        
-|   	CVE-2016-8858       	7.8  	7.5  	No        	No        
 |   	CVE-2016-6515       	7.8  	7.5  	Yes       	No        
+|   	CVE-2016-8858       	7.8  	7.5  	No        	No        
 |   	CVE-2016-1908       	7.5  	9.8  	No        	No        
 |   	CVE-2016-10009      	7.5  	7.3  	Yes       	No        
-|   	CVE-2015-8325       	7.2  	7.8  	No        	No        
 |   	CVE-2016-10012      	7.2  	7.8  	No        	No        
+|   	CVE-2015-8325       	7.2  	7.8  	No        	No        
 |   	CVE-2016-10010      	6.9  	7.0  	Yes       	No        
 |   	CVE-2020-15778      	6.8  	7.8  	No        	No        
 |_  	CVE-2019-6111       	5.8  	5.9  	Yes       	No        
@@ -48,23 +48,22 @@ PORT      STATE SERVICE              VERSION
 |   	http_cpe => nil
 |_	http_version => nil
 3000/tcp  open  http                 WEBrick httpd 1.3.1 (Ruby 2.3.3 (2016-11-21))
-|_http-server-header: WEBrick/1.3.1 (Ruby/2.3.3/2016-11-21)
 | cvescannerv2: 
 |   product: ruby
 |   version: 2.3.3
 |   vupdate: *
-|   cves: 36
+|   cves: 37
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
 |   	CVE-2013-1948       	10.0 	-    	No        	No        
-|   	CVE-2017-17405      	9.3  	8.8  	Yes       	No        
-|   	CVE-2017-10784      	9.3  	8.8  	No        	No        
-|   	CVE-2013-1933       	9.3  	-    	No        	No        
 |   	CVE-2013-1947       	9.3  	-    	No        	No        
-|   	CVE-2017-9226       	7.5  	9.8  	No        	No        
-|   	CVE-2013-0175       	7.5  	-    	No        	No        
-|   	CVE-2017-14064      	7.5  	9.8  	No        	No        
-|   	CVE-2018-8780       	7.5  	9.1  	No        	No        
-|_  	CVE-2017-9224       	7.5  	9.8  	No        	No        
+|   	CVE-2017-10784      	9.3  	8.8  	No        	No        
+|   	CVE-2017-17405      	9.3  	8.8  	Yes       	No        
+|   	CVE-2013-1933       	9.3  	-    	No        	No        
+|   	CVE-2017-9228       	7.5  	9.8  	No        	No        
+|   	CVE-2017-9224       	7.5  	9.8  	No        	No        
+|   	CVE-2017-9227       	7.5  	9.8  	No        	No        
+|   	CVE-2017-17790      	7.5  	9.8  	No        	No        
+|_  	CVE-2018-16395      	7.5  	9.8  	No        	No        
 3306/tcp  open  mysql                MySQL 5.5.20-log
 | cvescannerv2: 
 |   product: mysql
@@ -72,16 +71,16 @@ PORT      STATE SERVICE              VERSION
 |   vupdate: *
 |   cves: 541
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2012-2750       	10.0 	-    	No        	No        
 |   	CVE-2016-6662       	10.0 	9.8  	Yes       	No        
+|   	CVE-2012-2750       	10.0 	-    	No        	No        
 |   	CVE-2012-3163       	9.0  	-    	No        	No        
 |   	CVE-2020-14878      	7.7  	8.0  	No        	No        
-|   	CVE-2013-1492       	7.5  	-    	No        	No        
-|   	CVE-2014-0001       	7.5  	-    	No        	No        
-|   	CVE-2018-2562       	7.5  	7.1  	No        	No        
+|   	CVE-2020-14760      	7.5  	5.5  	No        	No        
 |   	CVE-2014-6500       	7.5  	-    	No        	No        
-|   	CVE-2014-6491       	7.5  	-    	No        	No        
-|_  	CVE-2012-0553       	7.5  	-    	No        	No        
+|   	CVE-2012-3158       	7.5  	-    	No        	No        
+|   	CVE-2018-2562       	7.5  	7.1  	No        	No        
+|   	CVE-2012-0553       	7.5  	-    	No        	No        
+|_  	CVE-2014-6491       	7.5  	-    	No        	No        
 3389/tcp  open  ssl/ms-wbt-server?
 | cvescannerv2: 
 |   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
@@ -93,7 +92,6 @@ PORT      STATE SERVICE              VERSION
 |_	http_version => nil
 4848/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
 |_http-server-header: GlassFish Server Open Source Edition  4.0 
-|_http-trane-info: Problem with XML parsing of /evox/about
 | cvescannerv2: 
 |   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
 |   Attach the following information in the Issue:
@@ -128,16 +126,16 @@ PORT      STATE SERVICE              VERSION
 |   vupdate: *
 |   cves: 20
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2002-0493       	7.5  	-    	No        	No        
 |   	CVE-2013-2185       	7.5  	-    	No        	No        
+|   	CVE-2002-0493       	7.5  	-    	No        	No        
 |   	CVE-2020-8022       	7.2  	7.8  	No        	No        
 |   	CVE-2013-6357       	6.8  	-    	No        	No        
 |   	CVE-2013-4444       	6.8  	-    	No        	No        
 |   	CVE-2013-4286       	5.8  	-    	No        	No        
 |   	CVE-2014-0075       	5.0  	-    	No        	No        
+|   	CVE-2001-0590       	5.0  	-    	No        	No        
 |   	CVE-2008-0128       	5.0  	-    	No        	No        
-|   	CVE-2000-1210       	5.0  	-    	No        	No        
-|_  	CVE-2001-0590       	5.0  	-    	No        	No        
+|_  	CVE-2000-1210       	5.0  	-    	No        	No        
 8031/tcp  open  ssl/unknown
 8080/tcp  open  http                 Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
 |_http-server-header: GlassFish Server Open Source Edition  4.0 
@@ -150,7 +148,6 @@ PORT      STATE SERVICE              VERSION
 |   	http_cpe => cpe:/a:oracle:glassfish_server
 |_	http_version => 4.0
 8181/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
-|_http-server-header: GlassFish Server Open Source Edition  4.0 
 | cvescannerv2: 
 |   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
 |   Attach the following information in the Issue:
@@ -233,7 +230,7 @@ PORT      STATE SERVICE              VERSION
 |_	http_version => nil
 49155/tcp open  unknown
 1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port9200-TCP:V=7.92%I=7%D=11/5%Time=61852B1A%P=x86_64-redhat-linux-gnu%
+SF-Port9200-TCP:V=7.92%I=7%D=4/26%Time=6267C927%P=x86_64-redhat-linux-gnu%
 SF:r(GetRequest,18A,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\x20applicatio
 SF:n/json;\x20charset=UTF-8\r\nContent-Length:\x20307\r\n\r\n{\r\n\x20\x20
 SF:\"status\"\x20:\x20200,\r\n\x20\x20\"name\"\x20:\x20\"Hairbag\",\r\n\x2
@@ -255,4 +252,4 @@ SF:0text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n");
 Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-# Nmap done at Fri Nov  5 14:04:05 2021 -- 1 IP address (1 host up) scanned in 184.25 seconds
+# Nmap done at Tue Apr 26 12:30:47 2022 -- 1 IP address (1 host up) scanned in 190.52 seconds

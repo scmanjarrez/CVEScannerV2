@@ -47,7 +47,7 @@ The current implementation take care of the following cases:
 
 # Run
 ## Pre-launch
-In order to execute **cvescannerv2.nse**, CVEs database must be present.
+In order to execute **cvescannerv2.nse**, CVEs database, http-paths and http-regex files must be present.
 
 The script **database.py** generates **cve.db** with the required information.
 
@@ -96,11 +96,12 @@ After database has been created, call the script:
 ```bash
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args log=cvescannerv2.log
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args json=cvescannerv2.json
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=10
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args path=http-paths-vulnerscom.json
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args regex=http-regex-vulnerscom.json
 
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,json=cvescannerv2.json,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
 ```
 
 </details>
@@ -230,6 +231,99 @@ Log file **cvescannerv2.log** contains every _exploit/metasploit_ found.
     [-] 	id: CVE-2020-14866    	cvss_v2: 6.8  	cvss_v3: 4.9
     ...
     ...
+</details>
+
+Log file (json format) **cvescannerv2.json**.
+
+<details>
+    <summary><b>cvescannerv2.json dump</b></summary>
+
+        {
+          "192.168.45.128": {
+            "ports": {
+              "22/tcp": {
+                "service": {
+                  "vupdate": "p1",
+                  "name": "ssh",
+                  "version": "4.7",
+                  "product": "openssh"
+                },
+                "vulnerabilities": {
+                  "total": 36,
+                  "cves": {
+                    "CVE-2008-5161": {
+                      "cvssv2": 2.6,
+                      "cvssv3": "-"
+                    },
+                    "CVE-2016-6210": {
+                      "cvssv3": 5.9,
+                      "exploitdb": [
+                        {
+                          "name": "OpenSSHd 7.2p2 - Username Enumeration",
+                          "url": "https://www.exploit-db.com/exploits/40113",
+                          "id": 40113
+                        },
+                        {
+                          "name": "OpenSSH 7.2p2 - Username Enumeration",
+                          "url": "https://www.exploit-db.com/exploits/40136",
+                          "id": 40136
+                        }
+                      ],
+                      "metasploit": [
+                        {
+                          "name": "auxiliary/scanner/ssh/ssh_enumusers"
+                        }
+                      ],
+                      "cvssv2": 4.3
+                    },
+                    ...
+                    "CVE-2016-3115": {
+                      "cvssv3": 6.4,
+                      "exploitdb": [
+                        {
+                          "name": "OpenSSH 7.2p1 - (Authenticated) xauth Command Injection",
+                          "url": "https://www.exploit-db.com/exploits/39569",
+                          "id": 39569
+                        }
+                      ],
+                      "cvssv2": 5.5
+                    },
+                    "CVE-2018-15473": {
+                      "cvssv3": 5.3,
+                      "exploitdb": [
+                        {
+                          "name": "OpenSSH 2.3 < 7.7 - Username Enumeration (PoC)",
+                          "url": "https://www.exploit-db.com/exploits/45210",
+                          "id": 45210
+                        },
+                        {
+                          "name": "OpenSSH 2.3 < 7.7 - Username Enumeration",
+                          "url": "https://www.exploit-db.com/exploits/45233",
+                          "id": 45233
+                        },
+                        {
+                          "name": "OpenSSH < 7.7 - User Enumeration (2)",
+                          "url": "https://www.exploit-db.com/exploits/45939",
+                          "id": 45939
+                        }
+                      ],
+                      "metasploit": [
+                        {
+                          "name": "auxiliary/scanner/ssh/ssh_enumusers"
+                        }
+                      ],
+                      "cvssv2": 5.0
+                    }
+                  },
+                  "cache": false
+                }
+              }
+              ...
+              ...
+            },
+            "timestamp": "2022-04-26 12:12:10"
+          }
+        }
 </details>
 
 > You can find the output from metasploitable2 and metasploitable3 in **example_data**.

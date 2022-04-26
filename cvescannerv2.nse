@@ -61,7 +61,7 @@ CVEs information gathered from nvd.nist.gov.
 
 categories = {"discovery", "version", "safe"}
 author = "Sergio Chica"
-version = "2.0"
+version = "2.1"
 
 local http = require 'http'
 local json = require 'json'
@@ -72,6 +72,7 @@ local stdnse = require 'stdnse'
 
 local db_arg = stdnse.get_script_args('db') or 'cve.db'
 local log_arg = stdnse.get_script_args('log') or 'cvescannerv2.log'
+local json_arg = stdnse.get_script_args('json') or 'cvescannerv2.json'
 local maxcve_arg = stdnse.get_script_args('maxcve') or 10
 local path_arg = stdnse.get_script_args('path') or 'http-paths-vulnerscom.json'
 local regex_arg = stdnse.get_script_args('regex') or 'http-regex-vulnerscom.json'
@@ -83,6 +84,7 @@ if not nmap.registry[SCRIPT_NAME] then
       cache = nil,
       env = nil,
       logger = nil,
+      json_out = nil,
       path = nil,
       regex = nil,
       status = true,
@@ -153,14 +155,33 @@ end
 
 
 local function log_info (host, port, product, info)
-   log("[*] host: %s", host.ip)
-   log("[*] port: %s", port.number)
-   log("[+] protocol: %s", port.protocol)
-   log("[+] service: %s", port.service)
-   log("[+] product: %s", product)
-   local v, vu = correct_version(info)
-   log("[+] version: %s", v)
-   log("[+] vupdate: %s", vu)
+   local _ip = host.ip
+   local _port = port.number
+   local _proto = port.protocol
+   local _port_proto = fmt('%s/%s', _port, _proto)
+   local _serv = port.service
+   local _prod = product
+   local _ver, _vupd = correct_version(info)
+   log("[*] host: %s", _ip)
+   log("[*] port: %s", _port)
+   log("[+] protocol: %s", _proto)
+   log("[+] service: %s", _serv)
+   log("[+] product: %s", _prod)
+   log("[+] version: %s", _ver)
+   log("[+] vupdate: %s", _vupd)
+   registry.json_out[_ip]['ports'][_port_proto] = {
+      ['service'] = {
+         ['name'] = _serv,
+         ['product'] = _prod,
+         ['version'] = _ver,
+         ['vupdate'] = _vupd
+      },
+      ['vulnerabilities'] = {
+         ['total'] = 0,
+         ['cache'] = false,
+         ['cves'] = {}
+      }
+   }
 end
 
 
@@ -415,13 +436,19 @@ local function query (qtype)
 end
 
 
-local function dump_exploit (vuln)
+local function dump_exploit (host, port, vuln)
+   local _ip = host.ip
+   local _port = fmt('%s/%s', port.number, port.protocol)
    -- Dump the CVE score
    local cur = registry.conn:execute(
       fmt(query('cve_score'), vuln)
    )
    local cvssv2, cvssv3 = cur:fetch()
    log("[-] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2, cvssv3 or "-")
+   registry.json_out[_ip]['ports'][_port]['vulnerabilities']['cves'][vuln] = {
+      ['cvssv2'] = cvssv2,
+      ['cvssv3'] = cvssv3 or "-"
+   }
 
    -- Dump exploits from Exploit-DB
    cur = registry.conn:execute(
@@ -430,10 +457,17 @@ local function dump_exploit (vuln)
    local exploit, name = cur:fetch()
    if exploit then
       log("[!] \t\tExploitDB:")
+      registry.json_out[_ip]['ports'][_port]['vulnerabilities']['cves'][vuln]['exploitdb'] = {}
+      local exp_list = registry.json_out[_ip]['ports'][_port]['vulnerabilities']['cves'][vuln]['exploitdb']
       while exploit do
          log("[#] \t\t\tname: %s", name)
          log("[#] \t\t\tid: %s", exploit)
          log("[#] \t\t\turl: https://www.exploit-db.com/exploits/%s", exploit)
+         exp_list[#exp_list + 1] = {
+            ['name'] = name,
+            ['id'] = exploit,
+            ['url'] = fmt('https://www.exploit-db.com/exploits/%s', exploit)
+         }
          exploit, name = cur:fetch()
       end
    end
@@ -445,15 +479,18 @@ local function dump_exploit (vuln)
    name = cur:fetch()
    if name then
       log("[!] \t\tMetasploit:")
+      registry.json_out[_ip]['ports'][_port]['vulnerabilities']['cves'][vuln]['metasploit'] = {}
+      local meta_list = registry.json_out[_ip]['ports'][_port]['vulnerabilities']['cves'][vuln]['metasploit']
       while name do
          log("[#] \t\t\tname: %s", name)
+         meta_list[#meta_list + 1] = {['name'] = name}
          name = cur:fetch()
       end
    end
 end
 
 
-local function vulnerabilities (product, info)
+local function vulnerabilities (host, port, product, info)
    local qrym = "multiaffected"
    local qry = "affected"
    if not info.empty then
@@ -513,7 +550,7 @@ local function vulnerabilities (product, info)
    -- Pretty print the output
    local cnt = 0
    for _, value in ipairs(sorted) do
-      dump_exploit(value[1])
+      dump_exploit(host, port, value[1])
       if cnt < tonumber(maxcve_arg) then
          table.insert(output,
                       fmt(
@@ -537,13 +574,14 @@ local function nmap_analysis (host, port, product, info)
    log_info(host, port, product, info)
    local v, vu = correct_version(info)
    if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
-      local vulns = vulnerabilities(product, info)
+      local vulns = vulnerabilities(host, port, product, info)
       local nvulns = table.remove(vulns, 1)
       if nvulns > 0 then
          table.insert(vulns, 1, fmt("product: %s", product))
          table.insert(vulns, 2, fmt("version: %s", v))
          table.insert(vulns, 3, fmt("vupdate: %s", vu))
          table.insert(vulns, 4, fmt("cves: %d", nvulns))
+         registry.json_out[host.ip]['ports'][fmt('%s/%s', port.number, port.protocol)]['vulnerabilities']['total'] = nvulns
          table.insert(vulns, 5,
                       fmt(
                          "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
@@ -551,14 +589,17 @@ local function nmap_analysis (host, port, product, info)
                       )
          )
          stdnse.verbose(2, "Caching product-version-vupdate vulnerabilities.")
-         registry.cache[fmt('%s|%s|%s', product, v, vu)] = vulns
+         registry.cache[fmt('%s|%s|%s', product, v, vu)] = {nvulns, vulns}
          return vulns
       end
    else
       log("[+] cves: cached")
+      local cache = registry.cache[fmt('%s|%s|%s', product, v, vu)]
+      registry.json_out[host.ip]['ports'][fmt('%s/%s', port.number, port.protocol)]['vulnerabilities']['cache'] = true
+      registry.json_out[host.ip]['ports'][fmt('%s/%s', port.number, port.protocol)]['vulnerabilities']['total'] = cache[1]
       log_separator()
       stdnse.verbose(2, "Using cached product-version-vupdate vulnerabilities.")
-      return registry.cache[fmt('%s|%s|%s', product, v, vu)]
+      return cache[2]
    end
 end
 
@@ -607,6 +648,7 @@ preaction = function ()
    registry.logger = io.open(log_arg, 'a')
    registry.time = os.date("%Y-%m-%d %H:%M:%S")
    registry.cache = {}
+   registry.json_out = {}
    timestamp()
 end
 
@@ -616,6 +658,12 @@ portaction = function (host, port)
    local http_scan = true
    local http_cpe = nil
    local http_version = nil
+   if registry.json_out[host.ip] == nil then
+      registry.json_out[host.ip] = {
+         ['timestamp'] = registry.time,
+         ['ports'] = {}
+      }
+   end
    if port.version.cpe[1] ~= nil then
       log_detection("Nmap", "worked")
       local product, info = cpe_parser(port.version.cpe[1], port.version.version)
@@ -678,6 +726,10 @@ postaction = function ()
    registry.env:close()
    registry.logger:write("\n")
    registry.logger:close()
+   local json_out = io.open(json_arg, 'a')
+   json_out:write(json.generate(registry.json_out))
+   json_out:write("\n")
+   json_out:close()
 end
 
 
