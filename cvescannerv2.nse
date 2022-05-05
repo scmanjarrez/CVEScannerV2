@@ -59,13 +59,14 @@ CVEs information gathered from nvd.nist.gov.
 --
 ---
 
-categories = {"discovery", "version", "safe"}
+categories = {"vuln", "safe"}
 author = "Sergio Chica"
-version = "2.1"
+version = "2.2"
 
 local http = require 'http'
 local json = require 'json'
 local nmap = require 'nmap'
+local datetime = require 'datetime'
 local shortport = require 'shortport'
 local sql = require 'luasql.sqlite3'
 local stdnse = require 'stdnse'
@@ -124,11 +125,7 @@ end
 
 
 local function timestamp ()
-   local pad = string.rep("#", 49)
-   local pad_mid = string.rep("#", 14)
-   registry.logger:write(
-      fmt(pad .. "\n" .. pad_mid .. " %s " .. pad_mid .. "\n" .. pad .. "\n\n",
-          registry.time))
+   registry.logger:write(fmt("## %s\n", registry.time))
    stdnse.verbose(1, fmt("Timestamp: %s", registry.time))
    stdnse.verbose(1, fmt("CVE data source: %s", "nvd.nist.gov"))
    stdnse.verbose(1, fmt("Script version: %s", version))
@@ -630,6 +627,11 @@ prerule = function ()
 end
 
 
+hostrule = function (_)
+   return true
+end
+
+
 portrule = function (_, port)
    return registry.status and
       port.service ~= 'tcpwrapped' and
@@ -646,10 +648,20 @@ preaction = function ()
    registry.env = sql.sqlite3()
    registry.conn = registry.env:connect(db_arg)
    registry.logger = io.open(log_arg, 'a')
-   registry.time = os.date("%Y-%m-%d %H:%M:%S")
+   registry.time = datetime.format_timestamp(os.time(), 0)
    registry.cache = {}
    registry.json_out = {}
    timestamp()
+end
+
+
+hostaction = function (host)
+   if registry.json_out[host.ip] == nil then
+      registry.json_out[host.ip] = {
+         ['timestamp'] = registry.time,
+         ['ports'] = {}
+      }
+   end
 end
 
 
@@ -703,18 +715,14 @@ portaction = function (host, port)
       vulns = {}
       table.insert(vulns,
                    "No vulnerabilities found in DB. " ..
-                   "If you think this could be an error, open an Issue in GitHub.")
-      table.insert(vulns, "Attach the following information in the Issue:")
-      table.insert(vulns, fmt("\tnmap_service => %s\n" ..
-                              "\tnmap_cpe => %s\n" ..
-                              "\tnmap_version => %s",
-                              port.version.name,
-                              port.version.cpe[1],
-                              port.version.version))
+                   "If you think this could be an error, open an Issue on GitHub.")
+      table.insert(vulns, "Attach the following information:")
+      table.insert(vulns, fmt("\tnmap_service: %s", port.version.name))
+      table.insert(vulns, fmt("\tnmap_cpe: %s", port.version.cpe[1]))
+      table.insert(vulns, fmt("\tnmap_version: %s", port.version.version))
       if http_scan then
-         table.insert(vulns, fmt("\thttp_cpe => %s\n" ..
-                                 "\thttp_version => %s",
-                                 http_cpe, http_version))
+         table.insert(vulns, fmt("\thttp_cpe: %s", http_cpe))
+         table.insert(vulns, fmt("\thttp_version: %s", http_version))
       end
    end
    return vulns
@@ -735,6 +743,7 @@ end
 
 local ActionsTable = {
    prerule = preaction,
+   hostrule = hostaction,
    portrule = portaction,
    postrule = postaction
 }
