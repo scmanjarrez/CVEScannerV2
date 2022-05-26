@@ -12,6 +12,7 @@ Nmap script that provides information about probable vulnerabilities based on di
   - [Errors and fixes](#errors-and-fixes)
     - [Blocked IP](#blocked-ip)
     - [Missing luasql](#missing-luasql)
+  - [Docker container](#docker-container)
   - [Acknowledgements](#acknowledgements)
   - [License](#license)
 
@@ -38,7 +39,6 @@ The current implementation take care of the following cases:
     **http-regex-vulnerscom.json**.
 
 > Nmap library shortport is used to detect if port matches HTTP/SSL.
-
 
 # Requirements
 - luasql
@@ -345,6 +345,16 @@ $ apt install lua-sql-sqlite3
 $ ln -s /usr/lib/x86_64-linux-gnu/lua /usr/local/lib/lua
 ```
 > Above command may require super user permissions.
+
+# Docker container
+We have prepared a container with nmap, CVEScannerV2 and [netauditor](https://gitlab.gast.it.uc3m.es/schica/netauditor).
+```bash
+$ docker run --entrypoint nmap -v /tmp/CVEScannerV2:/tmp/CVEScannerV2 registry.gast.it.uc3m.es/kubernetesdockerimages/netauditor:latest -sV <ip> --script cvescannerv2 --script-args json=/tmp/CVEScannerV2/cvescannerv2.json,log=/tmp/CVEScannerV2/cvescannerv2.log
+```
+> **Note**: The entrypoint is set to **netauditor**.
+> You need to change it to **nmap** and add the commands at the end.
+
+> **Note2**: Script logs will be stored in /tmp/CVEScannerV2
 
 # Acknowledgements
 **This work has been supported by National R&D Project TEC2017-84197-C4-1-R and by
