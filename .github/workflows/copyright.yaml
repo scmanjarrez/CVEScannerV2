@@ -23,7 +23,7 @@ jobs:
       - name: Merge pull request
         run: |
           export year=$(date +"%Y")
-          perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md *.py
+          perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md database.py cvescannerv2.nse splitter/splitter.py
           git add --update
           git commit -m "Copyright year update"
           git remote set-url origin --push https://updater:${{ secrets.TOKEN }}@github.com/scmanjarrez/CVEScannerV2.git

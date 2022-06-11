@@ -2,7 +2,7 @@
 
 -- cvescannerv2 - NSE script.
 
--- Copyright (C) 2022 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+-- Copyright (C) 2021-2022 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 -- Universidad Carlos III de Madrid.
 
 -- This file is part of CVEScannerV2.

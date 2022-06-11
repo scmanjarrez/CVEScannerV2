@@ -20,8 +20,8 @@ jobs:
       - name: Change global git configurations
         run: |
           git config --global push.default current
-          git config --global user.name "gha-updater"
-          git config --global user.email "gha@updater"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
 
       - name: Collect latest database
         uses: addnab/docker-run-action@v3
