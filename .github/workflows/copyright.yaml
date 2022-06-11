@@ -1,0 +1,31 @@
+name: Update copyright year(s) in license file
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 1 1 *" # 03:00 AM on January 1
+
+jobs:
+  update-years:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Change global git configurations
+        run: |
+          git config --global push.default current
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Merge pull request
+        run: |
+          export year=$(date +"%Y")
+          perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md *.py
+          git add --update
+          git commit -m "Copyright year update"
+          git remote set-url origin --push https://updater:${{ secrets.TOKEN }}@github.com/scmanjarrez/CVEScannerV2.git
+          git remote set-url origin --add --push https://updater:${{ secrets.TOKENGL }}@gitlab.gast.it.uc3m.es/schica/CVEScannerV2.git
+          git push
