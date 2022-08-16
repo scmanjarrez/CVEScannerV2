@@ -2,7 +2,7 @@ about-time==3.1.1
 alive-progress==2.0.0
 certifi==2021.5.30
 charset-normalizer==2.0.4
-fake-useragent @ git+https://github.com/danger89/fake-useragent.git@a3a55888c85b3dc06d79c4c0aebb7628b02f3379
+fake-useragent @ git+https://github.com/scmanjarrez/fake-useragent.git
 flake8==3.9.2
 grapheme==0.6.0
 idna==3.2
