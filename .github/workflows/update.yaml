@@ -34,7 +34,7 @@ jobs:
         run: sudo chown runner:runner cve.db
 
       - name: Download latest metasploit cache
-        run: curl https://gitlab.gast.it.uc3m.es/kubernetesdockerimages/metasploitframeworkcache/raw/master/modules_cache.json -o modules_cache_msf.json
+        run: curl https://gitlab.gast.it.uc3m.es/kubernetesdockerimages/metasploit/raw/master/modules_cache.json -o modules_cache_msf.json
 
       - name: Install CVEScannerV2 dependencies
         run: pip install -r requirements.txt
