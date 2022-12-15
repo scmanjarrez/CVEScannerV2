@@ -733,7 +733,7 @@ def check_updates(args):
                 cache = json.load(f)
 
             for meta in tqdm(cache, ascii=" =",
-                             desc="[PARSE] Reading Metastploit cache:"):
+                             desc="[PARSE] Reading Metastploit cache"):
                 name = cache[meta]['fullname']
                 if not exploit_in_db(db, name, msf=True):
                     popu_iqueue.put((7, (name,)))
