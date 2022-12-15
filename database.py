@@ -22,12 +22,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from alive_progress import alive_bar, config_handler
 from concurrent.futures import ThreadPoolExecutor
 from fake_useragent import UserAgent
 from threading import Thread, Event
 from contextlib import closing
 from queue import Queue
+from tqdm import tqdm
+
 import requests as req
 import dateutil.parser
 import sqlite3 as sql
@@ -606,7 +607,8 @@ def check_updates(args):
                     sys.exit(-1)
 
                 tmpurl = f'{NVD_URL}{NVD_NAME}{year}.json.zip'
-                with alive_bar(1, title=f"[DWNLD] Year {year}:") as bar:
+                with tqdm(total=1, ascii=" =",
+                          desc=f"[DWNLD] Year {year}") as bar:
                     try:
                         urllib.request.urlretrieve(tmpurl, f'{tmpfile}.zip')
                     except urllib.error.ContentTooShortError:
@@ -622,19 +624,19 @@ def check_updates(args):
                         except ValueError:
                             print("[ERROR] Unexpected close.")
                             sys.exit(-1)
-                    bar()
+                    bar.update()
 
                 with open(tmpfile, 'r', encoding='utf8') as f:
                     data = json.load(f)
 
-                with alive_bar(len(data['CVE_Items']),
-                               title=f"[PARSE] Year {year}:") as bar:
+                with tqdm(data['CVE_Items'], ascii=" =",
+                          desc=f"[PARSE] Year {year}") as bar:
                     for idx, cve_item in enumerate(data['CVE_Items']):
                         if '** REJECT **' in (
                                 cve_item['cve']['description']
                                 ['description_data'][0]
                                 ['value']):
-                            bar()
+                            bar.update()
                             continue
 
                         cve_id = cve_item['cve']['CVE_data_meta']['ID']
@@ -643,7 +645,7 @@ def check_updates(args):
                                 cve_item['impact']['baseMetricV2']
                                 ['cvssV2']['baseScore'])
                         except KeyError:
-                            bar()
+                            bar.update()
                             continue
                         cvssv3 = (cve_item['impact']
                                   ['baseMetricV3']['cvssV3']['baseScore']
@@ -714,11 +716,12 @@ def check_updates(args):
                                                 db, cve_id, exploit):
                                             popu_iqueue.put(
                                                 (6, (cve_id, exploit)))
-                        bar()
+                        bar.update()
                 popu_new_year.set()
-                with alive_bar(1, title=f"[STORE] Year {year}:") as bar:
+                with tqdm(total=1, ascii=" =",
+                          desc=f"[STORE] Year {year}") as bar:
                     popu_oqueue.get()
-                    bar()
+                    bar.update()
                 update_year(db, year, last_update, sha256)
             else:
                 print(f"[CHECK] Year {year}: Already in DB ... skipping")
@@ -729,38 +732,36 @@ def check_updates(args):
             with open(args.metasploit, 'r', encoding='utf8') as f:
                 cache = json.load(f)
 
-            with alive_bar(len(cache),
-                           title="[PARSE] Reading Metastploit cache:") as bar:
-                for meta in cache:
-                    name = cache[meta]['fullname']
-                    if not exploit_in_db(db, name, msf=True):
-                        popu_iqueue.put((7, (name,)))
-                    for ref in cache[meta]['references']:
-                        match = REF_CVE.match(ref)
-                        if match and cve_in_db(db, ref):
-                            popu_iqueue.put((8, (ref, name)))
-                    bar()
-                popu_new_year.set()
-        with alive_bar(1, title="[AWAIT] Populate threads") as bar:
+            for meta in tqdm(cache, ascii=" =",
+                             desc="[PARSE] Reading Metastploit cache:"):
+                name = cache[meta]['fullname']
+                if not exploit_in_db(db, name, msf=True):
+                    popu_iqueue.put((7, (name,)))
+                for ref in cache[meta]['references']:
+                    match = REF_CVE.match(ref)
+                    if match and cve_in_db(db, ref):
+                        popu_iqueue.put((8, (ref, name)))
+            popu_new_year.set()
+        with tqdm(total=1, ascii=" =",
+                  desc="[AWAIT] Populate threads") as bar:
             popu_finished.set()
             popu_thread.join()
-            bar()
+            bar.update()
 
         if not args.noscrape:
             exploits = exploits_in_db(db)
             if len(exploits) > 0:
                 expl_generator = exploit_batch(exploits)
                 with ThreadPoolExecutor(max_workers=THREADS) as executor:
-                    with alive_bar(len(exploits)//BATCH+1,
-                                   title="[CRAWL] Exploit names") as bar:
+                    with tqdm(total=len(exploits)//BATCH+1, ascii=" =",
+                              desc="[CRAWL] Exploit names") as bar:
                         for batch in expl_generator:
                             results = executor.map(scrape_title, batch)
                             bulk_update_exploit_name(db, list(results))
-                            bar()
+                            bar.update()
 
 
 if __name__ == "__main__":
-    config_handler.set_global(bar='classic', spinner='classic')
     parser = argparse.ArgumentParser(description="Tool to generate cve.db.")
 
     parser.add_argument('-d', '--database',

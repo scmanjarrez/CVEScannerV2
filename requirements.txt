@@ -1,15 +1,11 @@
-about-time==3.1.1
-alive-progress==2.0.0
-certifi==2021.5.30
-charset-normalizer==2.0.4
-fake-useragent @ git+https://github.com/scmanjarrez/fake-useragent.git
-flake8==3.9.2
-grapheme==0.6.0
-idna==3.2
-mccabe==0.6.1
-pycodestyle==2.7.0
-pyflakes==2.3.1
+certifi==2022.12.7
+charset-normalizer==2.1.1
+fake-useragent==1.1.1
+idna==3.4
+importlib-resources==5.10.1
 python-dateutil==2.8.2
-requests==2.26.0
+requests==2.28.1
 six==1.16.0
-urllib3==1.26.6
+tqdm==4.64.1
+urllib3==1.26.13
+zipp==3.11.0
