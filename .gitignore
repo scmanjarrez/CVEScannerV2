@@ -1,4 +1,5 @@
 ## Own ignore
+temp/
 .idea/
 pycve/
 *.bk
