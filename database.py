@@ -4,7 +4,7 @@
 
 # database - Database generator.
 
-# Copyright (C) 2021-2022 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+# Copyright (C) 2021-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 # Universidad Carlos III de Madrid.
 
 # This file is part of CVEScannerV2.
@@ -77,7 +77,7 @@ THREADS = 3
 DELAY = 5
 
 COPYRIGHT = """
-CVEScannerV2  Copyright (C) 2022 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+CVEScannerV2  Copyright (C) 2022-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 Universidad Carlos III de Madrid.
 This program comes with ABSOLUTELY NO WARRANTY; for details check below.
 This is free software, and you are welcome to redistribute it
