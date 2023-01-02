@@ -2,7 +2,7 @@ name: Database updater
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 5 1,15 * *"
+    - cron: "30 6 1,15 * *"
 
 jobs:
   update-database:
