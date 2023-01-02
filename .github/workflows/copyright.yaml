@@ -13,6 +13,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           persist-credentials: false
+          submodules: recursive
 
       - name: Change global git configurations
         run: |
@@ -20,12 +21,25 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-      - name: Merge pull request
+      - name: Update CVEScannerV2DB year
+        run: |
+          cd CVEScannerV2DB
+          git checkout --orphan latest
+          export year=$(date +"%Y")
+          perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md build.sh
+          git add -A
+          git commit -m "Copyright year update"
+          git branch -D master
+          git branch -m master
+          git remote set-url origin https://updater:${{ secrets.TOKEN }}@github.com/scmanjarrez/CVEScannerV2DB.git
+          git push -f
+
+      - name: Update CVEScannerV2 year
         run: |
           export year=$(date +"%Y")
           perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md database.py cvescannerv2.nse splitter/splitter.py
           git add --update
-          git commit -m "Copyright year update"
+          git commit -m "Copyright year update and CVEScannerV2DB (year update) commit"
           git remote set-url origin --push https://updater:${{ secrets.TOKEN }}@github.com/scmanjarrez/CVEScannerV2.git
           git remote set-url origin --add --push https://updater:${{ secrets.TOKENGL }}@gitlab.gast.it.uc3m.es/schica/CVEScannerV2.git
           git push
