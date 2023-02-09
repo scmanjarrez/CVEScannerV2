@@ -1,2553 +1,74 @@
 {
   "192.168.45.130": {
+    "timestamp": "2023-02-09T13:04:29+00:00",
     "ports": {
-      "22/tcp": {
-        "services": [
-          {
-            "name": "ssh",
-            "product": "openssh",
-            "vupdate": "*",
-            "vulnerabilities": {
-              "cves": {
-                "CVE-2018-15473": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/45210",
-                      "id": 45210,
-                      "name": "OpenSSH 2.3 < 7.7 - Username Enumeration (PoC)"
-                    },
-                    {
-                      "url": "https://www.exploit-db.com/exploits/45233",
-                      "id": 45233,
-                      "name": "OpenSSH 2.3 < 7.7 - Username Enumeration"
-                    },
-                    {
-                      "url": "https://www.exploit-db.com/exploits/45939",
-                      "id": 45939,
-                      "name": "OpenSSH < 7.7 - User Enumeration (2)"
-                    }
-                  ],
-                  "cvssv3": 5.3,
-                  "cvssv2": 5.0,
-                  "metasploit": [
-                    {
-                      "name": "auxiliary/scanner/ssh/ssh_enumusers"
-                    }
-                  ]
-                },
-                "CVE-2016-10012": {
-                  "cvssv2": 7.2,
-                  "cvssv3": 7.8
-                },
-                "CVE-2019-6111": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/46193",
-                      "id": 46193,
-                      "name": "SCP Client - Multiple Vulnerabilities (SSHtranger Things)"
-                    }
-                  ],
-                  "cvssv3": 5.9,
-                  "cvssv2": 5.8
-                },
-                "CVE-2020-14145": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.9
-                },
-                "CVE-2016-3115": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/39569",
-                      "id": 39569,
-                      "name": "OpenSSH 7.2p1 - (Authenticated) xauth Command Injection"
-                    }
-                  ],
-                  "cvssv3": 6.4,
-                  "cvssv2": 5.5
-                },
-                "CVE-2016-10009": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40963",
-                      "id": 40963,
-                      "name": "OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading"
-                    }
-                  ],
-                  "cvssv3": 7.3,
-                  "cvssv2": 7.5
-                },
-                "CVE-2016-1907": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 5.3
-                },
-                "CVE-2016-6515": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40888",
-                      "id": 40888,
-                      "name": "OpenSSH 7.2 - Denial of Service"
-                    }
-                  ],
-                  "cvssv3": 7.5,
-                  "cvssv2": 7.8
-                },
-                "CVE-2016-0778": {
-                  "cvssv2": 4.6,
-                  "cvssv3": 8.1
-                },
-                "CVE-2019-6110": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/46193",
-                      "id": 46193,
-                      "name": "SCP Client - Multiple Vulnerabilities (SSHtranger Things)"
-                    }
-                  ],
-                  "cvssv3": 6.8,
-                  "cvssv2": 4.0
-                },
-                "CVE-2018-15919": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 5.3
-                },
-                "CVE-2016-10011": {
-                  "cvssv2": 2.1,
-                  "cvssv3": 5.5
-                },
-                "CVE-2017-15906": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 5.3
-                },
-                "CVE-2007-2768": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-6109": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.8
-                },
-                "CVE-2008-3844": {
-                  "cvssv2": 9.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2021-36368": {
-                  "cvssv2": 2.6,
-                  "cvssv3": 3.7
-                },
-                "CVE-2015-8325": {
-                  "cvssv2": 7.2,
-                  "cvssv3": 7.8
-                },
-                "CVE-2016-0777": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2020-15778": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 7.8
-                },
-                "CVE-2016-20012": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.3
-                },
-                "CVE-2016-8858": {
-                  "cvssv2": 7.8,
-                  "cvssv3": 7.5
-                },
-                "CVE-2016-10010": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40962",
-                      "id": 40962,
-                      "name": "OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation"
-                    }
-                  ],
-                  "cvssv3": 7.0,
-                  "cvssv2": 6.9
-                },
-                "CVE-2016-6210": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40113",
-                      "id": 40113,
-                      "name": "OpenSSHd 7.2p2 - Username Enumeration"
-                    },
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40136",
-                      "id": 40136,
-                      "name": "OpenSSH 7.2p2 - Username Enumeration"
-                    }
-                  ],
-                  "cvssv3": 5.9,
-                  "cvssv2": 4.3,
-                  "metasploit": [
-                    {
-                      "name": "auxiliary/scanner/ssh/ssh_enumusers"
-                    }
-                  ]
-                },
-                "CVE-2018-20685": {
-                  "cvssv2": 2.6,
-                  "cvssv3": 5.3
-                },
-                "CVE-2021-41617": {
-                  "cvssv2": 4.4,
-                  "cvssv3": 7.0
-                },
-                "CVE-2016-1908": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2016-10708": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                }
-              },
-              "total": 28,
-              "info": "scan"
-            },
-            "version": "7.1"
-          }
-        ]
-      },
-      "3306/tcp": {
-        "services": [
-          {
-            "name": "mysql",
-            "product": "mysql",
-            "vupdate": "*",
-            "vulnerabilities": {
-              "cves": {
-                "CVE-2015-2568": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0640": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 6.1
-                },
-                "CVE-2013-1555": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1566": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2834": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2014-2435": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3147": {
-                  "cvssv2": 6.4,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4858": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14576": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2016-0666": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2015-2639": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-1971": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.9
-                },
-                "CVE-2012-5612": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/23076",
-                      "id": 23076,
-                      "name": "MySQL (Linux) - Heap Overrun (PoC)"
-                    }
-                  ],
-                  "cvssv3": "-",
-                  "cvssv2": 6.5
-                },
-                "CVE-2013-1567": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2815": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-1705": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14839": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4819": {
-                  "cvssv2": 7.2,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2767": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 3.1
-                },
-                "CVE-2017-3317": {
-                  "cvssv2": 1.5,
-                  "cvssv3": 4.0
-                },
-                "CVE-2016-0505": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0433": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6489": {
-                  "cvssv2": 5.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2830": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-5060": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-1703": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-1967": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2012-0484": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0115": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14866": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-0498": {
-                  "cvssv2": 1.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-0368": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3802": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4890": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-5881": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14614": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-2818": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2803": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-3794": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3285": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0120": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5437": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2021-22570": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2016-8283": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2020-14891": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0649": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 5.5
-                },
-                "CVE-2015-3152": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.9
-                },
-                "CVE-2012-0114": {
-                  "cvssv2": 3.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3796": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14651": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2013-3807": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-0384": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3812": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14619": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-2376": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5634": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-10311": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-3440": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 7.7
-                },
-                "CVE-2012-1756": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3798": {
-                  "cvssv2": 5.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2812": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2785": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3461": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3312": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 6.7
-                },
-                "CVE-2020-14860": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 2.7
-                },
-                "CVE-2020-14861": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-5860": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-1735": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0608": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0118": {
-                  "cvssv2": 4.9,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0611": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-9843": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2015-4866": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1861": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-2102": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5612": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2746": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-3839": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-2643": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-10167": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2012-5614": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-8286": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 3.1
-                },
-                "CVE-2017-3465": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2016-0657": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2018-3071": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-3795": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0662": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2016-0650": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 5.5
-                },
-                "CVE-2015-2611": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5631": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2495": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-5440": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-3805": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0496": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14631": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3279": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2780": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14829": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3070": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2015-2641": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-15358": {
-                  "cvssv2": 2.1,
-                  "cvssv3": 5.5
-                },
-                "CVE-2013-0383": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2752": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0546": {
-                  "cvssv2": 7.2,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0485": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6500": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-3588": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 5.9
-                },
-                "CVE-2015-2571": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3081": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 5.0
-                },
-                "CVE-2015-4767": {
-                  "cvssv2": 1.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3133": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2018-3061": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2014-6495": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0441": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5441": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3212": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2022-21444": {
-                  "cvssv2": 2.1,
-                  "cvssv3": 4.4
-                },
-                "CVE-2015-4757": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2741": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.3
-                },
-                "CVE-2017-3646": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-2567": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6555": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14568": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0642": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 4.7
-                },
-                "CVE-2020-14893": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3329": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2020-14591": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-5894": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0382": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3173": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-4214": {
-                  "cvssv2": 3.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3251": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3280": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2014-2430": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0506": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-7317": {
-                  "cvssv2": 2.6,
-                  "cvssv3": 5.3
-                },
-                "CVE-2012-0574": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-4233": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0598": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3810": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4864": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3809": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3645": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0116": {
-                  "cvssv2": 4.9,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3286": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2020-14654": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0652": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2016-3495": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2757": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-2573": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4830": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0437": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-2375": {
-                  "cvssv2": 6.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2022-21417": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4836": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3243": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 4.4
-                },
-                "CVE-2018-3067": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3320": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 2.4
-                },
-                "CVE-2015-0385": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3305": {
-                  "cvssv2": 6.3,
-                  "cvssv3": 5.3
-                },
-                "CVE-2017-3459": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4800": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3319": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 3.1
-                },
-                "CVE-2014-4207": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2802": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2801": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-10378": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2020-14828": {
-                  "cvssv2": 6.5,
-                  "cvssv3": 7.2
-                },
-                "CVE-2020-14760": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2016-9841": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2017-3238": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2018-2819": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2826": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-3615": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.3
-                },
-                "CVE-2014-4287": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0667": {
-                  "cvssv2": 2.8,
-                  "cvssv3": 4.4
-                },
-                "CVE-2012-0489": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4833": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1492": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-0389": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-2122": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/19092",
-                      "id": 19092,
-                      "name": "MySQL - Authentication Bypass"
-                    }
-                  ],
-                  "cvssv3": "-",
-                  "cvssv2": 5.1,
-                  "metasploit": [
-                    {
-                      "name": "auxiliary/scanner/mysql/mysql_authbypass_hashdump"
-                    }
-                  ]
-                },
-                "CVE-2014-6520": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3073": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2017-10284": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-10320": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2014-0401": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0500": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3651": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2019-2808": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14656": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0616": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-3452": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 3.7
-                },
-                "CVE-2022-21427": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2879": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14846": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2014-2442": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4752": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0001": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3783": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3145": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2539": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-10379": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2020-14868": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0119": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0505": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-4274": {
-                  "cvssv2": 4.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3804": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3167": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0651": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2017-3639": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2530": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0491": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14597": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2796": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14553": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2015-4756": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4870": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/39867",
-                      "id": 39867,
-                      "name": "MySQL 5.5.45 - procedure analyse Function Denial of Service"
-                    }
-                  ],
-                  "cvssv3": "-",
-                  "cvssv2": 4.0
-                },
-                "CVE-2014-6494": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0490": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0420": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3144": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1526": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-5096": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3636": {
-                  "cvssv2": 4.6,
-                  "cvssv3": 5.3
-                },
-                "CVE-2015-4766": {
-                  "cvssv2": 1.9,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0595": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0597": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-2749": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3166": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-8290": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 4.4
-                },
-                "CVE-2017-3648": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.4
-                },
-                "CVE-2020-14624": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14559": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2014-0430": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6484": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5444": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 3.7
-                },
-                "CVE-2014-6463": {
-                  "cvssv2": 3.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2761": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.9
-                },
-                "CVE-2017-3653": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 3.1
-                },
-                "CVE-2019-2795": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2016-5624": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2015-4862": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3600": {
-                  "cvssv2": 6.0,
-                  "cvssv3": 6.6
-                },
-                "CVE-2018-2640": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2017-3309": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 7.7
-                },
-                "CVE-2018-2668": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2017-10268": {
-                  "cvssv2": 1.5,
-                  "cvssv3": 4.1
-                },
-                "CVE-2016-0647": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 5.5
-                },
-                "CVE-2013-1512": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3075": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3244": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2012-1697": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14809": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3203": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2014-4243": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0508": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14837": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-0439": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3641": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-5626": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2014-2450": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2773": {
-                  "cvssv2": 1.9,
-                  "cvssv3": 4.1
-                },
-                "CVE-2017-3256": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-5767": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5436": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4904": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0502": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2494": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0596": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6491": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2021-2356": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 5.9
-                },
-                "CVE-2020-14830": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2012-1696": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14702": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14878": {
-                  "cvssv2": 7.7,
-                  "cvssv3": 8.0
-                },
-                "CVE-2016-0503": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0405": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2665": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2020-14567": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-3806": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-5882": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14814": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0553": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3163": {
-                  "cvssv2": 9.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14869": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-2755": {
-                  "cvssv2": 3.7,
-                  "cvssv3": 7.7
-                },
-                "CVE-2019-2536": {
-                  "cvssv2": 1.2,
-                  "cvssv3": 5.0
-                },
-                "CVE-2016-3521": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2012-1689": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0654": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2016-6663": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40678",
-                      "id": 40678,
-                      "name": "MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'mysql' System User Privilege Escalation / Race Condition"
-                    }
-                  ],
-                  "cvssv3": 7.0,
-                  "cvssv2": 4.4
-                },
-                "CVE-2014-6505": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3529": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.3
-                },
-                "CVE-2017-3458": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0644": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 5.5
-                },
-                "CVE-2018-2759": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-3424": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-0423": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3793": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-2582": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3197": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6507": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6559": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2743": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.3
-                },
-                "CVE-2013-1552": {
-                  "cvssv2": 6.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6496": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14586": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-4414": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-1690": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-10165": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4816": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3082": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 2.7
-                },
-                "CVE-2014-6551": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14643": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2012-0488": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14852": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2533": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2811": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-5442": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0646": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 5.5
-                },
-                "CVE-2015-2661": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-2419": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0374": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2798": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3650": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 3.7
-                },
-                "CVE-2011-2262": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0402": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3186": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3078": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-10384": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2014-6530": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-3492": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2017-10365": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 3.8
-                },
-                "CVE-2015-0511": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14697": {
-                  "cvssv2": 6.5,
-                  "cvssv3": 7.2
-                },
-                "CVE-2015-4807": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-3518": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2800": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 7.1
-                },
-                "CVE-2019-2747": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3195": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2018-2813": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2013-2389": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3467": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 3.7
-                },
-                "CVE-2013-1544": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3066": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 3.3
-                },
-                "CVE-2012-3180": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-2395": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2535": {
-                  "cvssv2": 1.9,
-                  "cvssv3": 4.1
-                },
-                "CVE-2013-1521": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-1702": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-2620": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-5807": {
-                  "cvssv2": 4.9,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1531": {
-                  "cvssv2": 6.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3462": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-1757": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0578": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14678": {
-                  "cvssv2": 6.5,
-                  "cvssv3": 7.2
-                },
-                "CVE-2014-4260": {
-                  "cvssv2": 5.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4910": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3453": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2018-3282": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2018-3063": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4737": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3318": {
-                  "cvssv2": 1.0,
-                  "cvssv3": 4.0
-                },
-                "CVE-2016-5443": {
-                  "cvssv2": 1.2,
-                  "cvssv3": 4.7
-                },
-                "CVE-2019-2513": {
-                  "cvssv2": 1.2,
-                  "cvssv3": 2.5
-                },
-                "CVE-2017-3313": {
-                  "cvssv2": 1.5,
-                  "cvssv3": 4.7
-                },
-                "CVE-2013-1502": {
-                  "cvssv2": 1.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0540": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5628": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4792": {
-                  "cvssv2": 1.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2822": {
-                  "cvssv2": 5.1,
-                  "cvssv3": 7.5
-                },
-                "CVE-2012-0494": {
-                  "cvssv2": 1.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3652": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 4.2
-                },
-                "CVE-2017-3265": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 5.6
-                },
-                "CVE-2017-3464": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2019-2731": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.4
-                },
-                "CVE-2018-3174": {
-                  "cvssv2": 1.9,
-                  "cvssv3": 5.3
-                },
-                "CVE-2016-0504": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3084": {
-                  "cvssv2": 1.9,
-                  "cvssv3": 2.8
-                },
-                "CVE-2012-0492": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3468": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 3.1
-                },
-                "CVE-2012-0493": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-7440": {
-                  "cvssv2": 2.1,
-                  "cvssv3": 5.5
-                },
-                "CVE-2014-0412": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3160": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-5770": {
-                  "cvssv2": 2.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-6664": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40679",
-                      "id": 40679,
-                      "name": "MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'root' System User Privilege Escalation"
-                    }
-                  ],
-                  "cvssv3": 7.0,
-                  "cvssv2": 6.9
-                },
-                "CVE-2017-3644": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-5584": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 4.4
-                },
-                "CVE-2014-4238": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1506": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0607": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0882": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-2566": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3177": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3137": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2784": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4791": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-2434": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14680": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2015-4730": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2021-2226": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-8289": {
-                  "cvssv2": 3.3,
-                  "cvssv3": 4.7
-                },
-                "CVE-2014-2451": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3808": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4826": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0393": {
-                  "cvssv2": 3.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3635": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.3
-                },
-                "CVE-2017-3640": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-3156": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-10296": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4772": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-2047": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.9
-                },
-                "CVE-2020-14873": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.4
-                },
-                "CVE-2015-4761": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0503": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2810": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2814": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 2.2
-                },
-                "CVE-2016-5632": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-0433": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3457": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14620": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3463": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0641": {
-                  "cvssv2": 4.9,
-                  "cvssv3": 5.1
-                },
-                "CVE-2018-2562": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 7.1
-                },
-                "CVE-2013-2392": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3460": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-0600": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0643": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 3.3
-                },
-                "CVE-2014-2444": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3452": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-2391": {
-                  "cvssv2": 3.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4879": {
-                  "cvssv2": 4.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3637": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.3
-                },
-                "CVE-2015-4861": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6568": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-3004": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2017-3291": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 6.3
-                },
-                "CVE-2015-4769": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6464": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-2438": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5629": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-2378": {
-                  "cvssv2": 6.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3149": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3074": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.3
-                },
-                "CVE-2013-1570": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0606": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2771": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 4.4
-                },
-                "CVE-2016-0653": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2016-0610": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0438": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0112": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-8287": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 4.5
-                },
-                "CVE-2018-3079": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3455": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.4
-                },
-                "CVE-2016-5635": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0487": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-2648": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-5627": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3150": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0501": {
-                  "cvssv2": 5.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-9840": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 8.8
-                },
-                "CVE-2015-4771": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0117": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-2484": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0594": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0656": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2014-0384": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-6469": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0386": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-2440": {
-                  "cvssv2": 5.1,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0499": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-4258": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0427": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1511": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0663": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 4.7
-                },
-                "CVE-2014-6564": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5625": {
-                  "cvssv2": 4.4,
-                  "cvssv3": 7.0
-                },
-                "CVE-2019-2755": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0572": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0507": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3080": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14623": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14845": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2016-3477": {
-                  "cvssv2": 4.1,
-                  "cvssv3": 8.1
-                },
-                "CVE-2014-6474": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0658": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2015-0391": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-0386": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-3801": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0432": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3182": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-3811": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0431": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1523": {
-                  "cvssv2": 4.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-3158": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-1734": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0381": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4815": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-0371": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-9842": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 8.8
-                },
-                "CVE-2016-6662": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/40360",
-                      "id": 40360,
-                      "name": "MySQL / MariaDB / PerconaDB 5.5.51/5.6.32/5.7.14 - Code Execution / Privilege Escalation"
-                    }
-                  ],
-                  "cvssv3": 9.8,
-                  "cvssv2": 10.0
-                },
-                "CVE-2016-0659": {
-                  "cvssv2": 3.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2015-4913": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-5793": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-0385": {
-                  "cvssv2": 6.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-4895": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-4240": {
-                  "cvssv2": 3.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-3471": {
-                  "cvssv2": 7.1,
-                  "cvssv3": 7.5
-                },
-                "CVE-2014-2436": {
-                  "cvssv2": 6.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-10313": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-5908": {
-                  "cvssv2": 2.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14870": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 4.9
-                },
-                "CVE-2019-2789": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 2.7
-                },
-                "CVE-2017-3257": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-2381": {
-                  "cvssv2": 3.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-2750": {
-                  "cvssv2": 10.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3058": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.3
-                },
-                "CVE-2014-6478": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-14663": {
-                  "cvssv2": 6.5,
-                  "cvssv3": 7.2
-                },
-                "CVE-2017-3456": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-0411": {
-                  "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2817": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2013-5786": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-2494": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-3170": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4802": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-1688": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3642": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2020-14575": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2017-3308": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 7.7
-                },
-                "CVE-2017-3638": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2015-4905": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2781": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2014-2431": {
-                  "cvssv2": 2.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0495": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-0735": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 5.9
-                },
-                "CVE-2016-0609": {
-                  "cvssv2": 1.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-3454": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.5
-                },
-                "CVE-2017-3643": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-1532": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-0648": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 5.5
-                },
-                "CVE-2017-3258": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 6.5
-                },
-                "CVE-2019-2502": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2013-0367": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2016-5633": {
-                  "cvssv2": 4.0,
-                  "cvssv3": 4.9
-                },
-                "CVE-2012-0113": {
-                  "cvssv2": 5.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-5891": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-2617": {
-                  "cvssv2": 6.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0075": {
-                  "cvssv2": 1.7,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-2622": {
-                  "cvssv2": 6.8,
-                  "cvssv3": 6.5
-                },
-                "CVE-2014-2432": {
-                  "cvssv2": 2.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2012-0486": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2015-0409": {
-                  "cvssv2": 4.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2019-2436": {
-                  "cvssv2": 5.5,
-                  "cvssv3": 5.5
-                }
-              },
-              "total": 556,
-              "info": "scan"
-            },
-            "version": "5.5.20"
-          }
-        ]
-      },
       "3000/tcp": {
         "services": [
           {
-            "name": "http",
             "product": "ruby",
-            "vupdate": "*",
             "vulnerabilities": {
+              "info": "scan",
+              "total": 38,
               "cves": {
+                "CVE-2017-14064": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2017-0898": {
+                  "cvssv2": 6.4,
+                  "cvssv3": 9.1
+                },
+                "CVE-2017-9228": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2018-16395": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2017-9224": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
                 "CVE-2013-0175": {
                   "cvssv2": 7.5,
                   "cvssv3": "-"
                 },
-                "CVE-2018-6914": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2017-9225": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2021-31810": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 5.8
-                },
-                "CVE-2017-9229": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2021-28965": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
+                "CVE-2013-1948": {
+                  "cvssv2": 10.0,
+                  "cvssv3": "-"
                 },
                 "CVE-2015-9096": {
                   "cvssv2": 4.3,
                   "cvssv3": 6.1
                 },
-                "CVE-2018-16396": {
+                "CVE-2017-9225": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2013-1911": {
                   "cvssv2": 6.8,
-                  "cvssv3": 8.1
+                  "cvssv3": "-"
                 },
                 "CVE-2018-8777": {
                   "cvssv2": 5.0,
                   "cvssv3": 7.5
                 },
-                "CVE-2017-17742": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 5.3
-                },
-                "CVE-2017-14064": {
+                "CVE-2013-5647": {
                   "cvssv2": 7.5,
-                  "cvssv3": 9.8
+                  "cvssv3": "-"
+                },
+                "CVE-2022-28739": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 7.5
+                },
+                "CVE-2018-16396": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 8.1
+                },
+                "CVE-2018-8780": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.1
                 },
                 "CVE-2017-9227": {
                   "cvssv2": 7.5,
@@ -2557,9 +78,80 @@
                   "cvssv2": 4.4,
                   "cvssv3": 7.0
                 },
-                "CVE-2013-5647": {
-                  "cvssv2": 7.5,
+                "CVE-2013-4136": {
+                  "cvssv2": 4.4,
                   "cvssv3": "-"
+                },
+                "CVE-2021-41819": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2017-14033": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2017-9226": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2018-8778": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2021-28965": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2013-2119": {
+                  "cvssv2": 4.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-9229": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2021-31810": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 5.8
+                },
+                "CVE-2017-10784": {
+                  "cvssv2": 9.3,
+                  "cvssv3": 8.8
+                },
+                "CVE-2017-17405": {
+                  "cvssv3": 8.8,
+                  "cvssv2": 9.3,
+                  "exploitdb": [
+                    {
+                      "name": "Ruby < 2.2.8 / < 2.3.5 / < 2.4.2 / < 2.5.0-preview1 - 'NET::Ftp' Command Injection",
+                      "url": "https://www.exploit-db.com/exploits/43381",
+                      "id": 43381
+                    }
+                  ]
+                },
+                "CVE-2018-6914": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2017-17742": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 5.3
+                },
+                "CVE-2013-4413": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-17790": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2013-1933": {
+                  "cvssv2": 9.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2021-28966": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
                 },
                 "CVE-2013-0233": {
                   "cvssv3": "-",
@@ -2570,167 +162,44 @@
                     }
                   ]
                 },
-                "CVE-2018-16395": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2022-28739": {
-                  "cvssv2": 4.3,
-                  "cvssv3": 7.5
-                },
-                "CVE-2013-1948": {
-                  "cvssv2": 10.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2020-25613": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2018-8778": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2013-4136": {
-                  "cvssv2": 4.4,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-2119": {
-                  "cvssv2": 4.6,
-                  "cvssv3": "-"
-                },
-                "CVE-2018-8780": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.1
-                },
-                "CVE-2013-1933": {
+                "CVE-2013-1947": {
                   "cvssv2": 9.3,
                   "cvssv3": "-"
-                },
-                "CVE-2021-41819": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2017-10784": {
-                  "cvssv2": 9.3,
-                  "cvssv3": 8.8
-                },
-                "CVE-2017-9228": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2017-17405": {
-                  "exploitdb": [
-                    {
-                      "url": "https://www.exploit-db.com/exploits/43381",
-                      "id": 43381,
-                      "name": "Ruby < 2.2.8 / < 2.3.5 / < 2.4.2 / < 2.5.0-preview1 - 'NET::Ftp' Command Injection"
-                    }
-                  ],
-                  "cvssv3": 8.8,
-                  "cvssv2": 9.3
-                },
-                "CVE-2017-0898": {
-                  "cvssv2": 6.4,
-                  "cvssv3": 9.1
-                },
-                "CVE-2017-14033": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2021-28966": {
-                  "cvssv2": 5.0,
-                  "cvssv3": 7.5
-                },
-                "CVE-2017-9224": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
-                },
-                "CVE-2017-17790": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
                 },
                 "CVE-2018-8779": {
                   "cvssv2": 5.0,
                   "cvssv3": 7.5
                 },
-                "CVE-2013-1911": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-1947": {
-                  "cvssv2": 9.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-4413": {
+                "CVE-2020-25613": {
                   "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2017-9226": {
-                  "cvssv2": 7.5,
-                  "cvssv3": 9.8
+                  "cvssv3": 7.5
                 }
-              },
-              "total": 38,
-              "info": "scan"
+              }
             },
-            "version": "2.3.3"
+            "version": "2.3.3",
+            "name": "http",
+            "vupdate": "*"
           }
         ]
       },
       "8022/tcp": {
         "services": [
           {
-            "name": "http",
             "product": "tomcat",
-            "vupdate": "*",
             "vulnerabilities": {
+              "info": "scan",
+              "total": 20,
               "cves": {
-                "CVE-2001-0590": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-6357": {
-                  "cvssv2": 6.8,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-2185": {
+                "CVE-2002-0493": {
                   "cvssv2": 7.5,
-                  "cvssv3": "-"
-                },
-                "CVE-2000-1210": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2009-2696": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2014-0075": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2008-0128": {
-                  "cvssv2": 5.0,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-4444": {
-                  "cvssv2": 6.8,
                   "cvssv3": "-"
                 },
                 "CVE-2007-2449": {
                   "cvssv2": 4.3,
                   "cvssv3": "-"
                 },
-                "CVE-2020-8022": {
-                  "cvssv2": 7.2,
-                  "cvssv3": 7.8
-                },
-                "CVE-2014-0119": {
-                  "cvssv2": 4.3,
-                  "cvssv3": "-"
-                },
-                "CVE-2013-4286": {
-                  "cvssv2": 5.8,
+                "CVE-2013-6357": {
+                  "cvssv2": 6.8,
                   "cvssv3": "-"
                 },
                 "CVE-2007-1358": {
@@ -2741,39 +210,2570 @@
                   "cvssv2": 4.3,
                   "cvssv3": "-"
                 },
+                "CVE-2014-0099": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
                 "CVE-2013-4590": {
                   "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2009-2696": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-4444": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0075": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-4286": {
+                  "cvssv2": 5.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2001-0590": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0119": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0096": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-8022": {
+                  "cvssv2": 7.2,
+                  "cvssv3": 7.8
+                },
+                "CVE-2013-4322": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-2185": {
+                  "cvssv2": 7.5,
                   "cvssv3": "-"
                 },
                 "CVE-2005-4838": {
                   "cvssv2": 4.3,
                   "cvssv3": "-"
                 },
-                "CVE-2014-0099": {
+                "CVE-2008-0128": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2000-1210": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                }
+              }
+            },
+            "version": "1.1",
+            "name": "http",
+            "vupdate": "*"
+          }
+        ]
+      },
+      "22/tcp": {
+        "services": [
+          {
+            "product": "openssh",
+            "vulnerabilities": {
+              "info": "scan",
+              "total": 28,
+              "cves": {
+                "CVE-2016-1907": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 5.3
+                },
+                "CVE-2016-10708": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2020-15778": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 7.8
+                },
+                "CVE-2016-1908": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2021-41617": {
+                  "cvssv2": 4.4,
+                  "cvssv3": 7.0
+                },
+                "CVE-2019-6111": {
+                  "cvssv3": 5.9,
+                  "cvssv2": 5.8,
+                  "exploitdb": [
+                    {
+                      "name": "SCP Client - Multiple Vulnerabilities (SSHtranger Things)",
+                      "url": "https://www.exploit-db.com/exploits/46193",
+                      "id": 46193
+                    }
+                  ]
+                },
+                "CVE-2016-10011": {
+                  "cvssv2": 2.1,
+                  "cvssv3": 5.5
+                },
+                "CVE-2019-6109": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.8
+                },
+                "CVE-2018-15919": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 5.3
+                },
+                "CVE-2016-6210": {
+                  "exploitdb": [
+                    {
+                      "name": "OpenSSHd 7.2p2 - Username Enumeration",
+                      "url": "https://www.exploit-db.com/exploits/40113",
+                      "id": 40113
+                    },
+                    {
+                      "name": "OpenSSH 7.2p2 - Username Enumeration",
+                      "url": "https://www.exploit-db.com/exploits/40136",
+                      "id": 40136
+                    }
+                  ],
+                  "cvssv3": 5.9,
+                  "cvssv2": 4.3,
+                  "metasploit": [
+                    {
+                      "name": "auxiliary/scanner/ssh/ssh_enumusers"
+                    }
+                  ]
+                },
+                "CVE-2020-14145": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.9
+                },
+                "CVE-2016-10012": {
+                  "cvssv2": 7.2,
+                  "cvssv3": 7.8
+                },
+                "CVE-2016-6515": {
+                  "cvssv3": 7.5,
+                  "cvssv2": 7.8,
+                  "exploitdb": [
+                    {
+                      "name": "OpenSSH 7.2 - Denial of Service",
+                      "url": "https://www.exploit-db.com/exploits/40888",
+                      "id": 40888
+                    }
+                  ]
+                },
+                "CVE-2021-36368": {
+                  "cvssv2": 2.6,
+                  "cvssv3": 3.7
+                },
+                "CVE-2018-20685": {
+                  "cvssv2": 2.6,
+                  "cvssv3": 5.3
+                },
+                "CVE-2017-15906": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 5.3
+                },
+                "CVE-2019-6110": {
+                  "cvssv3": 6.8,
+                  "cvssv2": 4.0,
+                  "exploitdb": [
+                    {
+                      "name": "SCP Client - Multiple Vulnerabilities (SSHtranger Things)",
+                      "url": "https://www.exploit-db.com/exploits/46193",
+                      "id": 46193
+                    }
+                  ]
+                },
+                "CVE-2007-2768": {
                   "cvssv2": 4.3,
                   "cvssv3": "-"
                 },
-                "CVE-2013-4322": {
+                "CVE-2016-8858": {
+                  "cvssv2": 7.8,
+                  "cvssv3": 7.5
+                },
+                "CVE-2016-0777": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-20012": {
                   "cvssv2": 4.3,
+                  "cvssv3": 5.3
+                },
+                "CVE-2016-0778": {
+                  "cvssv2": 4.6,
+                  "cvssv3": 8.1
+                },
+                "CVE-2016-10010": {
+                  "cvssv3": 7.0,
+                  "cvssv2": 6.9,
+                  "exploitdb": [
+                    {
+                      "name": "OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation",
+                      "url": "https://www.exploit-db.com/exploits/40962",
+                      "id": 40962
+                    }
+                  ]
+                },
+                "CVE-2008-3844": {
+                  "cvssv2": 9.3,
                   "cvssv3": "-"
                 },
-                "CVE-2002-0493": {
+                "CVE-2016-3115": {
+                  "cvssv3": 6.4,
+                  "cvssv2": 5.5,
+                  "exploitdb": [
+                    {
+                      "name": "OpenSSH 7.2p1 - (Authenticated) xauth Command Injection",
+                      "url": "https://www.exploit-db.com/exploits/39569",
+                      "id": 39569
+                    }
+                  ]
+                },
+                "CVE-2015-8325": {
+                  "cvssv2": 7.2,
+                  "cvssv3": 7.8
+                },
+                "CVE-2018-15473": {
+                  "exploitdb": [
+                    {
+                      "name": "OpenSSH 2.3 < 7.7 - Username Enumeration (PoC)",
+                      "url": "https://www.exploit-db.com/exploits/45210",
+                      "id": 45210
+                    },
+                    {
+                      "name": "OpenSSH 2.3 < 7.7 - Username Enumeration",
+                      "url": "https://www.exploit-db.com/exploits/45233",
+                      "id": 45233
+                    },
+                    {
+                      "name": "OpenSSH < 7.7 - User Enumeration (2)",
+                      "url": "https://www.exploit-db.com/exploits/45939",
+                      "id": 45939
+                    }
+                  ],
+                  "cvssv3": 5.3,
+                  "cvssv2": 5.0,
+                  "metasploit": [
+                    {
+                      "name": "auxiliary/scanner/ssh/ssh_enumusers"
+                    }
+                  ]
+                },
+                "CVE-2016-10009": {
+                  "cvssv3": 7.3,
+                  "cvssv2": 7.5,
+                  "exploitdb": [
+                    {
+                      "name": "OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading",
+                      "url": "https://www.exploit-db.com/exploits/40963",
+                      "id": 40963
+                    }
+                  ]
+                }
+              }
+            },
+            "version": "7.1",
+            "name": "ssh",
+            "vupdate": "*"
+          }
+        ]
+      },
+      "3306/tcp": {
+        "services": [
+          {
+            "product": "mysql",
+            "vulnerabilities": {
+              "info": "scan",
+              "total": 556,
+              "cves": {
+                "CVE-2020-14873": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.4
+                },
+                "CVE-2013-0367": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2813": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2017-10313": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14860": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 2.7
+                },
+                "CVE-2016-0609": {
+                  "cvssv2": 1.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6464": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5436": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-2617": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4890": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2495": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2785": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2021-22570": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2014-2430": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0659": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2017-10296": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-3058": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2014-4260": {
+                  "cvssv2": 5.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0439": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3457": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-4757": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0075": {
+                  "cvssv2": 1.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5635": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-0503": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-2047": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.9
+                },
+                "CVE-2013-1492": {
                   "cvssv2": 7.5,
                   "cvssv3": "-"
                 },
-                "CVE-2014-0096": {
+                "CVE-2014-6469": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0412": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2803": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-3794": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3251": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-8283": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2016-8286": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 3.1
+                },
+                "CVE-2012-1705": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6489": {
+                  "cvssv2": 5.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2743": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.3
+                },
+                "CVE-2016-0649": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 5.5
+                },
+                "CVE-2019-2812": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3600": {
+                  "cvssv2": 6.0,
+                  "cvssv3": 6.6
+                },
+                "CVE-2018-3073": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3463": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-0374": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0648": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 5.5
+                },
+                "CVE-2017-10268": {
+                  "cvssv2": 1.5,
+                  "cvssv3": 4.1
+                },
+                "CVE-2013-0371": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5625": {
+                  "cvssv2": 4.4,
+                  "cvssv3": 7.0
+                },
+                "CVE-2019-2789": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 2.7
+                },
+                "CVE-2013-5786": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2834": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2019-2530": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14837": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-4862": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0607": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0118": {
+                  "cvssv2": 4.9,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2419": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2668": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2020-14631": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2533": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3453": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2020-14654": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-4287": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-5612": {
+                  "cvssv3": "-",
+                  "cvssv2": 6.5,
+                  "exploitdb": [
+                    {
+                      "name": "MySQL (Linux) - Heap Overrun (PoC)",
+                      "url": "https://www.exploit-db.com/exploits/23076",
+                      "id": 23076
+                    }
+                  ]
+                },
+                "CVE-2018-2767": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 3.1
+                },
+                "CVE-2017-3643": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-2395": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3467": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 3.7
+                },
+                "CVE-2017-3652": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 4.2
+                },
+                "CVE-2016-0596": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0608": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2436": {
+                  "cvssv2": 6.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14828": {
+                  "cvssv2": 6.5,
+                  "cvssv3": 7.2
+                },
+                "CVE-2019-2535": {
+                  "cvssv2": 1.9,
+                  "cvssv3": 4.1
+                },
+                "CVE-2015-4730": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14846": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2014-2442": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-4238": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3067": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-2444": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2434": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3459": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3642": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-6474": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2773": {
+                  "cvssv2": 1.9,
+                  "cvssv3": 4.1
+                },
+                "CVE-2012-1756": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2815": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2811": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3244": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2019-2539": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-4274": {
+                  "cvssv2": 4.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4756": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-9840": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 8.8
+                },
+                "CVE-2020-14870": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-1702": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-4258": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6500": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0666": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2015-0411": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14553": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2015-4752": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2502": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-3149": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-5060": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5584": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 4.4
+                },
+                "CVE-2012-0119": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-4240": {
+                  "cvssv2": 3.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-5881": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14869": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-5767": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0420": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5631": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-5908": {
+                  "cvssv2": 2.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-3004": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2012-0492": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-2381": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0402": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6491": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0594": {
                   "cvssv2": 4.3,
                   "cvssv3": "-"
+                },
+                "CVE-2015-4791": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0432": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6564": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4826": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2796": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3651": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2012-0112": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2781": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14597": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-4836": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14624": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-6496": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1567": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-9843": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2013-3808": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3312": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 6.7
+                },
+                "CVE-2018-2771": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 4.4
+                },
+                "CVE-2017-3644": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-0485": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5441": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-4207": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3468": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 3.1
+                },
+                "CVE-2013-1531": {
+                  "cvssv2": 6.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0616": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-2750": {
+                  "cvssv2": 10.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2665": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2015-2567": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0381": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4864": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0433": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0120": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6484": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6494": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4879": {
+                  "cvssv2": 4.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5632": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2802": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-3063": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-10284": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3319": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 3.1
+                },
+                "CVE-2020-14591": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3454": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-0113": {
+                  "cvssv2": 5.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4866": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-1690": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3452": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2019-2826": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3265": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 5.6
+                },
+                "CVE-2018-0735": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.9
+                },
+                "CVE-2016-5612": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3653": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 3.1
+                },
+                "CVE-2015-0498": {
+                  "cvssv2": 1.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0611": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3588": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 5.9
+                },
+                "CVE-2014-4243": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-0385": {
+                  "cvssv2": 6.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0386": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-0384": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6551": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0553": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-5614": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6507": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0001": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0646": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-3180": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-3150": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3182": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-6663": {
+                  "cvssv3": 7.0,
+                  "cvssv2": 4.4,
+                  "exploitdb": [
+                    {
+                      "name": "MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'mysql' System User Privilege Escalation / Race Condition",
+                      "url": "https://www.exploit-db.com/exploits/40678",
+                      "id": 40678
+                    }
+                  ]
+                },
+                "CVE-2016-3521": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2020-14830": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2013-1512": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14866": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14878": {
+                  "cvssv2": 7.7,
+                  "cvssv3": 8.0
+                },
+                "CVE-2013-5894": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3070": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2014-0401": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6559": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2759": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-3163": {
+                  "cvssv2": 9.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14893": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-3795": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3455": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.4
+                },
+                "CVE-2013-3805": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3145": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2013-2376": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3518": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-3495": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-0500": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0597": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3492": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3460": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3305": {
+                  "cvssv2": 6.3,
+                  "cvssv3": 5.3
+                },
+                "CVE-2020-14656": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-0427": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14829": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3648": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.4
+                },
+                "CVE-2012-1757": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3318": {
+                  "cvssv2": 1.0,
+                  "cvssv3": 4.0
+                },
+                "CVE-2015-0391": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3285": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-5437": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14809": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-3796": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-3806": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2484": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3424": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-10167": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-10365": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 3.8
+                },
+                "CVE-2014-2494": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4771": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3329": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2016-5626": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2015-4830": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0437": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0647": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 5.5
+                },
+                "CVE-2015-4807": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0662": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2018-3074": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.3
+                },
+                "CVE-2019-2822": {
+                  "cvssv2": 5.1,
+                  "cvssv3": 7.5
+                },
+                "CVE-2018-3186": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3641": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-0656": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2020-14586": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-4761": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14576": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2018-3195": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2017-3456": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-0508": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4819": {
+                  "cvssv2": 7.2,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14619": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2012-0578": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0598": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3645": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-5634": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2784": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-2378": {
+                  "cvssv2": 6.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2536": {
+                  "cvssv2": 1.2,
+                  "cvssv3": 5.0
+                },
+                "CVE-2013-5860": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4772": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2513": {
+                  "cvssv2": 1.2,
+                  "cvssv3": 2.5
+                },
+                "CVE-2013-3810": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-3839": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4913": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3440": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 7.7
+                },
+                "CVE-2014-6495": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1521": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0643": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 3.3
+                },
+                "CVE-2015-4766": {
+                  "cvssv2": 1.9,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3238": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2020-14839": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-1734": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-1735": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-0386": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2022-21417": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-5444": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 3.7
+                },
+                "CVE-2015-4858": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-2643": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0667": {
+                  "cvssv2": 2.8,
+                  "cvssv3": 4.4
+                },
+                "CVE-2016-3452": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 3.7
+                },
+                "CVE-2017-3291": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 6.3
+                },
+                "CVE-2017-3308": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 7.7
+                },
+                "CVE-2016-0644": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 5.5
+                },
+                "CVE-2015-2611": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3458": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14575": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-10320": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-3071": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-2568": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3258": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2018-3174": {
+                  "cvssv2": 1.9,
+                  "cvssv3": 5.3
+                },
+                "CVE-2012-0540": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0430": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0507": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2021-2226": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-10378": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2017-3465": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2015-4861": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-1696": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-9841": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 9.8
+                },
+                "CVE-2018-2562": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 7.1
+                },
+                "CVE-2015-0501": {
+                  "cvssv2": 5.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2755": {
+                  "cvssv2": 3.7,
+                  "cvssv3": 7.7
+                },
+                "CVE-2016-0642": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 4.7
+                },
+                "CVE-2019-2801": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-0499": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3313": {
+                  "cvssv2": 1.5,
+                  "cvssv3": 4.7
+                },
+                "CVE-2020-14620": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-0546": {
+                  "cvssv2": 7.2,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5633": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-1506": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0494": {
+                  "cvssv2": 1.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3256": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2018-3082": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 2.7
+                },
+                "CVE-2017-3461": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-6555": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0653": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-0495": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6520": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3529": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.3
+                },
+                "CVE-2013-5891": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5440": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-5443": {
+                  "cvssv2": 1.2,
+                  "cvssv3": 4.7
+                },
+                "CVE-2020-14663": {
+                  "cvssv2": 6.5,
+                  "cvssv3": 7.2
+                },
+                "CVE-2014-0431": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1502": {
+                  "cvssv2": 1.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3061": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3317": {
+                  "cvssv2": 1.5,
+                  "cvssv3": 4.0
+                },
+                "CVE-2015-4792": {
+                  "cvssv2": 1.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1552": {
+                  "cvssv2": 6.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4767": {
+                  "cvssv2": 1.7,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3084": {
+                  "cvssv2": 1.9,
+                  "cvssv3": 2.8
+                },
+                "CVE-2022-21444": {
+                  "cvssv2": 2.1,
+                  "cvssv3": 4.4
+                },
+                "CVE-2012-0488": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0385": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0493": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3650": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 3.7
+                },
+                "CVE-2019-2810": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3464": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2015-4910": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-7440": {
+                  "cvssv2": 2.1,
+                  "cvssv3": 5.5
+                },
+                "CVE-2016-0502": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-5770": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2757": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-3160": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6505": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2431": {
+                  "cvssv2": 2.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-7317": {
+                  "cvssv2": 2.6,
+                  "cvssv3": 5.3
+                },
+                "CVE-2018-3203": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-8287": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 4.5
+                },
+                "CVE-2015-0511": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3615": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.3
+                },
+                "CVE-2020-14559": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2013-1532": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6463": {
+                  "cvssv2": 3.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-2566": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-0368": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-8290": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 4.4
+                },
+                "CVE-2012-3197": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0114": {
+                  "cvssv2": 3.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-5793": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14697": {
+                  "cvssv2": 6.5,
+                  "cvssv3": 7.2
+                },
+                "CVE-2013-0383": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-2391": {
+                  "cvssv2": 3.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3137": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-0600": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-8289": {
+                  "cvssv2": 3.3,
+                  "cvssv3": 4.7
+                },
+                "CVE-2013-3802": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-3809": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2432": {
+                  "cvssv2": 2.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2752": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-10165": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-4214": {
+                  "cvssv2": 3.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2440": {
+                  "cvssv2": 5.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1523": {
+                  "cvssv2": 4.6,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0610": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14702": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-0441": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14852": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-1967": {
+                  "cvssv2": 5.0,
+                  "cvssv3": 7.5
+                },
+                "CVE-2019-2755": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3646": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2731": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.4
+                },
+                "CVE-2020-14814": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-1971": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.9
+                },
+                "CVE-2017-3639": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-3801": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0640": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 6.1
+                },
+                "CVE-2014-2451": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2640": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-5629": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-0650": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 5.5
+                },
+                "CVE-2013-1570": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2879": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2808": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-0663": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 4.7
+                },
+                "CVE-2015-4833": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2021-2356": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 5.9
+                },
+                "CVE-2017-10384": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2013-3783": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1526": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-5882": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-2375": {
+                  "cvssv2": 6.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14567": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-2641": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0487": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-2438": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3080": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3309": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 7.7
+                },
+                "CVE-2018-3279": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-0438": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2817": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-0652": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2015-4895": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0658": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-3156": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2800": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 7.1
+                },
+                "CVE-2017-10311": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14614": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-0389": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0503": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2798": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-3147": {
+                  "cvssv2": 6.4,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2814": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 2.2
+                },
+                "CVE-2015-2639": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-3167": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-4233": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-5624": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2012-3166": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4769": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6478": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0606": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14680": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2012-5096": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0504": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-10379": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2019-2747": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-3075": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-5628": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2022-21427": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3637": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.3
+                },
+                "CVE-2015-0409": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0651": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2013-3812": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0384": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3170": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2017-3243": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 4.4
+                },
+                "CVE-2020-14868": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-2761": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.9
+                },
+                "CVE-2020-14861": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-2648": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14568": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-3212": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-3477": {
+                  "cvssv2": 4.1,
+                  "cvssv3": 8.1
+                },
+                "CVE-2015-4737": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-2571": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-6568": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4870": {
+                  "cvssv3": "-",
+                  "cvssv2": 4.0,
+                  "exploitdb": [
+                    {
+                      "name": "MySQL 5.5.45 - procedure analyse Function Denial of Service",
+                      "url": "https://www.exploit-db.com/exploits/39867",
+                      "id": 39867
+                    }
+                  ]
+                },
+                "CVE-2013-3807": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3635": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.3
+                },
+                "CVE-2015-2573": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1861": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0506": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3257": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-9842": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 8.8
+                },
+                "CVE-2012-3144": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-3152": {
+                  "cvssv2": 4.3,
+                  "cvssv3": 5.9
+                },
+                "CVE-2016-6662": {
+                  "cvssv3": 9.8,
+                  "cvssv2": 10.0,
+                  "exploitdb": [
+                    {
+                      "name": "MySQL / MariaDB / PerconaDB 5.5.51/5.6.32/5.7.14 - Code Execution / Privilege Escalation",
+                      "url": "https://www.exploit-db.com/exploits/40360",
+                      "id": 40360
+                    }
+                  ]
+                },
+                "CVE-2013-2392": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3636": {
+                  "cvssv2": 4.6,
+                  "cvssv3": 5.3
+                },
+                "CVE-2020-14760": {
+                  "cvssv2": 7.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2019-2741": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.3
+                },
+                "CVE-2018-3079": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2013-3811": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0505": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3462": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14651": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2015-4800": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0654": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-0116": {
+                  "cvssv2": 4.9,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-3158": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-4414": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0574": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1566": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2819": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-6664": {
+                  "cvssv3": 7.0,
+                  "cvssv2": 6.9,
+                  "exploitdb": [
+                    {
+                      "name": "MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'root' System User Privilege Escalation",
+                      "url": "https://www.exploit-db.com/exploits/40679",
+                      "id": 40679
+                    }
+                  ]
+                },
+                "CVE-2017-3638": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-5627": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-1688": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4904": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0496": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0486": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0882": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3081": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 5.0
+                },
+                "CVE-2012-3177": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-3173": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14891": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-3066": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 3.3
+                },
+                "CVE-2013-3804": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-3471": {
+                  "cvssv2": 7.1,
+                  "cvssv3": 7.5
+                },
+                "CVE-2015-4905": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0433": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1555": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3282": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-2661": {
+                  "cvssv2": 2.1,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-3798": {
+                  "cvssv2": 5.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14623": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2014-2450": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0405": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2830": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2015-2620": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3640": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2780": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2018-2818": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-1703": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-2582": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-2102": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-2622": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 6.5
+                },
+                "CVE-2014-2435": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0489": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4816": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-2122": {
+                  "exploitdb": [
+                    {
+                      "name": "MySQL - Authentication Bypass",
+                      "url": "https://www.exploit-db.com/exploits/19092",
+                      "id": 19092
+                    }
+                  ],
+                  "cvssv3": "-",
+                  "cvssv2": 5.1,
+                  "metasploit": [
+                    {
+                      "name": "auxiliary/scanner/mysql/mysql_authbypass_hashdump"
+                    }
+                  ]
+                },
+                "CVE-2020-14678": {
+                  "cvssv2": 6.5,
+                  "cvssv3": 7.2
+                },
+                "CVE-2012-2749": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-3793": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4802": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1544": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-4815": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2015-0382": {
+                  "cvssv2": 4.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2013-1511": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2494": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-0491": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2011-2262": {
+                  "cvssv2": 5.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0115": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3280": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2019-2795": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2018-3133": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2016-5442": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2016-0641": {
+                  "cvssv2": 4.9,
+                  "cvssv3": 5.1
+                },
+                "CVE-2019-2436": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2014-6530": {
+                  "cvssv2": 6.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0505": {
+                  "cvssv2": 6.8,
+                  "cvssv3": "-"
+                },
+                "CVE-2014-0393": {
+                  "cvssv2": 3.3,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0484": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2017-3320": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 2.4
+                },
+                "CVE-2013-2389": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-0572": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-14845": {
+                  "cvssv2": 6.8,
+                  "cvssv3": 4.9
+                },
+                "CVE-2012-0117": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3078": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.9
+                },
+                "CVE-2020-14643": {
+                  "cvssv2": 5.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-1689": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2019-2746": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 6.5
+                },
+                "CVE-2015-0423": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2018-3286": {
+                  "cvssv2": 4.0,
+                  "cvssv3": 4.3
+                },
+                "CVE-2016-0657": {
+                  "cvssv2": 3.5,
+                  "cvssv3": 5.5
+                },
+                "CVE-2013-5807": {
+                  "cvssv2": 4.9,
+                  "cvssv3": "-"
+                },
+                "CVE-2012-1697": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2020-15358": {
+                  "cvssv2": 2.1,
+                  "cvssv3": 5.5
+                },
+                "CVE-2012-0490": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-0595": {
+                  "cvssv2": 4.0,
+                  "cvssv3": "-"
                 }
-              },
-              "total": 20,
-              "info": "scan"
+              }
             },
-            "version": "1.1"
+            "version": "5.5.20",
+            "name": "mysql",
+            "vupdate": "*"
           }
         ]
       }
-    },
-    "timestamp": "2023-02-09T11:09:57+00:00"
+    }
   }
 }

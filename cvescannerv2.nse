@@ -668,7 +668,7 @@ local function analysis (host, port, matches)
                         fmt(
                            "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
                            "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
-                        )
+                       )
                      )
                      stdnse.verbose(2, "Caching " .. product .. "@" ..
                         v .. "@" .. vu .. " vulnerabilities.")
@@ -678,9 +678,12 @@ local function analysis (host, port, matches)
                   log("[+] cves: cached")
                   local cache = registry.cache[fmt('%s|%s|%s', product, v, vu)]
                   if cache[1] > 0 then
+                     local port_proto = fmt('%s/%s', port.number, port.protocol)
+                     if registry.json_out[host.ip]['ports'][port_proto] == nil then
+                        registry.json_out[host.ip]['ports'][port_proto] = {['services'] = {}}
+                     end
                      table.insert(
-                        registry.json_out[host.ip]['ports'][
-                           fmt('%s/%s', port.number, port.protocol)]['services'],
+                        registry.json_out[host.ip]['ports'][port_proto]['services'],
                         {
                            name = port.service,
                            product = product,
@@ -698,12 +701,12 @@ local function analysis (host, port, matches)
                      v .. "@" .. vu .. " vulnerabilities.")
                   tmp_vulns = cache[2]
                end
-               if tmp_vulns ~= nil then
+               if tmp_vulns ~= nil and #tmp_vulns > 0 then
                   for _, value in pairs(tmp_vulns) do
                      table.insert(vulns, value)
                   end
+                  table.insert(vulns, "")
                end
-               table.insert(vulns, "")
             end
          end
       end
