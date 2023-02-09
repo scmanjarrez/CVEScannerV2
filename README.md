@@ -32,11 +32,15 @@ The current implementation take care of the following cases:
   - **NO** product _cpe_: HTTP detection is used.
 
 - HTTP detection:
-  - Used only if port matches HTTP/SSL.
+  - Used only if port matches HTTP/SSL/UPnP.
   - An HTTP GET request is sent for every combination of _path_
     and _extension_ in **http-paths-vulnerscom.json**, comparing
     the request headers/body with the regexes in
     **http-regex-vulnerscom.json**.
+  - Finally, the _home_ page html is analyzed in search for library paths.
+    The script tries to obtain the name and version from library location;
+    then does an HTTP GET to that path in order to inspect the code
+    of the library and analyze the starting comment looking for the version.
 
 > Nmap library shortport is used to detect if port matches HTTP/SSL.
 

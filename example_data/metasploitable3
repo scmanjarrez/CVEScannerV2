@@ -1,183 +1,119 @@
-# Nmap 7.92 scan initiated Tue Apr 26 12:27:36 2022 as: nmap -sV -n --script cvescannerv2 --script-args log=metasploitable3.log,json=metasploitable3.json -oN metasploitable3 192.168.45.129
-Nmap scan report for 192.168.45.129
-Host is up (0.00030s latency).
-Not shown: 980 closed tcp ports (conn-refused)
+# Nmap 7.93 scan initiated Thu Feb  9 12:09:57 2023 as: nmap -sV -n --script cvescannerv2 --script-args log=metasploitable3.log,json=metasploitable3.json -oN metasploitable3 192.168.45.130
+Nmap scan report for 192.168.45.130
+Host is up (0.00018s latency).
+Not shown: 978 closed tcp ports (conn-refused)
 PORT      STATE SERVICE              VERSION
 22/tcp    open  ssh                  OpenSSH 7.1 (protocol 2.0)
-| cvescannerv2: 
+| cvescannerv2:
 |   product: openssh
 |   version: 7.1
 |   vupdate: *
 |   cves: 28
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2008-3844       	9.3  	-    	No        	No        
-|   	CVE-2016-6515       	7.8  	7.5  	Yes       	No        
-|   	CVE-2016-8858       	7.8  	7.5  	No        	No        
-|   	CVE-2016-1908       	7.5  	9.8  	No        	No        
-|   	CVE-2016-10009      	7.5  	7.3  	Yes       	No        
-|   	CVE-2016-10012      	7.2  	7.8  	No        	No        
-|   	CVE-2015-8325       	7.2  	7.8  	No        	No        
-|   	CVE-2016-10010      	6.9  	7.0  	Yes       	No        
-|   	CVE-2020-15778      	6.8  	7.8  	No        	No        
-|_  	CVE-2019-6111       	5.8  	5.9  	Yes       	No        
+|   	CVE-2008-3844       	9.3  	-    	No        	No
+|   	CVE-2016-6515       	7.8  	7.5  	Yes       	No
+|   	CVE-2016-8858       	7.8  	7.5  	No        	No
+|   	CVE-2016-10009      	7.5  	7.3  	Yes       	No
+|   	CVE-2016-1908       	7.5  	9.8  	No        	No
+|   	CVE-2016-10012      	7.2  	7.8  	No        	No
+|   	CVE-2015-8325       	7.2  	7.8  	No        	No
+|   	CVE-2016-10010      	6.9  	7.0  	Yes       	No
+|   	CVE-2020-15778      	6.8  	7.8  	No        	No
+|   	CVE-2019-6111       	5.8  	5.9  	Yes       	No
+|_
 135/tcp   open  msrpc                Microsoft Windows RPC
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => msrpc
-| 	nmap_cpe => cpe:/o:microsoft:windows
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 139/tcp   open  netbios-ssn          Microsoft Windows netbios-ssn
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => netbios-ssn
-| 	nmap_cpe => cpe:/o:microsoft:windows
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 445/tcp   open  microsoft-ds         Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => microsoft-ds
-| 	nmap_cpe => cpe:/o:microsoft:windows
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 3000/tcp  open  http                 WEBrick httpd 1.3.1 (Ruby 2.3.3 (2016-11-21))
-| cvescannerv2: 
+|_http-server-header: WEBrick/1.3.1 (Ruby/2.3.3/2016-11-21)
+| cvescannerv2:
 |   product: ruby
 |   version: 2.3.3
 |   vupdate: *
-|   cves: 37
+|   cves: 38
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2013-1948       	10.0 	-    	No        	No        
-|   	CVE-2013-1947       	9.3  	-    	No        	No        
-|   	CVE-2017-10784      	9.3  	8.8  	No        	No        
-|   	CVE-2017-17405      	9.3  	8.8  	Yes       	No        
-|   	CVE-2013-1933       	9.3  	-    	No        	No        
-|   	CVE-2017-9228       	7.5  	9.8  	No        	No        
-|   	CVE-2017-9224       	7.5  	9.8  	No        	No        
-|   	CVE-2017-9227       	7.5  	9.8  	No        	No        
-|   	CVE-2017-17790      	7.5  	9.8  	No        	No        
-|_  	CVE-2018-16395      	7.5  	9.8  	No        	No        
+|   	CVE-2013-1948       	10.0 	-    	No        	No
+|   	CVE-2017-10784      	9.3  	8.8  	No        	No
+|   	CVE-2013-1933       	9.3  	-    	No        	No
+|   	CVE-2017-17405      	9.3  	8.8  	Yes       	No
+|   	CVE-2013-1947       	9.3  	-    	No        	No
+|   	CVE-2018-16395      	7.5  	9.8  	No        	No
+|   	CVE-2013-0175       	7.5  	-    	No        	No
+|   	CVE-2018-8780       	7.5  	9.1  	No        	No
+|   	CVE-2017-9228       	7.5  	9.8  	No        	No
+|   	CVE-2013-5647       	7.5  	-    	No        	No
+|_
 3306/tcp  open  mysql                MySQL 5.5.20-log
-| cvescannerv2: 
+| cvescannerv2:
 |   product: mysql
 |   version: 5.5.20
 |   vupdate: *
-|   cves: 541
+|   cves: 556
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2016-6662       	10.0 	9.8  	Yes       	No        
-|   	CVE-2012-2750       	10.0 	-    	No        	No        
-|   	CVE-2012-3163       	9.0  	-    	No        	No        
-|   	CVE-2020-14878      	7.7  	8.0  	No        	No        
-|   	CVE-2020-14760      	7.5  	5.5  	No        	No        
-|   	CVE-2014-6500       	7.5  	-    	No        	No        
-|   	CVE-2012-3158       	7.5  	-    	No        	No        
-|   	CVE-2018-2562       	7.5  	7.1  	No        	No        
-|   	CVE-2012-0553       	7.5  	-    	No        	No        
-|_  	CVE-2014-6491       	7.5  	-    	No        	No        
+|   	CVE-2012-2750       	10.0 	-    	No        	No
+|   	CVE-2016-6662       	10.0 	9.8  	Yes       	No
+|   	CVE-2012-3163       	9.0  	-    	No        	No
+|   	CVE-2020-14878      	7.7  	8.0  	No        	No
+|   	CVE-2014-6491       	7.5  	-    	No        	No
+|   	CVE-2012-0553       	7.5  	-    	No        	No
+|   	CVE-2014-0001       	7.5  	-    	No        	No
+|   	CVE-2012-0882       	7.5  	-    	No        	No
+|   	CVE-2013-1492       	7.5  	-    	No        	No
+|   	CVE-2020-14760      	7.5  	5.5  	No        	No
+|_
 3389/tcp  open  ssl/ms-wbt-server?
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => ms-wbt-server
-| 	nmap_cpe => nil
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 4848/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
-|_http-server-header: GlassFish Server Open Source Edition  4.0 
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => http
-| 	nmap_cpe => cpe:/a:oracle:jsp:2.3
-| 	nmap_version => 4.0
-|   	http_cpe => cpe:/a:oracle:glassfish_server
-|_	http_version => 4.0
+| cvescannerv2:
+|
+|_
+|_http-server-header: GlassFish Server Open Source Edition  4.0
+|_http-trane-info: Problem with XML parsing of /evox/about
 7676/tcp  open  java-message-service Java Message Service 301
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => java-message-service
-| 	nmap_cpe => nil
-| 	nmap_version => 301
-|   	http_cpe => nil
-|_	http_version => nil
 8009/tcp  open  ajp13                Apache Jserv (Protocol v1.3)
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => ajp13
-| 	nmap_cpe => nil
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 8022/tcp  open  http                 Apache Tomcat/Coyote JSP engine 1.1
 |_http-server-header: Apache-Coyote/1.1
-| cvescannerv2: 
+| cvescannerv2:
 |   product: tomcat
 |   version: 1.1
 |   vupdate: *
 |   cves: 20
 |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2013-2185       	7.5  	-    	No        	No        
-|   	CVE-2002-0493       	7.5  	-    	No        	No        
-|   	CVE-2020-8022       	7.2  	7.8  	No        	No        
-|   	CVE-2013-6357       	6.8  	-    	No        	No        
-|   	CVE-2013-4444       	6.8  	-    	No        	No        
-|   	CVE-2013-4286       	5.8  	-    	No        	No        
-|   	CVE-2014-0075       	5.0  	-    	No        	No        
-|   	CVE-2001-0590       	5.0  	-    	No        	No        
-|   	CVE-2008-0128       	5.0  	-    	No        	No        
-|_  	CVE-2000-1210       	5.0  	-    	No        	No        
+|   	CVE-2013-2185       	7.5  	-    	No        	No
+|   	CVE-2002-0493       	7.5  	-    	No        	No
+|   	CVE-2020-8022       	7.2  	7.8  	No        	No
+|   	CVE-2013-4444       	6.8  	-    	No        	No
+|   	CVE-2013-6357       	6.8  	-    	No        	No
+|   	CVE-2013-4286       	5.8  	-    	No        	No
+|   	CVE-2000-1210       	5.0  	-    	No        	No
+|   	CVE-2001-0590       	5.0  	-    	No        	No
+|   	CVE-2008-0128       	5.0  	-    	No        	No
+|   	CVE-2014-0075       	5.0  	-    	No        	No
+|
+|_
 8031/tcp  open  ssl/unknown
 8080/tcp  open  http                 Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
-|_http-server-header: GlassFish Server Open Source Edition  4.0 
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => http
-| 	nmap_cpe => cpe:/a:oracle:jsp:2.3
-| 	nmap_version => 4.0
-|   	http_cpe => cpe:/a:oracle:glassfish_server
-|_	http_version => 4.0
+| cvescannerv2:
+|
+|_
+|_http-server-header: GlassFish Server Open Source Edition  4.0
 8181/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => http
-| 	nmap_cpe => cpe:/a:oracle:jsp:2.3
-| 	nmap_version => 4.0
-|   	http_cpe => cpe:/a:oracle:glassfish_server
-|_	http_version => 4.0
+| cvescannerv2:
+|
+|_
 8443/tcp  open  ssl/https-alt?
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => https-alt
-| 	nmap_cpe => nil
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 9200/tcp  open  wap-wsp?
-| fingerprint-strings: 
-|   FourOhFourRequest: 
+| fingerprint-strings:
+|   FourOhFourRequest:
 |     HTTP/1.0 400 Bad Request
 |     Content-Type: text/plain; charset=UTF-8
 |     Content-Length: 80
 |     handler found for uri [/nice%20ports%2C/Tri%6Eity.txt%2ebak] and method [GET]
-|   GetRequest: 
+|   GetRequest:
 |     HTTP/1.0 200 OK
 |     Content-Type: application/json; charset=UTF-8
-|     Content-Length: 307
+|     Content-Length: 318
 |     "status" : 200,
-|     "name" : "Hairbag",
+|     "name" : "Angar the Screamer",
 |     "version" : {
 |     "number" : "1.1.1",
 |     "build_hash" : "f1585f096d3f3985e73456debdc1a0745f512bbc",
@@ -185,71 +121,42 @@ PORT      STATE SERVICE              VERSION
 |     "build_snapshot" : false,
 |     "lucene_version" : "4.7"
 |     "tagline" : "You Know, for Search"
-|   HTTPOptions: 
+|   HTTPOptions:
 |     HTTP/1.0 200 OK
 |     Content-Type: text/plain; charset=UTF-8
 |     Content-Length: 0
-|   RTSPRequest, SIPOptions: 
+|   RTSPRequest, SIPOptions:
 |     HTTP/1.1 200 OK
 |     Content-Type: text/plain; charset=UTF-8
 |_    Content-Length: 0
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => wap-wsp
-| 	nmap_cpe => nil
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 49152/tcp open  msrpc                Microsoft Windows RPC
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => msrpc
-| 	nmap_cpe => cpe:/o:microsoft:windows
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 49153/tcp open  msrpc                Microsoft Windows RPC
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => msrpc
-| 	nmap_cpe => cpe:/o:microsoft:windows
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
 49154/tcp open  msrpc                Microsoft Windows RPC
-| cvescannerv2: 
-|   No vulnerabilities found in DB. If you think this could be an error, open an Issue in GitHub.
-|   Attach the following information in the Issue:
-|   	nmap_service => msrpc
-| 	nmap_cpe => cpe:/o:microsoft:windows
-| 	nmap_version => nil
-|   	http_cpe => nil
-|_	http_version => nil
-49155/tcp open  unknown
+49159/tcp open  java-rmi             Java RMI
+49160/tcp open  msrpc                Microsoft Windows RPC
+49167/tcp open  unknown
 1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port9200-TCP:V=7.92%I=7%D=4/26%Time=6267C927%P=x86_64-redhat-linux-gnu%
-SF:r(GetRequest,18A,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\x20applicatio
-SF:n/json;\x20charset=UTF-8\r\nContent-Length:\x20307\r\n\r\n{\r\n\x20\x20
-SF:\"status\"\x20:\x20200,\r\n\x20\x20\"name\"\x20:\x20\"Hairbag\",\r\n\x2
-SF:0\x20\"version\"\x20:\x20{\r\n\x20\x20\x20\x20\"number\"\x20:\x20\"1\.1
-SF:\.1\",\r\n\x20\x20\x20\x20\"build_hash\"\x20:\x20\"f1585f096d3f3985e734
-SF:56debdc1a0745f512bbc\",\r\n\x20\x20\x20\x20\"build_timestamp\"\x20:\x20
-SF:\"2014-04-16T14:27:12Z\",\r\n\x20\x20\x20\x20\"build_snapshot\"\x20:\x2
-SF:0false,\r\n\x20\x20\x20\x20\"lucene_version\"\x20:\x20\"4\.7\"\r\n\x20\
-SF:x20},\r\n\x20\x20\"tagline\"\x20:\x20\"You\x20Know,\x20for\x20Search\"\
-SF:r\n}\n")%r(HTTPOptions,4F,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\x20t
-SF:ext/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n")%r(RTSPReq
-SF:uest,4F,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x20text/plain;\x20char
-SF:set=UTF-8\r\nContent-Length:\x200\r\n\r\n")%r(FourOhFourRequest,A9,"HTT
-SF:P/1\.0\x20400\x20Bad\x20Request\r\nContent-Type:\x20text/plain;\x20char
-SF:set=UTF-8\r\nContent-Length:\x2080\r\n\r\nNo\x20handler\x20found\x20for
-SF:\x20uri\x20\[/nice%20ports%2C/Tri%6Eity\.txt%2ebak\]\x20and\x20method\x
-SF:20\[GET\]")%r(SIPOptions,4F,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x2
-SF:0text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n");
+SF-Port9200-TCP:V=7.93%I=7%D=2/9%Time=63E4D492%P=x86_64-redhat-linux-gnu%r
+SF:(GetRequest,195,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\x20application
+SF:/json;\x20charset=UTF-8\r\nContent-Length:\x20318\r\n\r\n{\r\n\x20\x20\
+SF:"status\"\x20:\x20200,\r\n\x20\x20\"name\"\x20:\x20\"Angar\x20the\x20Sc
+SF:reamer\",\r\n\x20\x20\"version\"\x20:\x20{\r\n\x20\x20\x20\x20\"number\
+SF:"\x20:\x20\"1\.1\.1\",\r\n\x20\x20\x20\x20\"build_hash\"\x20:\x20\"f158
+SF:5f096d3f3985e73456debdc1a0745f512bbc\",\r\n\x20\x20\x20\x20\"build_time
+SF:stamp\"\x20:\x20\"2014-04-16T14:27:12Z\",\r\n\x20\x20\x20\x20\"build_sn
+SF:apshot\"\x20:\x20false,\r\n\x20\x20\x20\x20\"lucene_version\"\x20:\x20\
+SF:"4\.7\"\r\n\x20\x20},\r\n\x20\x20\"tagline\"\x20:\x20\"You\x20Know,\x20
+SF:for\x20Search\"\r\n}\n")%r(HTTPOptions,4F,"HTTP/1\.0\x20200\x20OK\r\nCo
+SF:ntent-Type:\x20text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n
+SF:\r\n")%r(RTSPRequest,4F,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x20tex
+SF:t/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n")%r(FourOhFou
+SF:rRequest,A9,"HTTP/1\.0\x20400\x20Bad\x20Request\r\nContent-Type:\x20tex
+SF:t/plain;\x20charset=UTF-8\r\nContent-Length:\x2080\r\n\r\nNo\x20handler
+SF:\x20found\x20for\x20uri\x20\[/nice%20ports%2C/Tri%6Eity\.txt%2ebak\]\x2
+SF:0and\x20method\x20\[GET\]")%r(SIPOptions,4F,"HTTP/1\.1\x20200\x20OK\r\n
+SF:Content-Type:\x20text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r
+SF:\n\r\n");
 Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-# Nmap done at Tue Apr 26 12:30:47 2022 -- 1 IP address (1 host up) scanned in 190.52 seconds
+# Nmap done at Thu Feb  9 12:14:03 2023 -- 1 IP address (1 host up) scanned in 246.45 seconds
