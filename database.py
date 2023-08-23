@@ -77,8 +77,8 @@ VTAGS = (
     "versionEndExcluding",
 )
 URL = {
-    # "nvd": "https://services.nvd.nist.gov/rest/json/{}/2.0?startIndex={}",
-    "nvd": "http://localhost:8000/{}/{}",
+    "nvd": "https://services.nvd.nist.gov/rest/json/{}/2.0?startIndex={}",
+    # "nvd": "http://localhost:8000/{}/{}",
     "expdb": "https://www.exploit-db.com/exploits",
 }
 CONST = {
@@ -86,6 +86,7 @@ CONST = {
     "cve": 2000,
     "bat": 25,
 }
+TEST = re.compile(r"https://services.nvd.nist.gov/rest/json/(\w+)/2.0\?startIndex=(\d+)")
 COPYRIGHT = """
 CVEScannerV2  Copyright (C) 2022-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 Universidad Carlos III de Madrid.
@@ -196,19 +197,6 @@ class Database:
         self.cursor.execute("SELECT last_mod FROM metadata")
         return self.cursor.fetchone()[0]
 
-    def cached_product(self, vendor, product, version, update):
-        self.cursor.execute(
-            "SELECT EXISTS "
-            "("
-            "SELECT 1 "
-            "FROM products "
-            "WHERE vendor = ? AND product = ? "
-            "AND version = ? AND version_update = ?"
-            ")",
-            [vendor, product, version, update],
-        )
-        return self.cursor.fetchone()[0]
-
     def cached_cve(self, cve):
         self.cursor.execute(
             "SELECT EXISTS "
@@ -221,114 +209,24 @@ class Database:
         )
         return self.cursor.fetchone()[0]
 
-    def cached_exploit(self, exploit, msf=False):
-        if not msf:
-            self.cursor.execute(
-                "SELECT EXISTS "
-                "("
-                "SELECT 1 "
-                "FROM exploits "
-                "WHERE exploit_id = ?"
-                ")",
-                [exploit],
-            )
-        else:
-            self.cursor.execute(
-                "SELECT EXISTS "
-                "("
-                "SELECT 1 "
-                "FROM metasploits "
-                "WHERE name = ?"
-                ")",
-                [exploit],
-            )
-        return self.cursor.fetchone()[0]
-
     def cached_exploits(self):
         self.cursor.execute(
             "SELECT exploit_id FROM exploits WHERE name IS NULL"
         )
         return [expl[0] for expl in self.cursor.fetchall()]
 
-    def cached_affected(self, cve, vendor, product, version, update):
-        self.cursor.execute(
-            "SELECT EXISTS "
-            "("
-            "SELECT 1 FROM affected "
-            "WHERE cve_id = ? "
-            "AND product_id = "
-            "("
-            "SELECT product_id FROM products "
-            "WHERE vendor = ? AND product = ? "
-            "AND version = ? AND version_update = ?"
-            ")"
-            ")",
-            [cve, vendor, product, version, update],
-        )
-        return self.cursor.fetchone()[0]
-
-    def cached_multiaffected(
-        self, cve, vendor, product, start_inc, start_exc, end_inc, end_exc
-    ):
-        self.cursor.execute(
-            "SELECT EXISTS "
-            "("
-            "SELECT 1 FROM multiaffected "
-            "WHERE cve_id = ? "
-            "AND product_id = "
-            "("
-            "SELECT product_id FROM products "
-            "WHERE vendor = ? AND product = ? "
-            "AND version = '*'"
-            ") "
-            "AND versionStartIncluding = ? "
-            "AND versionStartExcluding = ? "
-            "AND versionEndIncluding = ? "
-            "AND versionEndExcluding = ?"
-            ")",
-            [cve, vendor, product, start_inc, start_exc, end_inc, end_exc],
-        )
-        return self.cursor.fetchone()[0]
-
-    def cached_referenced(self, cve, exploit, msf=False):
-        if not msf:
-            self.cursor.execute(
-                "SELECT EXISTS "
-                "("
-                "SELECT 1 "
-                "FROM referenced_exploit "
-                "WHERE cve_id = ? AND exploit_id = ?"
-                ")",
-                [cve, exploit],
-            )
-        else:
-            self.cursor.execute(
-                "SELECT EXISTS "
-                "("
-                "SELECT 1 "
-                "FROM referenced_metasploit "
-                "WHERE cve_id = ? AND metastploit_id = ?"
-                ")",
-                [cve, exploit],
-            )
-        return self.cursor.fetchone()[0]
-
     def insert_products(self, products):
         self.cursor.executemany(
             "INSERT or IGNORE INTO products "
             "(vendor, product, version, version_update) "
-            "VALUES "
-            "(?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?)",
             products,
         )
         self.conn.commit()
 
     def insert_cves(self, cves):
         self.cursor.executemany(
-            "INSERT or IGNORE INTO cves "
-            "(cve_id, cvss_v2, cvss_v3, published) "
-            "VALUES "
-            "(?, ?, ?, ?)",
+            "INSERT or REPLACE INTO cves VALUES (?, ?, ?, ?)",
             cves,
         )
         self.conn.commit()
@@ -401,17 +299,7 @@ class Database:
 
     def update_metadata(self):
         self.cursor.execute(
-            "INSERT or REPLACE INTO metadata VALUES (1, ?)", now()
-        )
-        self.conn.commit()
-
-    def update_cves(self, cves):
-        self.cursor.executemany(
-            "UPDATE cves "
-            "SET "
-            "cvss_v2 = ?, cvss_v3 = ?, published = ? "
-            "WHERE cve_id = ?",
-            cves,
+            "INSERT or REPLACE INTO metadata VALUES (1, ?)", [now()]
         )
         self.conn.commit()
 
@@ -420,6 +308,20 @@ class Database:
             "UPDATE exploits SET name = ? WHERE exploit_id = ?",
             exploits,
         )
+        self.conn.commit()
+
+    def remove_cves(self, cves):
+        self.cursor.executemany(
+            "DELETE FROM referenced_exploit WHERE cve_id = ?", cves
+        )
+        self.cursor.executemany(
+            "DELETE FROM referenced_metasploit WHERE cve_id = ?", cves
+        )
+        self.cursor.executemany("DELETE FROM affected WHERE cve_id = ?", cves)
+        self.cursor.executemany(
+            "DELETE FROM multiaffected WHERE cve_id = ?", cves
+        )
+        self.cursor.executemany("DELETE FROM cves WHERE cve_id = ?", cves)
         self.conn.commit()
 
     def clean(self):
@@ -438,14 +340,14 @@ class Database:
         self.conn.commit()
 
 
-def now(self):
+def now():
     return datetime.isoformat(datetime.utcnow())
 
 
 def scrape_title(exploit):
+    print("FIX!!!")
     title = None
     delay = 5
-
     try:
         with httpx.get(
             f"{URL['expdb']}/{exploit}", headers={"User-Agent": UA.random}
@@ -499,7 +401,7 @@ class PopulateDBThread(Thread):
         self.execmany = {
             0: db.insert_products,
             1: db.insert_cves,
-            2: db.update_cves,
+            2: db.remove_cves,
             3: db.insert_exploits,
             4: db.insert_metasploits,
             5: db.insert_affected,
@@ -513,37 +415,38 @@ class PopulateDBThread(Thread):
         with Database(self.path) as db:
             db.setup()
             self.setup_execm(db)
-            while True:
-                if not self.queue.empty():
-                    dtype, data = self.queue.get()
-                    self.datalist[dtype].append(data)
-                else:
-                    if self.insert.is_set():
-                        self.insert.clear()
-                        for dt in range(len(self.execmany)):
-                            self.execmany[dt](set(self.datalist[dt]))
-                            self.datalist[dt] = []
-                    elif self.finished.is_set():
-                        break
+            try:
+                while True:
+                    if not self.queue.empty():
+                        dtype, data = self.queue.get()
+                        self.datalist[dtype].append(data)
                     else:
-                        time.sleep(1)
+                        if self.insert.is_set():
+                            self.insert.clear()
+                            for dt in range(len(self.execmany)):
+                                self.execmany[dt](set(self.datalist[dt]))
+                                self.datalist[dt] = []
+                        elif self.finished.is_set():
+                            break
+                        else:
+                            time.sleep(1)
+            except Exception:
+                print(traceback.format_exc())
 
 
 @LIMITER.ratelimit("identity", delay=True)
 def query_api(args):
     try:
-        url, database, cl, bar, thread_objs, batch = args
-        print("DELETE!!!!")
-        url = url.replace("&noRejected", "")
+        url, database, cl, bar, thread_objs, batch, populate = args
         ev_fin, ev_ins, queue = thread_objs
         try:
             resp = cl.get(url)
         except httpx.TimeoutException:
-            print(f"[!] Timeout exception: {url}")
+            print(traceback.format_exc())
             return
-        # match = TEST.match(url)
-        # with open(f'{match.group(1)}/{match.group(2)}', 'w') as f:
-        #     f.write(resp.text)
+        match = TEST.match(url)
+        with open(f'{match.group(1)}/{match.group(2)}', 'w') as f:
+            f.write(resp.text)
         data = resp.json()
         if "cpes" in url:
             idy = 0
@@ -553,98 +456,84 @@ def query_api(args):
                 if ptype == "a":
                     queue.put((0, (ven, pro, ver, vup)))
         else:
-            with Database(database) as db:
-                for vuln in data["vulnerabilities"]:
-                    if vuln["cve"]["vulnStatus"].lower() == "deferred":
-                        continue
-                    cve_id = vuln["cve"]["id"]
-                    cvssv2 = (
-                        None
-                        if "cvssMetricV2" not in vuln["cve"]["metrics"]
-                        else vuln["cve"]["metrics"]["cvssMetricV2"][0][
-                            "cvssData"
-                        ]["baseScore"]
-                    )
-                    cvssv3keys = [
-                        key
-                        for key in vuln["cve"]["metrics"].keys()
-                        if RE["v3"].match(key) is not None
+            for vuln in data["vulnerabilities"]:
+                cve_id = vuln["cve"]["id"]
+                if vuln["cve"]["vulnStatus"].lower() in (
+                    "deferred",
+                    "rejected",
+                ):
+                    if not populate:
+                        # print(f"sending {cve_id} to remove")
+                        queue.put((2, (cve_id,)))
+                    continue
+                cvssv2 = (
+                    None
+                    if "cvssMetricV2" not in vuln["cve"]["metrics"]
+                    else vuln["cve"]["metrics"]["cvssMetricV2"][0]["cvssData"][
+                        "baseScore"
                     ]
-                    cvssv3 = (
-                        None
-                        if not cvssv3keys
-                        else vuln["cve"]["metrics"][cvssv3keys[0]][0][
-                            "cvssData"
-                        ]["baseScore"]
-                    )
-                    year = int(vuln["cve"]["published"][:4])
-                    queue.put((1, (cve_id, cvssv2, cvssv3, year)))
-                    if "configurations" in vuln["cve"]:
-                        for config in vuln["cve"]["configurations"]:
-                            for node in config["nodes"]:
-                                products = parse_node(node, cve_id)
-                                for (
-                                    ptype,
-                                    ven,
-                                    pro,
-                                    ver,
-                                    vup,
-                                ), tags in products:
-                                    if ptype == "a":
-                                        while True:
-                                            try:
-                                                if not db.cached_product(
-                                                    ven, pro, ver, vup
-                                                ):
-                                                    queue.put(
-                                                        (
-                                                            0,
-                                                            (
-                                                                ven,
-                                                                pro,
-                                                                ver,
-                                                                vup,
-                                                            ),
-                                                        )
-                                                    )
-                                            except sql.OperationalError:
-                                                time.sleep(2)
-                                            else:
-                                                break
-                                        if (
-                                            all(t is None for t in tags)
-                                            and ver != "*"
-                                        ):
-                                            queue.put(
+                )
+                cvssv3keys = [
+                    key
+                    for key in vuln["cve"]["metrics"].keys()
+                    if RE["v3"].match(key) is not None
+                ]
+                cvssv3 = (
+                    None
+                    if not cvssv3keys
+                    else vuln["cve"]["metrics"][cvssv3keys[0]][0]["cvssData"][
+                        "baseScore"
+                    ]
+                )
+                year = int(vuln["cve"]["published"][:4])
+                queue.put((1, (cve_id, cvssv2, cvssv3, year)))
+                if "configurations" in vuln["cve"]:
+                    for config in vuln["cve"]["configurations"]:
+                        for node in config["nodes"]:
+                            products = parse_node(node, cve_id)
+                            for (
+                                ptype,
+                                ven,
+                                pro,
+                                ver,
+                                vup,
+                            ), tags in products:
+                                if ptype == "a":
+                                    queue.put((0, (ven, pro, ver, vup)))
+                                    if (
+                                        all(t is None for t in tags)
+                                        and ver != "*"
+                                    ):
+                                        queue.put(
+                                            (
+                                                5,
                                                 (
-                                                    5,
-                                                    (
-                                                        cve_id,
-                                                        ven,
-                                                        pro,
-                                                        ver,
-                                                        vup,
-                                                    ),
-                                                )
+                                                    cve_id,
+                                                    ven,
+                                                    pro,
+                                                    ver,
+                                                    vup,
+                                                ),
                                             )
-                                        else:
-                                            queue.put(
-                                                (6, (cve_id, ven, pro, *tags))
-                                            )
-                    if "references" in vuln["cve"]:
-                        for reference in vuln["cve"]["references"]:
-                            if "exploit-db" in reference["url"] and (
-                                "tags" not in reference
-                                or (
-                                    "tags" in reference
-                                    and "Broken Link" not in reference["tags"]
-                                )
-                            ):
-                                match = RE["exp"].match(reference["url"])
-                                if match is not None:
-                                    exp_id = match.group(1)
-                                    queue.put((3, (exp_id,)))
-                                    queue.put((7, (cve_id, exp_id)))
+                                        )
+                                    else:
+                                        queue.put(
+                                            (6, (cve_id, ven, pro, *tags))
+                                        )
+                if "references" in vuln["cve"]:
+                    for reference in vuln["cve"]["references"]:
+                        if "exploit-db" in reference["url"] and (
+                            "tags" not in reference
+                            or (
+                                "tags" in reference
+                                and "Broken Link" not in reference["tags"]
+                            )
+                        ):
+                            match = RE["exp"].match(reference["url"])
+                            if match is not None:
+                                exp_id = match.group(1)
+                                queue.put((3, (exp_id,)))
+                                queue.put((7, (cve_id, exp_id)))
     except Exception:
         print(url)
         print(traceback.format_exc())
@@ -652,60 +541,76 @@ def query_api(args):
     bar.update(batch)
 
 
-def populate_db(args, thread_objs):
+def update_db(args, thread_objs, populate=False):
+    extra = ""
+    if not populate:
+        print("[*] Updating database...")
+        with Database(args.database) as db:
+            last = db.cached_metadata()
+        extra = f"&lastModStartDate={last}&lastModEndDate={now()}"
+    else:
+        print("[+] Creating database...")
+
     with httpx.Client(timeout=120, headers={"apiKey": KEY}) as cl:
         print("[*] Retrieving CVEs/CPEs metadata...")
-        resp = cl.get(f"{URL['nvd'].format('cpes', 0)}&resultsPerPage=1")
+        resp = cl.get(
+            f"{URL['nvd'].format('cpes', 0)}" f"&resultsPerPage=1{extra}"
+        )
         cpes = resp.json()["totalResults"]
-        # cpes = 1137617
-        resp = cl.get(f"{URL['nvd'].format('cves', 0)}&resultsPerPage=1")
+        resp = cl.get(
+            f"{URL['nvd'].format('cves', 0)}" f"&resultsPerPage=1{extra}"
+        )
         cves = resp.json()["totalResults"]
-        # cves = 223081
+        print(f"[+] Metadata: {cpes} CPEs | {cves} CVEs")
         cve_q, cpe_q = -(-cves // CONST["cve"]), -(-cpes // CONST["cpe"])
         cve_l, cpe_l = cves % CONST["cve"], cpes % CONST["cpe"]
         time.sleep(5)
 
-        with tqdm(total=cpes, ascii=" =", desc="[+] Retrieving CPEs") as bar:
-            q_args = []
-            idx = 0
-            with ThreadPoolExecutor() as tpe:
-                for _ in range(cpe_q):
-                    q_args.append(
-                        [
-                            f"{URL['nvd'].format('cpes', idx)}",
-                            args.database,
-                            cl,
-                            bar,
-                            thread_objs,
-                            CONST["cpe"],
-                        ]
-                    )
-                    idx += CONST["cpe"]
-                q_args[-1][-1] = cpe_l  # last batch
-                tpe.map(query_api, q_args)
+        if cpes:
+            with tqdm(
+                total=cpes, ascii=" =", desc="[+] Retrieving CPEs"
+            ) as bar:
+                q_args = []
+                idx = 0
+                with ThreadPoolExecutor() as tpe:
+                    for _ in range(cpe_q):
+                        q_args.append(
+                            [
+                                f"{URL['nvd'].format('cpes', idx)}{extra}",
+                                args.database,
+                                cl,
+                                bar,
+                                thread_objs,
+                                CONST["cpe"],
+                                populate,
+                            ]
+                        )
+                        idx += CONST["cpe"]
+                    q_args[-1][-2] = cpe_l  # last batch
+                    tpe.map(query_api, q_args)
 
-        with tqdm(total=cves, ascii=" =", desc="[+] Retrieving CVEs") as bar:
-            q_args = []
-            idx = 0
-            with ThreadPoolExecutor(max_workers=1) as tpe:
-                for _ in range(cve_q):
-                    q_args.append(
-                        [
-                            f"{URL['nvd'].format('cves', idx)}&noRejected",
-                            args.database,
-                            cl,
-                            bar,
-                            thread_objs,
-                            CONST["cve"],
-                        ]
-                    )
-                    idx += CONST["cve"]
-                q_args[-1][-1] = cve_l  # last batch
-                tpe.map(query_api, q_args)
-
-
-def update_db(args, thread_objs):
-    pass
+        if cves:
+            with tqdm(
+                total=cves, ascii=" =", desc="[+] Retrieving CVEs"
+            ) as bar:
+                q_args = []
+                idx = 0
+                with ThreadPoolExecutor() as tpe:
+                    for _ in range(cve_q):
+                        q_args.append(
+                            [
+                                f"{URL['nvd'].format('cves', idx)}{extra}",
+                                args.database,
+                                cl,
+                                bar,
+                                thread_objs,
+                                CONST["cve"],
+                                populate,
+                            ]
+                        )
+                        idx += CONST["cve"]
+                    q_args[-1][-2] = cve_l  # last batch
+                    tpe.map(query_api, q_args)
 
 
 def update_metasploit(args, thread_objs):
@@ -736,8 +641,9 @@ def update_metasploit(args, thread_objs):
 
 
 def update_exploitdb(args, thread_objs):
-    if not args.noscrape:
-        with Database(args.database) as db:
+    with Database(args.database) as db:
+        db.clean()
+        if not args.noscrape:
             exps = db.cached_exploits()
             # low requests per minute, but we need this to bypass WAF
             threads = 3
@@ -793,19 +699,13 @@ if __name__ == "__main__":
     thread = PopulateDBThread(args.database, *thread_objs)
     thread.start()
 
-    if not Path(args.database).is_file():
-        print("[+] Creating database...")
-        populate_db(args, thread_objs)
-    else:
-        print("[*] Updating database...")
-        update_db(args, thread_objs)
+    update_db(args, thread_objs, populate=not Path(args.database).is_file())
 
     with Database(args.database) as db:
         db.update_metadata()
 
     update_metasploit(args, thread_objs)
     update_exploitdb(args, thread_objs)
-    # clean(args)
 
     with tqdm(total=1, ascii=" =", desc="[*] Awaiting database thread") as bar:
         thread_objs[0].set()
