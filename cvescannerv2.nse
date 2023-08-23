@@ -81,6 +81,8 @@ local log_arg = stdnse.get_script_args('log') or 'cvescannerv2.log'
 local json_arg = stdnse.get_script_args('json') or 'cvescannerv2.json'
 local path_arg = stdnse.get_script_args('path') or 'http-paths-vulnerscom.json'
 local regex_arg = stdnse.get_script_args('regex') or 'http-regex-vulnerscom.json'
+local service_arg = stdnse.get_script_args('service') or 'all'
+local version_arg = stdnse.get_script_args('version') or 'all'
 
 
 if not nmap.registry[SCRIPT_NAME] then
@@ -649,63 +651,71 @@ local function analysis (host, port, matches)
          for version, _ in pairs(versions) do
             stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe, version))
             local product, info = cpe_parser(cpe, version)
-            if info ~= nil then
-               log_info(host, port, product, info)
-               local v, vu = correct_version(info)
-               local tmp_vulns = nil
-               if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
-                  tmp_vulns = vulnerabilities(host, port, product, info)
-                  local nvulns = table.remove(tmp_vulns, 1)
-                  if nvulns > 0 then
-                     table.insert(tmp_vulns, 1, fmt("product: %s", product))
-                     table.insert(tmp_vulns, 2, fmt("version: %s", v))
-                     table.insert(tmp_vulns, 3, fmt("vupdate: %s", vu))
-                     table.insert(tmp_vulns, 4, fmt("cves: %d", nvulns))
-                     local serv_fmt = fmt('%s/%s', port.number, port.protocol)
-                     local t_serv = #registry.json_out[host.ip]['ports'][serv_fmt]['services']
-                     registry.json_out[host.ip]['ports'][serv_fmt]['services'][t_serv]['vulnerabilities']['total'] = nvulns
-                     table.insert(tmp_vulns, 5,
-                        fmt(
-                           "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
-                           "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
-                       )
-                     )
-                     stdnse.verbose(2, "Caching " .. product .. "@" ..
-                        v .. "@" .. vu .. " vulnerabilities.")
-                     registry.cache[fmt('%s|%s|%s', product, v, vu)] = { nvulns, tmp_vulns }
-                  end
-               else
-                  log("[+] cves: cached")
-                  local cache = registry.cache[fmt('%s|%s|%s', product, v, vu)]
-                  if cache[1] > 0 then
-                     local port_proto = fmt('%s/%s', port.number, port.protocol)
-                     if registry.json_out[host.ip]['ports'][port_proto] == nil then
-                        registry.json_out[host.ip]['ports'][port_proto] = {['services'] = {}}
+            if ((service_arg == 'all' and version_arg == 'all')
+               or (service_arg ~= 'all' and version_arg ~= 'all'
+                   and product == service_arg and version == version_arg)
+               or (service_arg ~= 'all' and version_arg == 'all'
+                   and product == service_arg)
+               or (service_arg == 'all' and version_arg ~= 'all' and version == version_arg)) then
+               stdnse.verbose(2, fmt("product => %s | version => %s", product, version))
+               if info ~= nil then
+                  log_info(host, port, product, info)
+                  local v, vu = correct_version(info)
+                  local tmp_vulns = nil
+                  if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
+                     tmp_vulns = vulnerabilities(host, port, product, info)
+                     local nvulns = table.remove(tmp_vulns, 1)
+                     if nvulns > 0 then
+                        table.insert(tmp_vulns, 1, fmt("product: %s", product))
+                        table.insert(tmp_vulns, 2, fmt("version: %s", v))
+                        table.insert(tmp_vulns, 3, fmt("vupdate: %s", vu))
+                        table.insert(tmp_vulns, 4, fmt("cves: %d", nvulns))
+                        local serv_fmt = fmt('%s/%s', port.number, port.protocol)
+                        local t_serv = #registry.json_out[host.ip]['ports'][serv_fmt]['services']
+                        registry.json_out[host.ip]['ports'][serv_fmt]['services'][t_serv]['vulnerabilities']['total'] = nvulns
+                        table.insert(tmp_vulns, 5,
+                           fmt(
+                              "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
+                              "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
+                          )
+                        )
+                        stdnse.verbose(2, "Caching " .. product .. "@" ..
+                           v .. "@" .. vu .. " vulnerabilities.")
+                        registry.cache[fmt('%s|%s|%s', product, v, vu)] = { nvulns, tmp_vulns }
                      end
-                     table.insert(
-                        registry.json_out[host.ip]['ports'][port_proto]['services'],
-                        {
-                           name = port.service,
-                           product = product,
-                           version = v,
-                           vupdate = vu,
-                           vulnerabilities = {
-                              ['total'] = cache[1],
-                              ['info'] = 'cache'
+                  else
+                     log("[+] cves: cached")
+                     local cache = registry.cache[fmt('%s|%s|%s', product, v, vu)]
+                     if cache[1] > 0 then
+                        local port_proto = fmt('%s/%s', port.number, port.protocol)
+                        if registry.json_out[host.ip]['ports'][port_proto] == nil then
+                           registry.json_out[host.ip]['ports'][port_proto] = {['services'] = {}}
+                        end
+                        table.insert(
+                           registry.json_out[host.ip]['ports'][port_proto]['services'],
+                           {
+                              name = port.service,
+                              product = product,
+                              version = v,
+                              vupdate = vu,
+                              vulnerabilities = {
+                                 ['total'] = cache[1],
+                                 ['info'] = 'cache'
+                              }
                            }
-                        }
-                     )
+                        )
+                     end
+                     log_separator()
+                     stdnse.verbose(2, "Using cached " .. product .. "@" ..
+                        v .. "@" .. vu .. " vulnerabilities.")
+                     tmp_vulns = cache[2]
                   end
-                  log_separator()
-                  stdnse.verbose(2, "Using cached " .. product .. "@" ..
-                     v .. "@" .. vu .. " vulnerabilities.")
-                  tmp_vulns = cache[2]
-               end
-               if tmp_vulns ~= nil and #tmp_vulns > 0 then
-                  for _, value in pairs(tmp_vulns) do
-                     table.insert(vulns, value)
+                  if tmp_vulns ~= nil and #tmp_vulns > 0 then
+                     for _, value in pairs(tmp_vulns) do
+                        table.insert(vulns, value)
+                     end
+                     table.insert(vulns, "")
                   end
-                  table.insert(vulns, "")
                end
             end
          end

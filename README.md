@@ -83,7 +83,7 @@ After database has been created, call the script:
 
 - `nmap -sV <target_ip> --script cvescannerv2`
 
-**Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path and regex.
+**Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path, regex, service and version.
 <details>
     <summary><b>script-args default values</b></summary>
 
@@ -92,6 +92,8 @@ After database has been created, call the script:
     maxcve: 10
     path: http-paths-vulnerscom.json
     regex: http-regex-vulnerscom.json
+    service: all
+    version: all
 </details>
 
 <details>
@@ -99,13 +101,15 @@ After database has been created, call the script:
 
 ```bash
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args log=cvescannerv2.log
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args json=cvescannerv2.json
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=10
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args log=scan2023.log
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args json=scan2023.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=5
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args path=http-paths-vulnerscom.json
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args service=http_server
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args version=2.4.57
 
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,json=cvescannerv2.json,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=scan2023.log,json=scan2023.json,maxcve=5,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json,service=http_server,version=2.4.57
 ```
 
 </details>
