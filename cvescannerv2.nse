@@ -157,7 +157,7 @@ local function log_separator ()
 end
 
 
-local function log_info (host, port, product, info)
+local function log_info (host, port, cpe, product, info)
    local _ip = host.ip
    local _port = port.number
    local _proto = port.protocol
@@ -168,6 +168,7 @@ local function log_info (host, port, product, info)
    log("[*] port: %s", _port)
    log("[+] protocol: %s", _proto)
    log("[+] service: %s", _serv)
+   log("[+] cpe: %s", cpe)
    log("[+] product: %s", _prod)
    log("[+] version: %s", _ver)
    log("[+] vupdate: %s", _vupd)
@@ -216,9 +217,10 @@ local function add_cpe_version(cpe, version, matches, location)
       matches['data'][location][cpe] = {}
    end
    if matches['data'][location][cpe][version] == nil then
-      stdnse.verbose(2, "cpe: " .. cpe .. " | version: " .. version)
+      stdnse.verbose(2, location .. " cpe: " .. cpe .. " | version: " .. version)
       matches['data'][location][cpe][version] = true
       matches['size'] = matches['size'] + 1
+      return true
    end
 end
 
@@ -233,10 +235,12 @@ local function find_version(cpe, text, regex, matches)
          if version == '' then
             version = '*'
          end
-         stdnse.verbose(2, "find_version matched text: " ..
-                        text:sub(sidx, idx) ..
-                        " | version: " .. version)
-         add_cpe_version(cpe, version, matches, 'http')
+         local msg = add_cpe_version(cpe, version, matches, 'http')
+         if msg then
+            stdnse.verbose(2, "http find_version matched text: " ..
+                           text:sub(sidx, idx) ..
+                           " | version: " .. version)
+         end
       end
       if idx == nil then break end
    end
@@ -413,19 +417,23 @@ local function query (qtype)
              WHERE referenced_metasploit.cve_id = '%s'
              ]]
    elseif qtype == 'multiaffected' then
+      -- I'm using .0 in version matching as a workaround with versions that used to
+      -- appear as X.Y in data feeds but now appears as X.Y.0 in the API, e.g. 5.5 -> 5.5.0
       return [[
              SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = multiaffected.cve_id)) as edb,
              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = multiaffected.cve_id)) as msf
              FROM multiaffected
              INNER JOIN cves ON multiaffected.cve_id = cves.cve_id
-             WHERE product_id =
+             WHERE product_id IN
              (SELECT product_id FROM products WHERE product = '${p}' AND version = '*')
              AND (IFNULL(versionStartIncluding, '0') < '${v}'
-                  OR IFNULL(versionStartIncluding, '0') LIKE '${v}')
+                  OR IFNULL(versionStartIncluding, '0') LIKE '${v}'
+                  OR IFNULL(versionStartIncluding, '0') LIKE '${v}.0')
              AND (IFNULL(versionStartExcluding, '0') < '${v}')
              AND (IFNULL(versionEndIncluding, '9999') > '${v}'
-                  OR IFNULL(versionEndIncluding, '9999') LIKE '${v}')
+                  OR IFNULL(versionEndIncluding, '9999') LIKE '${v}'
+                  OR IFNULL(versionEndIncluding, '9999') LIKE '${v}.0')
              AND (IFNULL(versionEndExcluding, '9999') > '${v}')
              GROUP BY multiaffected.cve_id
              ]]
@@ -436,7 +444,7 @@ local function query (qtype)
              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = multiaffected.cve_id)) as msf
              FROM multiaffected
              INNER JOIN cves ON multiaffected.cve_id = cves.cve_id
-             WHERE product_id =
+             WHERE product_id IN
              (SELECT product_id FROM products WHERE product = '${p}' AND version = '*' and version_update = '*')
              AND versionStartIncluding IS NULL AND versionStartExcluding IS NULL
              AND versionEndIncluding IS NULL AND versionEndExcluding IS NULL
@@ -449,7 +457,7 @@ local function query (qtype)
              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = multiaffected.cve_id)) as msf
              FROM multiaffected
              INNER JOIN cves ON multiaffected.cve_id = cves.cve_id
-             WHERE product_id =
+             WHERE product_id IN
              (SELECT product_id FROM products WHERE product = '${p}' AND version = '*')
              AND (IFNULL(versionStartIncluding, '0') < '${f}'
                   OR IFNULL(versionStartIncluding, '0') LIKE '${f}')
@@ -468,8 +476,8 @@ local function query (qtype)
              INNER JOIN affected ON products.product_id = affected.product_id
              INNER JOIN cves ON affected.cve_id = cves.cve_id
              WHERE products.product = '${p}'
-             AND ((products.version = '${v}' AND products.version_update = '${vu}')
-                  OR (products.version = '${v}${vu}' AND products.version_update = '*'))
+             AND ((products.version IN ('${v}', '${v}.0') AND products.version_update = '${vu}')
+                  OR (products.version IN ('${v}${vu}', '${v}.0${vu}') AND products.version_update = '*'))
              GROUP BY affected.cve_id
              ]]
    elseif qtype == 'affected_range' then
@@ -544,7 +552,22 @@ local function dump_exploit (host, port, vuln)
 end
 
 
-local function vulnerabilities (host, port, product, info)
+local function cvss_comparator(a, b)
+   if a[3] ~= nil and b[3] ~= nil then
+      return a[3] > b[3]
+   elseif a[3] ~= nil and b[2] ~= nil then
+      return a[3] > b[2]
+   elseif a[2] ~= nil and b[3] ~= nil then
+      return a[2] > b[3]
+   elseif a[2] ~= nil and b[2] ~= nil then
+      return a[2] > b[2]
+   else
+      return false
+   end
+end
+
+
+local function vulnerabilities (host, port, cpe, product, info)
    local qrym = "multiaffected"
    local qry = "affected"
    if not info.empty then
@@ -594,7 +617,7 @@ local function vulnerabilities (host, port, product, info)
                             value.ExploitDB,
                             value.Metasploit})
    end
-   table.sort(sorted, function(a, b) return a[2] > b[2] end)
+   table.sort(sorted, cvss_comparator)
    log("[+] cves: %d", #sorted)
 
    -- Insert total vulnerabilities found
@@ -612,6 +635,7 @@ local function vulnerabilities (host, port, product, info)
          registry.json_out[host.ip]['ports'][port_proto]['services'],
          {
             name = port.service,
+            cpe = cpe,
             product = product,
             version = info.ver,
             vupdate = info.vup,
@@ -659,11 +683,11 @@ local function analysis (host, port, matches)
                or (service_arg == 'all' and version_arg ~= 'all' and version == version_arg)) then
                stdnse.verbose(2, fmt("product => %s | version => %s", product, version))
                if info ~= nil then
-                  log_info(host, port, product, info)
+                  log_info(host, port, cpe, product, info)
                   local v, vu = correct_version(info)
                   local tmp_vulns = nil
                   if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
-                     tmp_vulns = vulnerabilities(host, port, product, info)
+                     tmp_vulns = vulnerabilities(host, port, cpe, product, info)
                      local nvulns = table.remove(tmp_vulns, 1)
                      if nvulns > 0 then
                         table.insert(tmp_vulns, 1, fmt("product: %s", product))
@@ -679,8 +703,8 @@ local function analysis (host, port, matches)
                               "CVE ID", "CVSSv2", "CVSSv3", "ExploitDB", "Metasploit"
                           )
                         )
-                        stdnse.verbose(2, "Caching " .. product .. "@" ..
-                           v .. "@" .. vu .. " vulnerabilities.")
+                        stdnse.verbose(2, "Caching " .. product .. "|" ..
+                           v .. "|" .. vu .. " vulnerabilities.")
                         registry.cache[fmt('%s|%s|%s', product, v, vu)] = { nvulns, tmp_vulns }
                      end
                   else
@@ -695,6 +719,7 @@ local function analysis (host, port, matches)
                            registry.json_out[host.ip]['ports'][port_proto]['services'],
                            {
                               name = port.service,
+                              cpe = cpe,
                               product = product,
                               version = v,
                               vupdate = vu,
@@ -706,8 +731,8 @@ local function analysis (host, port, matches)
                         )
                      end
                      log_separator()
-                     stdnse.verbose(2, "Using cached " .. product .. "@" ..
-                        v .. "@" .. vu .. " vulnerabilities.")
+                     stdnse.verbose(2, "Using cached " .. product .. "|" ..
+                        v .. "|" .. vu .. " vulnerabilities.")
                      tmp_vulns = cache[2]
                   end
                   if tmp_vulns ~= nil and #tmp_vulns > 0 then

@@ -3,6 +3,7 @@ Nmap script that provides information about probable vulnerabilities based on di
 
 **Contents:**
   - [Technical details](#technical-details)
+    - [Known bugs](#known-bugs)
   - [Requirements](#requirements)
   - [Run](#run)
     - [Pre-launch](#pre-launch)
@@ -43,6 +44,11 @@ The current implementation take care of the following cases:
     of the library and analyze the starting comment looking for the version.
 
 > Nmap library shortport is used to detect if port matches HTTP/SSL.
+
+## Known bugs
+Due to limitations in sqlite, the version comparison sometimes fail and
+retrieve versions greater than the version queried, e.g. `10.0.0` would be queried
+when comparing with `2.5.0` becase `1 > 2` (sqlite does string comparison character by character)
 
 # Requirements
 - luasql

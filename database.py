@@ -86,7 +86,7 @@ CONST = {
     "cve": 2000,
     "bat": 25,
 }
-TEST = re.compile(r"https://services.nvd.nist.gov/rest/json/(\w+)/2.0\?startIndex=(\d+)")
+TEST = re.compile(r"https://services.nvd.nist.gov/rest/json/(\w+)/2.0\?startIndex=(\d+)")  # noqa
 COPYRIGHT = """
 CVEScannerV2  Copyright (C) 2022-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 Universidad Carlos III de Madrid.
@@ -463,7 +463,7 @@ def query_api(args):
                     "rejected",
                 ):
                     if not populate:
-                        # print(f"sending {cve_id} to remove")
+                        print(f"sending {cve_id} to remove")
                         queue.put((2, (cve_id,)))
                     continue
                 cvssv2 = (
