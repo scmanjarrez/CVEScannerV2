@@ -54,13 +54,15 @@ The current implementation take care of the following cases:
 In order to execute **cvescannerv2.nse**, CVEs database, http-paths and http-regex files must be present.
 
 The script **database.py** generates **cve.db** with the required information.
-
 ```bash
 $ pip install -r requirements.txt
 $ python database.py
 ```
 
-> **Note:** For your convenience, a semi-updated database is offered as .sql format in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)**.
+> **Note:** In order to run database.py, due to the changes in the data feeds from NVD, now you
+> need to [request an API key](https://nvd.nist.gov/developers/request-an-api-key) and store it in a file named `.api` in your current working directory.
+
+> **Note2:** For your convenience, a semi-updated database is offered as .sql format in **[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB)**.
 
 ### Optional
 **cvescannerv2.nse** can be placed in Nmap default script directory for global execution.
@@ -83,7 +85,7 @@ After database has been created, call the script:
 
 - `nmap -sV <target_ip> --script cvescannerv2`
 
-**Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path and regex.
+**Note**: cvescannerv2.nse accepts the following script-args: db, log, maxcve, path, regex, service and version.
 <details>
     <summary><b>script-args default values</b></summary>
 
@@ -92,6 +94,8 @@ After database has been created, call the script:
     maxcve: 10
     path: http-paths-vulnerscom.json
     regex: http-regex-vulnerscom.json
+    service: all
+    version: all
 </details>
 
 <details>
@@ -99,13 +103,15 @@ After database has been created, call the script:
 
 ```bash
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args log=cvescannerv2.log
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args json=cvescannerv2.json
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=10
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args log=scan2023.log
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args json=scan2023.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args maxcve=5
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args path=http-paths-vulnerscom.json
 $ nmap -sV <target_ip> --script cvescannerv2 --script-args regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args service=http_server
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args version=2.4.57
 
-$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=cvescannerv2.log,json=cvescannerv2.json,maxcve=10,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json
+$ nmap -sV <target_ip> --script cvescannerv2 --script-args db=cve.db,log=scan2023.log,json=scan2023.json,maxcve=5,path=http-paths-vulnerscom.json,regex=http-regex-vulnerscom.json,service=http_server,version=2.4.57
 ```
 
 </details>
@@ -120,39 +126,41 @@ CVEScannerV2 will show all CVEs related to every _service-version_ discovered.
     22/tcp    open  ssh                  OpenSSH 7.1 (protocol 2.0)
     | cvescannerv2:
     |   product: openssh
-    |   version: 7.1
-    |   vupdate: *
-    |   cves: 27
+    |   version: 4.7
+    |   vupdate: p1
+    |   cves: 38
     |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-    |   	CVE-2008-3844       	9.3  	-    	No        	No
-    |   	CVE-2016-8858       	7.8  	7.5  	No        	No
-    |   	CVE-2016-6515       	7.8  	7.5  	Yes       	No
     |   	CVE-2016-1908       	7.5  	9.8  	No        	No
-    |   	CVE-2016-10009      	7.5  	7.3  	Yes       	No
+    |   	CVE-2023-38408      	nil  	9.8  	No        	No
+    |   	CVE-2008-3844       	9.3  	-    	No        	No
+    |   	CVE-2015-5600       	8.5  	-    	No        	No
     |   	CVE-2015-8325       	7.2  	7.8  	No        	No
-    |   	CVE-2016-10012      	7.2  	7.8  	No        	No
-    |   	CVE-2016-10010      	6.9  	7.0  	Yes       	No
     |   	CVE-2020-15778      	6.8  	7.8  	No        	No
-    |_  	CVE-2019-6111       	5.8  	5.9  	Yes       	No
+    |   	CVE-2016-10012      	7.2  	7.8  	No        	No
+    |   	CVE-2016-10708      	5.0  	7.5  	No        	No
+    |   	CVE-2016-6515       	7.8  	7.5  	Yes       	No
+    |   	CVE-2010-4478       	7.5  	-    	No        	No
+    |_
     ...
     ...
     3306/tcp  open  mysql                MySQL 5.5.20-log
     | cvescannerv2:
     |   product: mysql
-    |   version: 5.5.20
-    |   vupdate: *
-    |   cves: 541
+    |   version: 5.0.51
+    |   vupdate: a
+    |   cves: 212
     |   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-    |   	CVE-2012-2750       	10.0 	-    	No        	No
-    |   	CVE-2016-6662       	10.0 	9.8  	Yes       	No
-    |   	CVE-2012-3163       	9.0  	-    	No        	No
-    |   	CVE-2020-14878      	7.7  	8.0  	No        	No
-    |   	CVE-2013-1492       	7.5  	-    	No        	No
-    |   	CVE-2014-0001       	7.5  	-    	No        	No
-    |   	CVE-2018-2562       	7.5  	7.1  	No        	No
-    |   	CVE-2014-6500       	7.5  	-    	No        	No
-    |   	CVE-2014-6491       	7.5  	-    	No        	No
-    |_  	CVE-2012-0553       	7.5  	-    	No        	No
+    |   	CVE-2009-2446       	8.5  	-    	No        	No
+    |   	CVE-2017-15945      	7.2  	7.8  	No        	No
+    |   	CVE-2016-3440       	4.0  	7.7  	No        	No
+    |   	CVE-2009-4484       	7.5  	-    	No        	Yes
+    |   	CVE-2008-0226       	7.5  	-    	No        	Yes
+    |   	CVE-2020-1967       	5.0  	7.5  	No        	No
+    |   	CVE-2009-2942       	7.5  	-    	No        	No
+    |   	CVE-2023-21980      	nil  	7.1  	No        	No
+    |   	CVE-2013-2395       	6.8  	-    	No        	No
+    |   	CVE-2009-5026       	6.8  	-    	No        	No
+    |_
     ...
     ...
 </details>
@@ -162,77 +170,60 @@ Log file **cvescannerv2.log** contains every _exploit/metasploit_ found.
 <details>
     <summary><b>cvescannerv2.log dump</b></summary>
 
-    #################################################
-    ############## 2021-11-05 14:01:01 ##############
-    #################################################
+    ## 2023-08-26T14:38:30+00:00
 
-    [*] host: 172.16.2.132
+    [*] host: 192.168.69.129
     [*] port: 22
     [+] protocol: tcp
     [+] service: ssh
+    [+] cpe: cpe:/a:openbsd:openssh:4.7p1
     [+] product: openssh
-    [+] version: 7.1
-    [+] vupdate: *
-    [+] cves: 27
+    [+] version: 4.7
+    [+] vupdate: p1
+    [+] cves: 38
+    [-] 	id: CVE-2016-1908     	cvss_v2: 7.5  	cvss_v3: 9.8
+    [-] 	id: CVE-2023-38408    	cvss_v2: nil  	cvss_v3: 9.8
     [-] 	id: CVE-2008-3844     	cvss_v2: 9.3  	cvss_v3: -
-    [-] 	id: CVE-2016-8858     	cvss_v2: 7.8  	cvss_v3: 7.5
+    [-] 	id: CVE-2015-5600     	cvss_v2: 8.5  	cvss_v3: -
+    [-] 	id: CVE-2015-8325     	cvss_v2: 7.2  	cvss_v3: 7.8
+    [-] 	id: CVE-2020-15778    	cvss_v2: 6.8  	cvss_v3: 7.8
+    [-] 	id: CVE-2016-10012    	cvss_v2: 7.2  	cvss_v3: 7.8
+    [-] 	id: CVE-2016-10708    	cvss_v2: 5.0  	cvss_v3: 7.5
     [-] 	id: CVE-2016-6515     	cvss_v2: 7.8  	cvss_v3: 7.5
     [!] 		ExploitDB:
-    [#] 			name: OpenSSH 7.2 - Denial of Service
+    [#] 			name: nil
     [#] 			id: 40888
     [#] 			url: https://www.exploit-db.com/exploits/40888
-    [-] 	id: CVE-2016-1908     	cvss_v2: 7.5  	cvss_v3: 9.8
-    [-] 	id: CVE-2016-10009    	cvss_v2: 7.5  	cvss_v3: 7.3
-    [!] 		ExploitDB:
-    [#] 			name: OpenSSH < 7.4 - agent Protocol Arbitrary Library Loading
-    [#] 			id: 40963
-    [#] 			url: https://www.exploit-db.com/exploits/40963
-    [-] 	id: CVE-2015-8325     	cvss_v2: 7.2  	cvss_v3: 7.8
-    [-] 	id: CVE-2016-10012    	cvss_v2: 7.2  	cvss_v3: 7.8
-    [-] 	id: CVE-2016-10010    	cvss_v2: 6.9  	cvss_v3: 7.0
-    [!] 		ExploitDB:
-    [#] 			name: OpenSSH < 7.4 - 'UsePrivilegeSeparation Disabled' Forwarded Unix Domain Sockets Privilege Escalation
-    [#] 			id: 40962
-    [#] 			url: https://www.exploit-db.com/exploits/40962
-    [-] 	id: CVE-2020-15778    	cvss_v2: 6.8  	cvss_v3: 7.8
+    [-] 	id: CVE-2010-4478     	cvss_v2: 7.5  	cvss_v3: -
     ...
     ...
     -------------------------------------------------
-    [*] host: 172.16.2.132
+    [*] host: 192.168.69.129
     [*] port: 3306
     [+] protocol: tcp
     [+] service: mysql
+    [+] cpe: cpe:/a:mysql:mysql:5.0.51a-3ubuntu5
     [+] product: mysql
-    [+] version: 5.5.20
-    [+] vupdate: *
-    [+] cves: 541
-    [-] 	id: CVE-2012-2750     	cvss_v2: 10.0 	cvss_v3: -
-    [-] 	id: CVE-2016-6662     	cvss_v2: 10.0 	cvss_v3: 9.8
-    [!] 		ExploitDB:
-    [#] 			name: MySQL / MariaDB / PerconaDB 5.5.51/5.6.32/5.7.14 - Code Execution / Privilege Escalation
-    [#] 			id: 40360
-    [#] 			url: https://www.exploit-db.com/exploits/40360
-    [-] 	id: CVE-2012-3163     	cvss_v2: 9.0  	cvss_v3: -
-    [-] 	id: CVE-2020-14878    	cvss_v2: 7.7  	cvss_v3: 8.0
-    [-] 	id: CVE-2013-1492     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2014-0001     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2018-2562     	cvss_v2: 7.5  	cvss_v3: 7.1
-    [-] 	id: CVE-2014-6500     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2014-6491     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2012-0553     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2012-0882     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2012-3158     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2020-14760    	cvss_v2: 7.5  	cvss_v3: 5.5
-    [-] 	id: CVE-2015-0411     	cvss_v2: 7.5  	cvss_v3: -
-    [-] 	id: CVE-2016-0546     	cvss_v2: 7.2  	cvss_v3: -
-    [-] 	id: CVE-2015-4819     	cvss_v2: 7.2  	cvss_v3: -
-    [-] 	id: CVE-2016-3471     	cvss_v2: 7.1  	cvss_v3: 7.5
-    [-] 	id: CVE-2016-6664     	cvss_v2: 6.9  	cvss_v3: 7.0
-    [!] 		ExploitDB:
-    [#] 			name: MySQL / MariaDB / PerconaDB 5.5.x/5.6.x/5.7.x - 'root' System User Privilege Escalation
-    [#] 			id: 40679
-    [#] 			url: https://www.exploit-db.com/exploits/40679
-    [-] 	id: CVE-2020-14866    	cvss_v2: 6.8  	cvss_v3: 4.9
+    [+] version: 5.0.51
+    [+] vupdate: a
+    [+] cves: 212
+    [-] 	id: CVE-2009-2446     	cvss_v2: 8.5  	cvss_v3: -
+    [-] 	id: CVE-2017-15945    	cvss_v2: 7.2  	cvss_v3: 7.8
+    [-] 	id: CVE-2016-3440     	cvss_v2: 4.0  	cvss_v3: 7.7
+    [-] 	id: CVE-2009-4484     	cvss_v2: 7.5  	cvss_v3: -
+    [!] 		Metasploit:
+    [#] 			name: exploit/linux/mysql/mysql_yassl_getname
+    [-] 	id: CVE-2008-0226     	cvss_v2: 7.5  	cvss_v3: -
+    [!] 		Metasploit:
+    [#] 			name: exploit/linux/mysql/mysql_yassl_hello
+    [#] 			name: exploit/windows/mysql/mysql_yassl_hello
+    [-] 	id: CVE-2020-1967     	cvss_v2: 5.0  	cvss_v3: 7.5
+    [-] 	id: CVE-2009-2942     	cvss_v2: 7.5  	cvss_v3: -
+    [-] 	id: CVE-2023-21980    	cvss_v2: nil  	cvss_v3: 7.1
+    [-] 	id: CVE-2013-2395     	cvss_v2: 6.8  	cvss_v3: -
+    [-] 	id: CVE-2009-5026     	cvss_v2: 6.8  	cvss_v3: -
+    [-] 	id: CVE-2013-5882     	cvss_v2: 6.8  	cvss_v3: -
+    [-] 	id: CVE-2009-4028     	cvss_v2: 6.8  	cvss_v3: -
     ...
     ...
 </details>
@@ -242,92 +233,63 @@ Log file (json format) **cvescannerv2.json**.
 <details>
     <summary><b>cvescannerv2.json dump</b></summary>
 
-        {
-          "192.168.45.128": {
-            "ports": {
-              "22/tcp": {
-                "service": {
-                  "vupdate": "p1",
-                  "name": "ssh",
-                  "version": "4.7",
-                  "product": "openssh"
+  "192.168.69.129": {
+    "ports": {
+      "22/tcp": {
+        "services": [
+          {
+            "vupdate": "p1",
+            "vulnerabilities": {
+              "total": 38,
+              "info": "scan",
+              "cves": {
+                "CVE-2014-1692": {
+                  "cvssv2": 7.5,
+                  "cvssv3": "-"
                 },
-                "vulnerabilities": {
-                  "total": 36,
-                  "cves": {
-                    "CVE-2008-5161": {
-                      "cvssv2": 2.6,
-                      "cvssv3": "-"
+                "CVE-2015-8325": {
+                  "cvssv2": 7.2,
+                  "cvssv3": 7.8
+                },
+                "CVE-2012-0814": {
+                  "cvssv2": 3.5,
+                  "cvssv3": "-"
+                },
+                "CVE-2016-6210": {
+                  "cvssv3": 5.9,
+                  "exploitdb": [
+                    {
+                      "id": 40113,
+                      "url": "https://www.exploit-db.com/exploits/40113"
                     },
-                    "CVE-2016-6210": {
-                      "cvssv3": 5.9,
-                      "exploitdb": [
-                        {
-                          "name": "OpenSSHd 7.2p2 - Username Enumeration",
-                          "url": "https://www.exploit-db.com/exploits/40113",
-                          "id": 40113
-                        },
-                        {
-                          "name": "OpenSSH 7.2p2 - Username Enumeration",
-                          "url": "https://www.exploit-db.com/exploits/40136",
-                          "id": 40136
-                        }
-                      ],
-                      "metasploit": [
-                        {
-                          "name": "auxiliary/scanner/ssh/ssh_enumusers"
-                        }
-                      ],
-                      "cvssv2": 4.3
-                    },
-                    ...
-                    "CVE-2016-3115": {
-                      "cvssv3": 6.4,
-                      "exploitdb": [
-                        {
-                          "name": "OpenSSH 7.2p1 - (Authenticated) xauth Command Injection",
-                          "url": "https://www.exploit-db.com/exploits/39569",
-                          "id": 39569
-                        }
-                      ],
-                      "cvssv2": 5.5
-                    },
-                    "CVE-2018-15473": {
-                      "cvssv3": 5.3,
-                      "exploitdb": [
-                        {
-                          "name": "OpenSSH 2.3 < 7.7 - Username Enumeration (PoC)",
-                          "url": "https://www.exploit-db.com/exploits/45210",
-                          "id": 45210
-                        },
-                        {
-                          "name": "OpenSSH 2.3 < 7.7 - Username Enumeration",
-                          "url": "https://www.exploit-db.com/exploits/45233",
-                          "id": 45233
-                        },
-                        {
-                          "name": "OpenSSH < 7.7 - User Enumeration (2)",
-                          "url": "https://www.exploit-db.com/exploits/45939",
-                          "id": 45939
-                        }
-                      ],
-                      "metasploit": [
-                        {
-                          "name": "auxiliary/scanner/ssh/ssh_enumusers"
-                        }
-                      ],
-                      "cvssv2": 5.0
+                    {
+                      "id": 40136,
+                      "url": "https://www.exploit-db.com/exploits/40136"
                     }
-                  },
-                  "cache": false
-                }
+                  ],
+                  "metasploit": [
+                    {
+                      "name": "auxiliary/scanner/ssh/ssh_enumusers"
+                    }
+                  ],
+                  "cvssv2": 4.3
+                },
               }
               ...
               ...
             },
-            "timestamp": "2022-04-26 12:12:10"
+            "cpe": "cpe:/a:openbsd:openssh:4.7p1",
+            "name": "ssh",
+            "version": "4.7",
+            "product": "openssh"
           }
-        }
+        ]
+      },
+      ...
+      ...
+    "timestamp": "2023-08-26T14:38:30+00:00"
+  }
+}
 </details>
 
 > You can find the output from metasploitable2 and metasploitable3 in **example_data**.
