@@ -228,7 +228,7 @@ end
 local function find_version(cpe, text, regex, matches)
    local idx = 0
    local sidx = 0
-   local version = nil
+   local version
    while true do
       sidx, idx, version = text:find(regex, idx + 1)
       if version then
@@ -417,25 +417,16 @@ local function query (qtype)
              WHERE referenced_metasploit.cve_id = '%s'
              ]]
    elseif qtype == 'multiaffected' then
-      -- I'm using .0 in version matching as a workaround with versions that used to
-      -- appear as X.Y in data feeds but now appears as X.Y.0 in the API, e.g. 5.5 -> 5.5.0
       return [[
              SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
+             multiaffected.versionStartIncluding, multiaffected.versionStartExcluding,
+             multiaffected.versionEndIncluding, multiaffected.versionEndExcluding,
              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = multiaffected.cve_id)) as edb,
              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = multiaffected.cve_id)) as msf
              FROM multiaffected
              INNER JOIN cves ON multiaffected.cve_id = cves.cve_id
              WHERE product_id IN
              (SELECT product_id FROM products WHERE product = '${p}' AND version = '*')
-             AND (IFNULL(versionStartIncluding, '0') < '${v}'
-                  OR IFNULL(versionStartIncluding, '0') LIKE '${v}'
-                  OR IFNULL(versionStartIncluding, '0') LIKE '${v}.0')
-             AND (IFNULL(versionStartExcluding, '0') < '${v}')
-             AND (IFNULL(versionEndIncluding, '9999') > '${v}'
-                  OR IFNULL(versionEndIncluding, '9999') LIKE '${v}'
-                  OR IFNULL(versionEndIncluding, '9999') LIKE '${v}.0')
-             AND (IFNULL(versionEndExcluding, '9999') > '${v}')
-             GROUP BY multiaffected.cve_id
              ]]
    elseif qtype == 'multiaffected_empty' then
       return [[
@@ -448,50 +439,17 @@ local function query (qtype)
              (SELECT product_id FROM products WHERE product = '${p}' AND version = '*' and version_update = '*')
              AND versionStartIncluding IS NULL AND versionStartExcluding IS NULL
              AND versionEndIncluding IS NULL AND versionEndExcluding IS NULL
-             GROUP BY multiaffected.cve_id
-             ]]
-   elseif qtype == 'multiaffected_range' then
-      return [[
-             SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
-             (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = multiaffected.cve_id)) as edb,
-             (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = multiaffected.cve_id)) as msf
-             FROM multiaffected
-             INNER JOIN cves ON multiaffected.cve_id = cves.cve_id
-             WHERE product_id IN
-             (SELECT product_id FROM products WHERE product = '${p}' AND version = '*')
-             AND (IFNULL(versionStartIncluding, '0') < '${f}'
-                  OR IFNULL(versionStartIncluding, '0') LIKE '${f}')
-             AND (IFNULL(versionStartExcluding, '0') < '${f}')
-             AND (IFNULL(versionEndIncluding, '9999') > '${t}'
-                  OR IFNULL(versionEndIncluding, '9999') LIKE '${t}')
-             AND (IFNULL(versionEndExcluding, '9999') > '${t}')
-             GROUP BY multiaffected.cve_id
              ]]
    elseif qtype == 'affected' then
       return [[
              SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
+             products.version, products.version_update,
              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = affected.cve_id)) as edb,
              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = affected.cve_id)) as msf
              FROM products
              INNER JOIN affected ON products.product_id = affected.product_id
              INNER JOIN cves ON affected.cve_id = cves.cve_id
              WHERE products.product = '${p}'
-             AND ((products.version IN ('${v}', '${v}.0') AND products.version_update = '${vu}')
-                  OR (products.version IN ('${v}${vu}', '${v}.0${vu}') AND products.version_update = '*'))
-             GROUP BY affected.cve_id
-             ]]
-   elseif qtype == 'affected_range' then
-      return [[
-             SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
-             (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = affected.cve_id)) as edb,
-             (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = affected.cve_id)) as msf
-             FROM products
-             INNER JOIN affected ON products.product_id = affected.product_id
-             INNER JOIN cves ON affected.cve_id = cves.cve_id
-             WHERE products.product = '${p}'
-             AND (products.version > '${f}' OR products.version LIKE '${f}')
-             AND (products.version < '${t}' OR products.version LIKE '${t}')
-             GROUP BY affected.cve_id
              ]]
    end
 end
@@ -567,49 +525,201 @@ local function cvss_comparator(a, b)
 end
 
 
-local function vulnerabilities (host, port, cpe, product, info)
-   local qrym = "multiaffected"
-   local qry = "affected"
-   if not info.empty then
-      if not info.range then
-         qrym = fmtn(query(qrym), {p = product, v = info.ver})
-         qry = fmtn(query(qry), {p = product, v = info.ver, vu = info.vup})
+local function split_version(str)
+   local parts = {}
+   for part in string.gmatch(str, "([^.]+)") do
+      table.insert(parts, part)
+   end
+   return parts
+end
+
+
+local function remove_alpha(str)
+    local numeric, alpha = string.match(str, "([%d%.]+)(%a*)")
+    return numeric, alpha
+end
+
+
+local function compare_version(version1, version2)
+   version1, _ = remove_alpha(version1)
+   version2, _ = remove_alpha(version2)
+   local parts1 = split_version(version1)
+   local parts2 = split_version(version2)
+   local max_len = math.max(#parts1, #parts2)
+   for i = 1, max_len do
+      local num1 = tonumber(parts1[i]) or 0
+      local num2 = tonumber(parts2[i]) or 0
+      if num1 < num2 then
+         return -1
+      elseif num1 > num2 then
+         return 1
+      end
+   end
+   return 0
+end
+
+
+local function default_version(version, default)
+   if version == nil or version == '-' then
+      return default
+   else
+      return version
+   end
+end
+
+
+local function scoped_multi_versions(all_versions, from, to, result)
+   local vuln, cvssv2, cvssv3, st_in, st_ex, en_in, en_ex, exploitdb, metasploit
+   for _, v in pairs(all_versions) do
+      st_in = default_version(v.StartInc, '0')
+      st_ex = default_version(v.StartExc, '0')
+      en_in = default_version(v.EndInc, '9999999999')
+      en_ex = default_version(v.EndExc, '9999999999')
+      if string.find(from, '%.') and string.find(to, '%.9999999999') then
+         -- range search
+         if ((compare_version(st_in, from) >= 0 or compare_version(st_ex, from) > 0)
+             and (compare_version(en_in, to) <= 0 or compare_version(en_ex, to) < 0)) then
+            vuln = v.id
+            cvssv2 = v.CVSSV2
+            cvssv3 = v.CVSSV3
+            exploitdb = v.ExploitDB
+            metasploit = v.Metasploit
+            if result[vuln] == nil then
+               result[vuln] = {
+                  ['CVSSV2'] = cvssv2, ['CVSSV3'] = cvssv3,
+                  ['ExploitDB'] = exploitdb,
+                  ['Metasploit'] = metasploit
+               }
+            end
+         end
       else
-         local sql_f = info.from:gsub('[xX]', '%%')
-         local sql_t = info.to:gsub('[xX]', '%%')
-         qrym = fmtn(query(qrym .. '_range'), {p = product, f = sql_f, t = sql_t})
-         qry = fmtn(query(qry .. '_range'), {p = product, f = sql_f, t = sql_t})
+         if compare_version(from, st_in) >= 0 and compare_version(from, st_ex) > 0
+            and compare_version(to, en_in) <= 0 and compare_version(to, en_ex) < 0 then
+            vuln = v.id
+            cvssv2 = v.CVSSV2
+            cvssv3 = v.CVSSV3
+            exploitdb = v.ExploitDB
+            metasploit = v.Metasploit
+            if result[vuln] == nil then
+               result[vuln] = {
+                  ['CVSSV2'] = cvssv2, ['CVSSV3'] = cvssv3,
+                  ['ExploitDB'] = exploitdb,
+                  ['Metasploit'] = metasploit
+               }
+            end
+         end
+      end
+   end
+end
+
+
+local function scoped_versions(all_versions, from, to, upd, result)
+   local vuln, cvssv2, cvssv3, pr_v, pr_vu, exploitdb, metasploit
+   for _, v in pairs(all_versions) do
+      pr_v = default_version(v.version, '0')
+      pr_vu = default_version(v.version_update, '*')
+      if from ~= to then
+         if ((compare_version(pr_v, from) >= 0
+              or compare_version(pr_v .. pr_vu, from) >= 0)
+            and (compare_version(pr_v, to) <= 0
+                 or compare_version(pr_v .. pr_vu, to) <= 0)) then
+            vuln = v.id
+            cvssv2 = v.CVSSV2
+            cvssv3 = v.CVSSV3
+            exploitdb = v.ExploitDB
+            metasploit = v.Metasploit
+            if result[vuln] == nil then
+               result[vuln] = {
+                  ['CVSSV2'] = cvssv2, ['CVSSV3'] = cvssv3,
+                  ['ExploitDB'] = exploitdb,
+                  ['Metasploit'] = metasploit
+               }
+            end
+         end
+      else
+         if ((compare_version(pr_v, from) == 0 and pr_vu == upd)
+             or (compare_version(pr_v .. pr_vu, from) == 0 and pr_vu == '*')) then
+            vuln = v.id
+            cvssv2 = v.CVSSV2
+            cvssv3 = v.CVSSV3
+            exploitdb = v.ExploitDB
+            metasploit = v.Metasploit
+            if result[vuln] == nil then
+               result[vuln] = {
+                  ['CVSSV2'] = cvssv2, ['CVSSV3'] = cvssv3,
+                  ['ExploitDB'] = exploitdb,
+                  ['Metasploit'] = metasploit
+               }
+            end
+         end
+      end
+   end
+end
+
+
+
+local function vulnerabilities (host, port, cpe, product, info)
+   local qrym = fmtn(query('multiaffected'), {p = product})
+   local qry = fmtn(query('affected'), {p = product})
+   local from = info.ver
+   local to = info.ver
+   local upd = info.vup
+
+   if not info.empty then
+      if info.range then
+         from = info.from:gsub('[xX]', '0')
+         to = info.to:gsub('[xX]', '9999999999')
       end
    else
       -- Given that we assumed '*' as version and vupdate when empty,
       -- we can't search vulnerabilities for specific versions
-      qrym = fmtn(query(qrym .. '_empty'), {p = product})
+      qrym = fmtn(query('multiaffected_empty'), {p = product})
    end
 
    -- Search vulnerabilities affecting multiple versions (this one included)
    local cur = registry.conn:execute(qrym)
-   local vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
-   local vulns = {}
+   local vuln, cvssv2, cvssv3, st_in, st_ex, en_in, en_ex, exploitdb, metasploit = cur:fetch()
+   local tmp_vulns = {}
+   local idx = 1
    while vuln do
-      vulns[vuln] = {['CVSSV2'] = cvssv2, ['CVSSV3'] = cvssv3,
-                     ['ExploitDB'] = exploitdb,
-                     ['Metasploit'] = metasploit}
-      vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
+      tmp_vulns[idx] = {
+         id = vuln,
+         CVSSV2 = cvssv2, CVSSV3 = cvssv3,
+         StartInc = st_in, StartExc = st_ex,
+         EndInc = en_in, EndExc = en_ex,
+         ExploitDB = exploitdb,
+         Metasploit = metasploit
+      }
+      idx = idx + 1
+      vuln, cvssv2, cvssv3, st_in, st_ex, en_in, en_ex, exploitdb, metasploit = cur:fetch()
    end
 
+   local vulns = {}
+   scoped_multi_versions(tmp_vulns, from, to, vulns)
+
    if not info.empty then
+      tmp_vulns = {}
       -- Search vulnerabilities affecting specific version
       cur = registry.conn:execute(qry)
-      vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
+      local pr_v, pr_vu
+      vuln, cvssv2, cvssv3, pr_v, pr_vu, exploitdb, metasploit = cur:fetch()
+      idx = 1
       while vuln do
-         vulns[vuln] = {['CVSSV2'] = cvssv2, ['CVSSV3'] = cvssv3,
-                        ['ExploitDB'] = exploitdb,
-                        ['Metasploit'] = metasploit}
-         vuln, cvssv2, cvssv3, exploitdb, metasploit = cur:fetch()
+         tmp_vulns[idx] = {
+            id = vuln,
+            CVSSV2 = cvssv2, CVSSV3 = cvssv3,
+            version = pr_v, version_update = pr_vu,
+            ExploitDB = exploitdb,
+            Metasploit = metasploit
+         }
+         idx = idx + 1
+         vuln, cvssv2, cvssv3, pr_v, pr_vu, exploitdb, metasploit = cur:fetch()
       end
    end
 
-   -- Sort CVEs by CVSSv2
+   scoped_versions(tmp_vulns, from, to, upd, vulns)
+
+   -- Sort CVEs by CVSSv3 and CVSSv2
    local sorted = {}
    for key, value in pairs(vulns) do
       table.insert(sorted, {key,
@@ -631,14 +741,15 @@ local function vulnerabilities (host, port, cpe, product, info)
       if registry.json_out[host.ip]['ports'][port_proto] == nil then
          registry.json_out[host.ip]['ports'][port_proto] = {['services'] = {}}
       end
+      local v, vu = correct_version(info)
       table.insert(
          registry.json_out[host.ip]['ports'][port_proto]['services'],
          {
             name = port.service,
             cpe = cpe,
             product = product,
-            version = info.ver,
-            vupdate = info.vup,
+            version = v,
+            vupdate = vu,
             vulnerabilities = {
                ['total'] = 0,
                ['info'] = 'scan',
@@ -799,7 +910,6 @@ end
 
 
 portaction = function (host, port)
-   local vulns = nil
    local matches = {['data'] = {['nmap'] = {}, ['http'] = {}}, ['size'] = 0}
    if registry.json_out[host.ip] == nil then
       registry.json_out[host.ip] = {
@@ -818,6 +928,7 @@ portaction = function (host, port)
            or port.service == 'upnp') then
       http_match(host, port, matches)
    end
+   local vulns
    if matches['size'] ~= 0 then
       vulns = analysis(host, port, matches)
    end

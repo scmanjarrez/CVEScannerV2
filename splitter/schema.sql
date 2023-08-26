@@ -1,7 +1,6 @@
-CREATE TABLE cached (
-                year INTEGER PRIMARY KEY,
-                last_update TEXT,
-                sha256 TEXT
+CREATE TABLE metadata (
+                id INTEGER PRIMARY KEY,
+                last_mod TEXT
             );
 CREATE TABLE exploits (
                 exploit_id INTEGER PRIMARY KEY,

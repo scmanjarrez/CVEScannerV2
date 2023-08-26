@@ -344,33 +344,6 @@ def now():
     return datetime.isoformat(datetime.utcnow())
 
 
-def scrape_title(exploit):
-    print("FIX!!!")
-    title = None
-    delay = 5
-    try:
-        with httpx.get(
-            f"{URL['expdb']}/{exploit}", headers={"User-Agent": UA.random}
-        ) as page:
-            decoded = html.unescape(page.text)
-            title = (
-                RE["tit"].search(decoded).group(3)
-            )  # group 1 and 2 are quotes
-    except (
-        httpx.exceptions.ConnectionError,
-        httpx.exceptions.ConnectTimeout,
-    ) as e:
-        print("Error ocurred:", exploit, e)
-    finally:
-        time.sleep(delay)
-        return title, exploit
-
-
-def exploit_batch(exploits):
-    for i in range(0, len(exploits), CONST["bat"]):
-        yield exploits[i : i + CONST["bat"]]
-
-
 def _norm(string):
     return string.replace("\\", "")
 
@@ -640,6 +613,30 @@ def update_metasploit(args, thread_objs):
         thread_objs[1].set()
 
 
+def scrape_title(exploit):
+    title = None
+    delay = 5
+    try:
+        page = httpx.get(
+            f"{URL['expdb']}/{exploit}", headers={"User-Agent": UA.random},
+            timeout=120
+        )
+        decoded = html.unescape(page.text)
+        title = (
+            RE["tit"].search(decoded).group(3)
+        )  # group 1 and 2 are quotes
+    except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+        print("Error ocurred:", exploit, e)
+    finally:
+        time.sleep(delay)
+        return title, exploit
+
+
+def exploit_batch(exploits):
+    for i in range(0, len(exploits), CONST["bat"]):
+        yield exploits[i : i + CONST["bat"]]
+
+
 def update_exploitdb(args, thread_objs):
     with Database(args.database) as db:
         db.clean()
@@ -651,12 +648,12 @@ def update_exploitdb(args, thread_objs):
                 exp_gen = exploit_batch(exps)
                 with ThreadPoolExecutor(max_workers=threads) as tpe:
                     with tqdm(
-                        total=len(exps) // CONST["bat"] + 1,
-                        ascii=" =",
-                        desc="[+] Retrieving exploit-db names",
+                            total=len(exps) // CONST["bat"] + 1,
+                            ascii=" =",
+                            desc="[+] Retrieving exploit-db names",
                     ) as bar:
                         for batch in exp_gen:
-                            res = tpe.map(scrape_title, batch)
+                            res = list(tpe.map(scrape_title, batch))
                             db.update_exploits(list(res))
                             bar.update()
 
