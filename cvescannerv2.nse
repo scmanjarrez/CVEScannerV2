@@ -781,6 +781,7 @@ end
 
 local function analysis (host, port, matches)
    local vulns = {}
+   local logged = {}
    for _, data in pairs(matches['data']) do
       for cpe, versions in pairs(data) do
          for version, _ in pairs(versions) do
@@ -846,7 +847,9 @@ local function analysis (host, port, matches)
                         v .. "|" .. vu .. " vulnerabilities.")
                      tmp_vulns = cache[2]
                   end
-                  if tmp_vulns ~= nil and #tmp_vulns > 0 then
+                  if (tmp_vulns ~= nil and #tmp_vulns > 0
+                      and logged[fmt("%s|%s", product, version)] == nil) then
+                     logged[fmt("%s|%s", product, version)] = 1
                      for _, value in pairs(tmp_vulns) do
                         table.insert(vulns, value)
                      end
