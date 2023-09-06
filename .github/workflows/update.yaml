@@ -39,6 +39,13 @@ jobs:
       - name: Install CVEScannerV2 dependencies
         run: pip install -r requirements.txt
 
+      - name: Configure .api file
+        run: |
+          python -c "import os; file = open('.api', 'w'); file.write(os.environ['API_KEY']); file.close()"
+        shell: bash
+        env:
+          API_KEY : ${{secrets.API_KEY}}
+
       - name: Update database
         run: python3 database.py
 
