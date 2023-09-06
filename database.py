@@ -78,7 +78,6 @@ VTAGS = (
 )
 URL = {
     "nvd": "https://services.nvd.nist.gov/rest/json/{}/2.0?startIndex={}",
-    # "nvd": "http://localhost:8000/{}/{}",
     "expdb": "https://www.exploit-db.com/exploits",
 }
 CONST = {
@@ -86,9 +85,6 @@ CONST = {
     "cve": 2000,
     "bat": 25,
 }
-TEST = re.compile(
-    r"https://services.nvd.nist.gov/rest/json/(\w+)/2.0\?startIndex=(\d+)"
-)  # noqa
 COPYRIGHT = """
 CVEScannerV2  Copyright (C) 2022-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
 Universidad Carlos III de Madrid.
@@ -419,9 +415,6 @@ def query_api(args):
         except httpx.TimeoutException:
             print(traceback.format_exc())
             return
-        match = TEST.match(url)
-        with open(f"{match.group(1)}/{match.group(2)}", "w") as f:
-            f.write(resp.text)
         data = resp.json()
         if "cpes" in url:
             idy = 0
@@ -690,7 +683,8 @@ if __name__ == "__main__":
         with api.open() as f:
             KEY = f.read().strip()
     else:
-        print("[!] NVD API key required in order to retrieve data. Check README.md for more information")
+        print("[!] NVD API key required in order to retrieve data. "
+              "Check README.md for more information")
         sys.exit(-1)
 
     thread_objs = (Event(), Event(), Queue())
