@@ -63,7 +63,7 @@ CVEs information gathered from nvd.nist.gov.
 
 categories = {"safe"}
 author = "Sergio Chica"
-version = "3.0"
+version = "3.1"
 
 local http = require 'http'
 http.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'
