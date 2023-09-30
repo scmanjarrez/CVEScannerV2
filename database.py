@@ -431,7 +431,7 @@ def query_api(args):
                     "rejected",
                 ):
                     if not populate:
-                        print(f"sending {cve_id} to remove")
+                        #print(f"sending {cve_id} to remove")
                         queue.put((2, (cve_id,)))
                     continue
                 cvssv2 = (
