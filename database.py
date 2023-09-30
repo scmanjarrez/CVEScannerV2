@@ -25,9 +25,9 @@
 import argparse
 import html
 import json
+import os
 import re
 import sqlite3 as sql
-import sys
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -514,8 +514,11 @@ def update_db(args, thread_objs, populate=False):
     if not populate:
         print("[*] Updating database...")
         with Database(args.database) as db:
-            last = db.cached_metadata()
-        extra = f"&lastModStartDate={last}&lastModEndDate={now()}"
+            try:
+                last = db.cached_metadata()
+                extra = f"&lastModStartDate={last}&lastModEndDate={now()}"
+            except TypeError:
+                pass
     else:
         print("[+] Creating database...")
 
@@ -524,6 +527,9 @@ def update_db(args, thread_objs, populate=False):
         resp = cl.get(
             f"{URL['nvd'].format('cpes', 0)}" f"&resultsPerPage=1{extra}"
         )
+        if resp.status_code != 200:
+            print("[!] Error retrieving information from NVD API")
+            os._exit(-1)
         cpes = resp.json()["totalResults"]
         resp = cl.get(
             f"{URL['nvd'].format('cves', 0)}" f"&resultsPerPage=1{extra}"
@@ -683,9 +689,11 @@ if __name__ == "__main__":
         with api.open() as f:
             KEY = f.read().strip()
     else:
-        print("[!] NVD API key required in order to retrieve data. "
-              "Check README.md for more information")
-        sys.exit(-1)
+        print(
+            "[!] NVD API key required in order to retrieve data. "
+            "Check README.md for more information"
+        )
+        os._exit(-1)
 
     thread_objs = (Event(), Event(), Queue())
     thread = PopulateDBThread(args.database, *thread_objs)
