@@ -337,7 +337,7 @@ Structural Funds (ESF and FEDER)**
 - CVE information gathered from [nvd.nist.gov](https://nvd.nist.gov).
 
 # License
-    CVEScannerV2  Copyright (C) 2021-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+    CVEScannerV2  Copyright (C) 2021-2024 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
     Universidad Carlos III de Madrid.
     This program comes with ABSOLUTELY NO WARRANTY; for details check below.
     This is free software, and you are welcome to redistribute it
