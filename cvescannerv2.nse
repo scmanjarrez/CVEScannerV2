@@ -63,7 +63,7 @@ CVEs information gathered from nvd.nist.gov.
 
 categories = {"safe"}
 author = "Sergio Chica"
-version = "3.1"
+version = "3.1.2"
 
 local http = require 'http'
 http.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'
@@ -637,8 +637,8 @@ local function scoped_versions(all_versions, from, to, upd, result)
             end
          end
       else
-         if ((compare_version(pr_v, from) == 0 and pr_vu == upd)
-             or (compare_version(pr_v .. pr_vu, from) == 0 and pr_vu == '*')) then
+         if ((compare_version(pr_v, from) == 0 and (pr_vu == upd or upd == '*'))
+             or (compare_version(pr_v .. pr_vu, from) == 0 and (pr_vu == '*' or upd == '*'))) then
             vuln = v.id
             cvssv2 = v.CVSSV2
             cvssv3 = v.CVSSV3
