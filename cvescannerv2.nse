@@ -56,6 +56,7 @@ CVEs information gathered from nvd.nist.gov.
 -- json: Change the json file. Default: cvescannerv2.json
 -- path: Change the paths file. Default: http-paths-vulnerscom.json
 -- regex: Change the regex file. Default: http-regex-vulnerscom.json
+-- product-aliases: Change the product-aliases file. Default: product-aliases.json
 -- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log
 -- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log,maxcve=20,db=mydb.db
 --
@@ -81,6 +82,7 @@ local log_arg = stdnse.get_script_args('log') or 'cvescannerv2.log'
 local json_arg = stdnse.get_script_args('json') or 'cvescannerv2.json'
 local path_arg = stdnse.get_script_args('path') or 'http-paths-vulnerscom.json'
 local regex_arg = stdnse.get_script_args('regex') or 'http-regex-vulnerscom.json'
+local product_aliases_arg = stdnse.get_script_args('product-aliases') or 'product-aliases.json'
 local service_arg = stdnse.get_script_args('service') or 'all'
 local version_arg = stdnse.get_script_args('version') or 'all'
 
@@ -175,14 +177,16 @@ local function log_info (host, port, cpe, product, info)
 end
 
 
-local function valid_json (arg, is_path)
+local function valid_json (arg, type)
    local f = io.open(arg, 'r')
    local status, data = json.parse(f:read('*all'))
    if status then
-      if is_path then
+      if type == 'path' then
          registry.path = data
-      else
-         registry.regex = data
+      elseif type == 'regex' then
+        registry.regex = data
+      elseif type == 'product-aliases' then
+        registry.product_aliases = data
       end
    end
    f:close()
@@ -198,12 +202,16 @@ local function required_files ()
                 db_arg)
    elseif not exists(path_arg) then
       ret = fmt("Paths file %s not found.", path_arg)
-   elseif not valid_json(path_arg, true) then
+   elseif not valid_json(path_arg, 'path') then
       ret = fmt("Invalid json %s.", path_arg)
    elseif not exists(regex_arg) then
       ret = fmt("Regexes file %s not found.", regex_arg)
-   elseif not valid_json(regex_arg, false) then
+   elseif not valid_json(regex_arg, 'regex') then
       ret = fmt("Invalid json %s.", regex_arg)
+   elseif not exists(product_aliases_arg) then
+      ret = fmt("CPE product aliases file %s not found.", product_aliases_arg)
+   elseif not valid_json(product_aliases_arg, 'product-aliases') then
+      ret = fmt("Invalid json %s.", product_aliases_arg)
    end
    return ret
 end
@@ -800,6 +808,20 @@ local function analysis (host, port, matches)
                   local tmp_vulns = nil
                   if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
                      tmp_vulns = vulnerabilities(host, port, cpe, product, info)
+                     -- Product aliases
+                     if registry.product_aliases[product] then
+                        for _, alias in pairs(registry.product_aliases[product]) do
+                            local tmp_alias_vulns = vulnerabilities(host, port, cpe, alias, info)
+                            if tmp_alias_vulns then
+                                -- Concatinate
+                                tmp_vulns[1] = tmp_vulns[1] + table.remove(tmp_alias_vulns, 1)
+                                for _, v in pairs(tmp_alias_vulns) do
+                                    table.insert(tmp_vulns, v)
+                                end
+                            end
+                        end
+                     end
+
                      local nvulns = table.remove(tmp_vulns, 1)
                      if nvulns > 0 then
                         table.insert(tmp_vulns, 1, fmt("product: %s", product))

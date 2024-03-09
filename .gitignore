@@ -9,6 +9,7 @@ tmp/
 practica/
 *pdf
 *.json
+!product-aliases.json
 
 ## Default python ignore
 # Byte-compiled / optimized / DLL files
