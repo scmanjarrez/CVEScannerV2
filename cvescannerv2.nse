@@ -64,7 +64,7 @@ CVEs information gathered from nvd.nist.gov.
 
 categories = {"safe"}
 author = "Sergio Chica"
-version = "3.1.2"
+version = "3.2"
 
 local http = require 'http'
 http.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'
@@ -229,6 +229,22 @@ local function add_cpe_version(cpe, version, matches, location)
       matches['data'][location][cpe][version] = true
       matches['size'] = matches['size'] + 1
       return true
+   end
+end
+
+
+local function add_cpe_aliases(cpe, version, matches, location)
+   local parts = {}
+   for part in string.gmatch(cpe, "([^:]+)") do
+      table.insert(parts, part)
+   end
+   local product = parts[4]
+   -- Product aliases
+   if registry.product_aliases[product] then
+      for _, alias in pairs(registry.product_aliases[product]) do
+         parts[4] = alias
+         add_cpe_version(table.concat(parts, ":"), version, matches, location)
+      end
    end
 end
 
@@ -808,20 +824,6 @@ local function analysis (host, port, matches)
                   local tmp_vulns = nil
                   if not registry.cache[fmt('%s|%s|%s', product, v, vu)] then
                      tmp_vulns = vulnerabilities(host, port, cpe, product, info)
-                     -- Product aliases
-                     if registry.product_aliases[product] then
-                        for _, alias in pairs(registry.product_aliases[product]) do
-                            local tmp_alias_vulns = vulnerabilities(host, port, cpe, alias, info)
-                            if tmp_alias_vulns then
-                                -- Concatinate
-                                tmp_vulns[1] = tmp_vulns[1] + table.remove(tmp_alias_vulns, 1)
-                                for _, v in pairs(tmp_alias_vulns) do
-                                    table.insert(tmp_vulns, v)
-                                end
-                            end
-                        end
-                     end
-
                      local nvulns = table.remove(tmp_vulns, 1)
                      if nvulns > 0 then
                         table.insert(tmp_vulns, 1, fmt("product: %s", product))
@@ -946,6 +948,7 @@ portaction = function (host, port)
        and port.version.cpe[1] ~= nil
        and port.version.version ~= nil) then
       add_cpe_version(port.version.cpe[1], port.version.version, matches, 'nmap')
+      add_cpe_aliases(port.version.cpe[1], port.version.version, matches, 'nmap')
    end
    if http_arg == '1'
       and (shortport.http(host, port)
