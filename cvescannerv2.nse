@@ -56,6 +56,7 @@ CVEs information gathered from nvd.nist.gov.
 -- json: Change the json file. Default: cvescannerv2.json
 -- path: Change the paths file. Default: http-paths-vulnerscom.json
 -- regex: Change the regex file. Default: http-regex-vulnerscom.json
+-- product-aliases: Change the product-aliases file. Default: product-aliases.json
 -- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log
 -- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log,maxcve=20,db=mydb.db
 --
@@ -63,7 +64,7 @@ CVEs information gathered from nvd.nist.gov.
 
 categories = {"safe"}
 author = "Sergio Chica"
-version = "3.1.2"
+version = "3.2"
 
 local http = require 'http'
 http.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'
@@ -81,6 +82,7 @@ local log_arg = stdnse.get_script_args('log') or 'cvescannerv2.log'
 local json_arg = stdnse.get_script_args('json') or 'cvescannerv2.json'
 local path_arg = stdnse.get_script_args('path') or 'http-paths-vulnerscom.json'
 local regex_arg = stdnse.get_script_args('regex') or 'http-regex-vulnerscom.json'
+local product_aliases_arg = stdnse.get_script_args('product-aliases') or 'product-aliases.json'
 local service_arg = stdnse.get_script_args('service') or 'all'
 local version_arg = stdnse.get_script_args('version') or 'all'
 
@@ -175,14 +177,16 @@ local function log_info (host, port, cpe, product, info)
 end
 
 
-local function valid_json (arg, is_path)
+local function valid_json (arg, type)
    local f = io.open(arg, 'r')
    local status, data = json.parse(f:read('*all'))
    if status then
-      if is_path then
+      if type == 'path' then
          registry.path = data
-      else
-         registry.regex = data
+      elseif type == 'regex' then
+        registry.regex = data
+      elseif type == 'product-aliases' then
+        registry.product_aliases = data
       end
    end
    f:close()
@@ -198,12 +202,16 @@ local function required_files ()
                 db_arg)
    elseif not exists(path_arg) then
       ret = fmt("Paths file %s not found.", path_arg)
-   elseif not valid_json(path_arg, true) then
+   elseif not valid_json(path_arg, 'path') then
       ret = fmt("Invalid json %s.", path_arg)
    elseif not exists(regex_arg) then
       ret = fmt("Regexes file %s not found.", regex_arg)
-   elseif not valid_json(regex_arg, false) then
+   elseif not valid_json(regex_arg, 'regex') then
       ret = fmt("Invalid json %s.", regex_arg)
+   elseif not exists(product_aliases_arg) then
+      ret = fmt("CPE product aliases file %s not found.", product_aliases_arg)
+   elseif not valid_json(product_aliases_arg, 'product-aliases') then
+      ret = fmt("Invalid json %s.", product_aliases_arg)
    end
    return ret
 end
@@ -221,6 +229,22 @@ local function add_cpe_version(cpe, version, matches, location)
       matches['data'][location][cpe][version] = true
       matches['size'] = matches['size'] + 1
       return true
+   end
+end
+
+
+local function add_cpe_aliases(cpe, version, matches, location)
+   local parts = {}
+   for part in string.gmatch(cpe, "([^:]+)") do
+      table.insert(parts, part)
+   end
+   local product = parts[4]
+   -- Product aliases
+   if registry.product_aliases[product] then
+      for _, alias in pairs(registry.product_aliases[product]) do
+         parts[4] = alias
+         add_cpe_version(table.concat(parts, ":"), version, matches, location)
+      end
    end
 end
 
@@ -924,6 +948,7 @@ portaction = function (host, port)
        and port.version.cpe[1] ~= nil
        and port.version.version ~= nil) then
       add_cpe_version(port.version.cpe[1], port.version.version, matches, 'nmap')
+      add_cpe_aliases(port.version.cpe[1], port.version.version, matches, 'nmap')
    end
    if http_arg == '1'
       and (shortport.http(host, port)
