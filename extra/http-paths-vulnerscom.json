@@ -1,0 +1,35 @@
+{
+    "extension": [
+        "",
+        ".asp",
+        ".aspx",
+        ".cfm",
+        ".cfml",
+        ".cgi",
+        ".htm",
+        ".html",
+        ".htmlx",
+        ".jhtml",
+        ".jsa",
+        ".jsp",
+        ".php",
+        ".php3",
+        ".pl",
+        ".shtm",
+        ".shtml"
+    ],
+    "path": [
+        "",
+        "admin",
+        "base",
+        "default",
+        "home",
+        "index",
+        "indice",
+        "inicio",
+        "localstart",
+        "menu",
+        "main",
+        "start"
+    ]
+}

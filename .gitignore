@@ -1,15 +1,8 @@
-## Own ignore
-temp/
-.idea/
-pycve/
-*.bk
-json-viewer/
-cve.db
+# Custom
 tmp/
-practica/
-*pdf
-*.json
-!product-aliases.json
+cve.db
+.api
+.flake8
 
 ## Default python ignore
 # Byte-compiled / optimized / DLL files

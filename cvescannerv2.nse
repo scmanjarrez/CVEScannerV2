@@ -24,13 +24,11 @@ description = [[
 Search for probable vulnerabilities based on services discovered in open ports.
 CVEs information gathered from nvd.nist.gov.
 ]]
---- Prerequisite: Download Databases
--- @usage ./databases.py
---
---- Optional: Download semiupdated databases from CVEScannerV2DB repository
+--- Prerequisite: cve.db. Can be generated using database.py or obtained from https://github.com/scmanjarrez/CVEScannerV2DB
 --
 --- Run: Execute CVEscannerV2
--- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse
+-- @usage nmap -sV --script cvescannerv2 <target-ip>
+-- @usage nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <target-ip>
 --
 -- @output
 -- PORT      STATE SERVICE       VERSION
@@ -49,22 +47,22 @@ CVEs information gathered from nvd.nist.gov.
 -- |_      CVE-2016-3976    5.0      7.5      Yes         Yes
 --
 --- Optional arguments
--- http: Change the behaviour of the analysis. Default: 1 (enabled). Possible values: 0, 1
+-- db: Modify the database file location. Default: cve.db
 -- maxcve: Limit the number of CVEs printed on screen. Default: 10
--- db: Change the database file. Default: cve.db
--- log: Change the log file. Default: cvescannerv2.log
--- json: Change the json file. Default: cvescannerv2.json
--- path: Change the paths file. Default: http-paths-vulnerscom.json
--- regex: Change the regex file. Default: http-regex-vulnerscom.json
--- product-aliases: Change the product-aliases file. Default: product-aliases.json
--- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log
--- @usage nmap -sV <target-ip> --script=./cvescannerv2.nse --script-args log=logfile.log,maxcve=20,db=mydb.db
---
+-- http: Modify HTTP analysis behaviour. Default: 1 (enabled). Possible values: 0, 1
+-- maxredirect: Limit the number of redirections. Default: 1
+-- log: Modify the output .log file location. Default: cvescannerv2.log
+-- json: Modify the output .json file location. Default: cvescannerv2.json
+-- path: Modify the paths file location. Default: extra/http-paths-vulnerscom.json
+-- regex: Modify the regex file location. Default: extra/http-regex-vulnerscom.json
+-- aliases: Modify the product-aliases file location. Default: extra/product-aliases.json
+-- service: Modify the search scope to specific service. Default: all
+-- version: Modify the search scope to specific version. Default: all
 ---
 
 categories = {"safe"}
 author = "Sergio Chica"
-version = "3.2"
+version = "3.3"
 
 local http = require 'http'
 http.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'
@@ -75,14 +73,17 @@ local shortport = require 'shortport'
 local sql = require 'luasql.sqlite3'
 local stdnse = require 'stdnse'
 
-local http_arg = stdnse.get_script_args('http') or '1'
-local maxcve_arg = stdnse.get_script_args('maxcve') or 10
 local db_arg = stdnse.get_script_args('db') or 'cve.db'
+local maxcve_arg = tonumber(stdnse.get_script_args('maxcve')) or 10
+local http_arg = stdnse.get_script_args('http') or '1'
+local maxredirect_arg = tonumber(stdnse.get_script_args('maxredirect')) or 1
 local log_arg = stdnse.get_script_args('log') or 'cvescannerv2.log'
 local json_arg = stdnse.get_script_args('json') or 'cvescannerv2.json'
-local path_arg = stdnse.get_script_args('path') or 'http-paths-vulnerscom.json'
-local regex_arg = stdnse.get_script_args('regex') or 'http-regex-vulnerscom.json'
-local product_aliases_arg = stdnse.get_script_args('product-aliases') or 'product-aliases.json'
+-- local word_arg = stdnse.get_script_args('word') or nil
+-- local ext_arg = stdnse.get_script_args('ext') or nil
+local path_arg = stdnse.get_script_args('path') or 'extra/http-paths-vulnerscom.json'
+local regex_arg = stdnse.get_script_args('regex') or 'extra/http-regex-vulnerscom.json'
+local aliases_arg = stdnse.get_script_args('aliases') or 'extra/product-aliases.json'
 local service_arg = stdnse.get_script_args('service') or 'all'
 local version_arg = stdnse.get_script_args('version') or 'all'
 
@@ -177,16 +178,16 @@ local function log_info (host, port, cpe, product, info)
 end
 
 
-local function valid_json (arg, type)
+local function valid_json (arg, ftype)
    local f = io.open(arg, 'r')
    local status, data = json.parse(f:read('*all'))
    if status then
-      if type == 'path' then
+      if ftype == 'path' then
          registry.path = data
-      elseif type == 'regex' then
+      elseif ftype == 'regex' then
         registry.regex = data
-      elseif type == 'product-aliases' then
-        registry.product_aliases = data
+      elseif ftype == 'aliases' then
+        registry.aliases = data
       end
    end
    f:close()
@@ -197,21 +198,21 @@ end
 local function required_files ()
    local ret = ""
    if not exists(db_arg) then
-      ret = fmt("Database %s not found. " ..
+      ret = fmt("Database %s could not be read. " ..
                 "Run ./databases.py before running nmap script.",
                 db_arg)
    elseif not exists(path_arg) then
       ret = fmt("Paths file %s not found.", path_arg)
-   elseif not valid_json(path_arg, 'path') then
-      ret = fmt("Invalid json %s.", path_arg)
    elseif not exists(regex_arg) then
       ret = fmt("Regexes file %s not found.", regex_arg)
+   elseif not exists(aliases_arg) then
+      ret = fmt("CPE product aliases file %s not found.", aliases_arg)
+   elseif not valid_json(path_arg, 'path') then
+      ret = fmt("Invalid json %s.", path_arg)
    elseif not valid_json(regex_arg, 'regex') then
       ret = fmt("Invalid json %s.", regex_arg)
-   elseif not exists(product_aliases_arg) then
-      ret = fmt("CPE product aliases file %s not found.", product_aliases_arg)
-   elseif not valid_json(product_aliases_arg, 'product-aliases') then
-      ret = fmt("Invalid json %s.", product_aliases_arg)
+   elseif not valid_json(aliases_arg, 'aliases') then
+      ret = fmt("Invalid json %s.", aliases_arg)
    end
    return ret
 end
@@ -240,8 +241,8 @@ local function add_cpe_aliases(cpe, version, matches, location)
    end
    local product = parts[4]
    -- Product aliases
-   if registry.product_aliases[product] then
-      for _, alias in pairs(registry.product_aliases[product]) do
+   if registry.aliases[product] then
+      for _, alias in pairs(registry.aliases[product]) do
          parts[4] = alias
          add_cpe_version(table.concat(parts, ":"), version, matches, location)
       end
@@ -283,16 +284,31 @@ local function regex_match (text, location, matches)
    end
 end
 
+local function redirect(_, _)
+   -- Taken from https://nmap.org/nsedoc/lib/http.html
+   -- https://svn.nmap.org/nmap/nselib/http.lua
+   local c = maxredirect_arg
+   return function(_)
+      if c == 0 then return false end
+      c = c - 1
+      return true
+   end
+end
 
 local function http_match (host, port, matches)
    for _, path in pairs(registry.path['path']) do
       for _, ext in pairs(registry.path['extension']) do
          local file = "/" .. path .. ext
          if (path == '' and ext == '') or path ~= '' then
-            local resp = http.get(host, port, file, {timeout = 90,
-                                                     bypass_cache = true,
-                                                     no_cache = true,
-                                                     no_cache_body = true})
+            local resp = http.get(host, port, file,
+                                  {
+                                     redirect_ok = redirect,
+                                     timeout = 90,
+                                     bypass_cache = true,
+                                     no_cache = true,
+                                     no_cache_body = true
+                                  }
+            )
             if not resp.status then
                stdnse.verbose(2, fmt("Error processing request http://%s:%s%s => %s",
                                      host.ip, port.number, file, resp['status-line']))
@@ -315,10 +331,14 @@ local function http_match (host, port, matches)
                      registry.regex['external']['path_regex'], idx + 1)
                   if lib_path and lib_path:sub(1, 1) == '/' then
                      local lib_resp = http.get(host, port, lib_path,
-                                               {timeout = 90,
-                                                bypass_cache = true,
-                                                no_cache = true,
-                                                no_cache_body = true})
+                                               {
+                                                  redirect_ok = redirect,
+                                                  timeout = 90,
+                                                  bypass_cache = true,
+                                                  no_cache = true,
+                                                  no_cache_body = true
+                                               }
+                     )
                      if lib_resp.status and lib_resp.rawbody ~= nil then
                         local _, _, lib_comm = lib_resp.rawbody:find(
                            registry.regex['external']['comment_regex'])
@@ -639,6 +659,7 @@ end
 
 local function scoped_versions(all_versions, from, to, upd, result)
    local vuln, cvssv2, cvssv3, pr_v, pr_vu, exploitdb, metasploit
+
    for _, v in pairs(all_versions) do
       pr_v = default_version(v.version, '0')
       pr_vu = default_version(v.version_update, '*')
@@ -784,7 +805,7 @@ local function vulnerabilities (host, port, cpe, product, info)
    end
    for _, value in pairs(sorted) do
       dump_exploit(host, port, value[1])
-      if cnt < tonumber(maxcve_arg) then
+      if cnt < maxcve_arg then
          table.insert(output,
                       fmt(
                          "\t%-20s\t%-5s\t%-5s\t%-10s\t%-10s",
