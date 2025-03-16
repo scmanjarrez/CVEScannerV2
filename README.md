@@ -11,6 +11,7 @@ Nmap script that provides information about probable vulnerabilities based on di
     - [Blocked IP](#blocked-ip)
     - [Missing luasql](#missing-luasql)
   - [Docker container](#docker-container)
+  - [Query database](#query-database)
   - [Acknowledgements](#acknowledgements)
   - [License](#license)
 
@@ -316,6 +317,56 @@ docker run -v ./cve.db:/CVEScannerV2/cve.db -v /tmp/cvslogs:/tmp/cvslogs scmanja
 ```
 
 > **Note**: You can find your logs in `/tmp/cvslogs` directory
+
+# Query database
+There is a helper script, `extra/query.py` to retrieve information directly from the
+sqlite database.
+
+```bash
+python extra/query.py -h
+usage: query.py [-h] [-c CVE] -p PRODUCT [-v VERSION] [-u UPDATE] [-r] [-d]
+
+Command line utility to query related CVEs
+
+options:
+  -h, --help            show this help message and exit
+  -c CVE, --cve CVE     Path to CVE db
+  -p PRODUCT, --product PRODUCT
+                        Product name to query
+  -v VERSION, --version VERSION
+                        Version of the product
+  -u UPDATE, --update UPDATE
+                        Version update of the product
+  -r, --raw             Output raw data (no filters applied)
+  -d, --debug           Debug messages
+```
+
+```bash
+python extra/query.py -p "gibbon" -v "25.0.0"
+
+Exact match:
++----------------+--------+--------+-----------+---------+---------+----------+-----+-----+
+|      CVE       | CVSSv2 | CVSSv3 |  Vendor   | Product | Version | V.Update | EDB | MSF |
++================+========+========+===========+=========+=========+==========+=====+=====+
+| CVE-2023-34599 |        |  6.1   | gibbonedu | gibbon  | 25.0.00 |    *     | No  | No  |
++----------------+--------+--------+-----------+---------+---------+----------+-----+-----+
+| CVE-2023-34598 |        |  9.8   | gibbonedu | gibbon  | 25.0.00 |    *     | No  | No  |
++----------------+--------+--------+-----------+---------+---------+----------+-----+-----+
+
+Multi match:
++----------------+--------+--------+-----------+---------+--------------+--------------+------------+------------+-----+-----+
+|      CVE       | CVSSv2 | CVSSv3 |  Vendor   | Product | StartInclude | StartExclude | EndInclude | EndExclude | EDB | MSF |
++================+========+========+===========+=========+==============+==============+============+============+=====+=====+
+| CVE-2023-45881 |        |  6.1   | gibbonedu | gibbon  |              |              |  25.0.00   |            | No  | No  |
++----------------+--------+--------+-----------+---------+--------------+--------------+------------+------------+-----+-----+
+| CVE-2023-45878 |        |  9.8   | gibbonedu | gibbon  |              |              |  25.0.01   |            | No  | No  |
++----------------+--------+--------+-----------+---------+--------------+--------------+------------+------------+-----+-----+
+| CVE-2023-45879 |        |  5.4   | gibbonedu | gibbon  |              |              |  25.0.00   |            | No  | No  |
++----------------+--------+--------+-----------+---------+--------------+--------------+------------+------------+-----+-----+
+| CVE-2023-45880 |        |  7.2   | gibbonedu | gibbon  |              |              |  25.0.00   |            | No  | No  |
++----------------+--------+--------+-----------+---------+--------------+--------------+------------+------------+-----+-----+
+```
+
 
 # Acknowledgements
 **This work has been supported by National R&D Project TEC2017-84197-C4-1-R and by
