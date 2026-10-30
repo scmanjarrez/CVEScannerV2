@@ -34,7 +34,8 @@ local EXPORTS = {
   'series_prefix', 'series_has_children', 'merge_series',
   'analysis', 'registry', 'smb_version', 'add_nmap_matches',
   'os_context', 'distro_backport', 'evaluate_platform',
-  'add_platform_reasons', 'confidence_of'
+  'add_platform_reasons', 'confidence_of', 'SERVICE_PROBES',
+  'run_version_probe', 'probe_enabled'
 }
 
 local function read_source()

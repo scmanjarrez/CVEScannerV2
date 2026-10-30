@@ -72,6 +72,9 @@ CVEs information gathered from nvd.nist.gov.
 -- version: Modify the search scope to specific version. Default: all
 -- smb: Probe SMB (ports 139/445) for the exact Samba version. Default: 1.
 -- Possible values: 0, 1
+-- probes: Service version probes to run: all, none or a comma-separated
+-- list of probe names (e.g. smb, irc). Default: all. The irc probe reads
+-- the exact UnrealIRCd version with a read-only IRC VERSION request.
 -- minconf: Minimum confidence of the CVEs shown in the table and the log:
 -- low, medium or high. Default: low. Invalid values use low. The JSON
 -- report always keeps every CVE.
@@ -88,7 +91,37 @@ local nmap = require 'nmap'
 local datetime = require 'datetime'
 local lfs = require 'lfs'
 local shortport = require 'shortport'
-local sql = require 'luasql.sqlite3'
+
+-- Recent Nmap versions drop Lua's C-module searcher, so `require` cannot load
+-- luasql.sqlite3 from package.cpath. Fall back to locating the .so by hand.
+local function load_luasql()
+  local ok, mod = pcall(require, 'luasql.sqlite3')
+  if ok then
+    return mod
+  end
+  local ver = _VERSION:match('%d+%.%d+') or '5.4'
+  local libdirs = {}
+  for _, arch in ipairs({'x86_64-linux-gnu', 'aarch64-linux-gnu', 'arm-linux-gnueabihf', ''}) do
+    for _, prefix in ipairs({'/usr/local/lib', '/usr/lib', '/usr/lib64', '/usr/local/lib64'}) do
+      libdirs[#libdirs + 1] = prefix .. (arch ~= '' and '/' .. arch or '') .. '/lua/' .. ver
+    end
+  end
+  local cpath = package.cpath .. ';' .. (os.getenv('LUA_CPATH') or '')
+  for _, dir in ipairs(libdirs) do
+    cpath = cpath .. ';' .. dir .. '/?.so'
+  end
+  local path = package.searchpath('luasql.sqlite3', cpath)
+  if not path then
+    error("module 'luasql.sqlite3' not found; install lua-sql-sqlite3 (see README)")
+  end
+  local opener, err = package.loadlib(path, 'luaopen_luasql_sqlite3')
+  if not opener then
+    error("cannot load " .. path .. ": " .. tostring(err))
+  end
+  return opener()
+end
+
+local sql = load_luasql()
 local stdnse = require 'stdnse'
 local smb_ok, smb = pcall(require, 'smb')
 
@@ -114,6 +147,9 @@ local catalog_url_arg = stdnse.get_script_args('catalog_url')
 local service_arg = stdnse.get_script_args('service') or 'all'
 local version_arg = stdnse.get_script_args('version') or 'all'
 local smb_arg = stdnse.get_script_args('smb') or '1'
+local probes_arg = (stdnse.get_script_args('probes') or 'all'):lower()
+local probes_set = {}
+for name in probes_arg:gmatch('[^,%s]+') do probes_set[name] = true end
 local minconf_raw = (stdnse.get_script_args('minconf') or 'low'):lower()
 local minconf_valid = minconf_raw == 'low' or minconf_raw == 'medium'
     or minconf_raw == 'high'
@@ -133,10 +169,12 @@ if not nmap.registry[SCRIPT_NAME] then
     vendor_aliases = {},
     platform_families = {},
     host_os = {},
-    catalog = { fingerprints = {}, paths = {}, probes = {} },
+    smb_info = {},
+    host_os_probe = {},
+    catalog ={ fingerprints = {}, paths = {}, probes = {} },
     catalog_loaded = false,
     legacy_catalog = false,
-    smb = {},
+    probes = {},
     status = true,
     time = nil
   }
@@ -768,7 +806,10 @@ local function regex_match(text, location, matches)
   end
 end
 
+local HTTP_MAX_FAILURES = 5
+
 local function http_match_legacy(host, port, matches)
+  local failures = 0
   for _, path in pairs(registry.path['path']) do
     for _, ext in pairs(registry.path['extension']) do
       local file = "/" .. path .. ext
@@ -785,9 +826,16 @@ local function http_match_legacy(host, port, matches)
           }
         )
         if not resp.status then
+          failures = failures + 1
           stdnse.verbose(2, fmt("Error processing request http://%s:%s%s => %s",
             host.ip, port.number, file, resp['status-line']))
+          if failures >= HTTP_MAX_FAILURES then
+            stdnse.verbose(2, fmt("Stopping http checks on %s:%s "
+              .. "after %d failures", host.ip, port.number, failures))
+            return
+          end
         else
+          failures = 0
           local rawbody = resp.rawbody or ''
           if resp.rawheader and #resp.rawheader > 0 then
             for _, header in pairs(resp.rawheader) do
@@ -1183,8 +1231,12 @@ local function sweep_catalog(host, port, matches, triggered)
         requests)
     end
     local responses = http.pipeline_go(host, port, requests)
+    local answered = false
     if type(responses) == 'table' then
       for idx, response in ipairs(responses) do
+        if type(response) == 'table' and response.status ~= nil then
+          answered = true
+        end
         if type(response) == 'table' and maxredirect_arg > 0 then
           local status = tonumber(response.status)
           if status == 301 or status == 302 or status == 303
@@ -1200,6 +1252,11 @@ local function sweep_catalog(host, port, matches, triggered)
             'http', triggered)
         end
       end
+    end
+    if not answered then
+      stdnse.verbose(2, fmt("No http answers on %s:%s; stopping sweep",
+        host.ip, port.number))
+      break
     end
     start = finish + 1
     if delay > 0 and start <= #paths then stdnse.sleep(delay) end
@@ -1992,6 +2049,39 @@ local function add_reason(vulns, reason)
 end
 
 
+-- Forward declaration: defined with the OS probes below.
+local host_probe_os
+
+-- True when a platform reason depends on the OS context of the host.
+local function is_platform_reason(reason)
+  return reason == 'requires_platform' or reason == 'requires_component'
+    or reason:find('^platform_mismatch:') ~= nil
+end
+
+-- True when a CVE needs the OS and the context has no family and no probe.
+local function platform_probe_needed(vulns, os_ctx)
+  if os_ctx.family ~= nil then return false end
+  if (os_ctx.source or ''):find('^probe') then return false end
+  for _, rec in pairs(vulns) do
+    for _, reason in ipairs(rec.reasons) do
+      if reason == 'requires_platform' then return true end
+    end
+  end
+  return false
+end
+
+-- Remove the platform reasons added by a previous add_platform_reasons.
+local function strip_platform_reasons(vulns)
+  for _, rec in pairs(vulns) do
+    local kept = {}
+    for _, reason in ipairs(rec.reasons) do
+      if not is_platform_reason(reason) then table.insert(kept, reason) end
+    end
+    rec.reasons = kept
+  end
+end
+
+
 -- Return the CVE count, the output lines, and the meta table with the
 -- confidence summary and the service warnings.
 local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
@@ -2087,12 +2177,21 @@ local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
   if info.range and spans_series(info.from, info.to) then
     add_reason(vulns, 'observed_range')
   end
-  add_platform_reasons(vulns, vendors, product, ctx and ctx.os or {})
+  local os_ctx = ctx and ctx.os or {}
+  add_platform_reasons(vulns, vendors, product, os_ctx)
+  if platform_probe_needed(vulns, os_ctx) then
+    local probed = host_probe_os(host)
+    if probed then
+      os_ctx = { family = probed.family, source = probed.source }
+      strip_platform_reasons(vulns)
+      add_platform_reasons(vulns, vendors, product, os_ctx)
+    end
+  end
   local meta = {
     summary = score_vulns(vulns),
     warnings = {},
     version_source = ctx and ctx.version_source,
-    os_context = ctx and ctx.os or {},
+    os_context = os_ctx,
     shown = 0,
   }
   if ctx and ctx.backport then
@@ -2255,7 +2354,12 @@ local function text_os(port)
   return nil, nil
 end
 
+-- Read-only: only a result cached by host_probe_os is used, never a probe.
 local function os_context(host, port)
+  local probed = registry.host_os_probe[host.ip]
+  if probed then
+    return { family = probed.family, source = probed.source }
+  end
   local info = port.version or {}
   local family, source = cpes_family(info.cpe), 'cpe'
   if family == nil then
@@ -2287,6 +2391,16 @@ local function context_key(ctx)
   return fmt('%s|%s|%s|%s|%s', tostring(ctx.version_source),
     tostring(os_ctx.family), tostring(os_ctx.distro),
     tostring(os_ctx.source), tostring(ctx.backport))
+end
+
+
+-- Cache key of one service. Unknown OS also keys by host IP, so a probe
+-- result is never reused across hosts.
+local function service_cache_key(host, vendor, product, v, vu, ctx)
+  local key = fmt('%s|%s|%s|%s|%s', vendor, product, v, vu,
+    context_key(ctx))
+  if ctx.os.family == nil then key = key .. '|' .. host.ip end
+  return key
 end
 
 
@@ -2322,7 +2436,7 @@ local function analysis(host, port, matches, ctx)
         stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe, version))
         local vendor, product, info, source = cpe_parser(cpe, version)
         local version_source = source
-        if origin == 'smb' or origin == 'http' then
+        if origin ~= 'nmap' then
           version_source = origin
         end
         if ((service_arg == 'all' and version_arg == 'all')
@@ -2341,12 +2455,19 @@ local function analysis(host, port, matches, ctx)
               backport = ctx.backport,
               version_source = version_source,
             }
-            local cache_key = fmt('%s|%s|%s|%s|%s', vendor, product, v, vu,
-              context_key(vctx))
+            local cache_key = service_cache_key(host, vendor, product, v,
+              vu, vctx)
             if not registry.cache[cache_key] then
               local meta
               tmp_vulns, meta = vulnerabilities(host, port, cpe, vendor,
                 product, info, vctx)
+              if meta.os_context.family ~= vctx.os.family then
+                -- An OS probe changed the context: key by the new one.
+                cache_key = service_cache_key(host, vendor, product, v, vu,
+                  { os = meta.os_context,
+                    backport = vctx.backport,
+                    version_source = vctx.version_source })
+              end
               local nvulns = table.remove(tmp_vulns, 1)
               if nvulns > 0 then
                 local serv_fmt = fmt('%s/%s', port.number, port.protocol)
@@ -2463,39 +2584,282 @@ end
 local SMB_PORTS = { [139] = true, [445] = true }
 local SMB_SERVICES = { ['microsoft-ds'] = true, ['netbios-ssn'] = true }
 
---- Return the exact Samba version reported by the SMB service.
--- The result is cached per host so each port reuses the same probe.
-local function smb_version(host, port)
-  if smb_arg ~= '1' or not smb_ok then return nil end
-  if not (SMB_PORTS[port.number] or SMB_SERVICES[port.service]) then
-    return nil
-  end
-  if registry.smb[host.ip] == nil then
-    local version = false
+--- Return the SMB OS info of a host, calling smb.get_os at most once.
+-- Return nil when the probe fails. Failures are cached as false.
+local function smb_get_os(host)
+  local cached = registry.smb_info[host.ip]
+  if cached == nil then
     local ok, status, info = pcall(smb.get_os, host)
     if not ok then
       stdnse.verbose(2, fmt("smb probe failed: %s", tostring(status)))
     elseif not status then
       stdnse.verbose(2, fmt("smb probe failed: %s", tostring(info)))
-    elseif type(info) == 'table' and type(info.lanmanager) == 'string' then
-      version = info.lanmanager:match('^Samba%s+([%d%.]+[%w%.]*)') or false
     end
-    registry.smb[host.ip] = version
+    cached = ok and status and info or false
+    registry.smb_info[host.ip] = cached
   end
-  return registry.smb[host.ip] or nil
+  return cached or nil
+end
+
+--- Return the Samba CPE and exact version reported by the SMB service.
+-- Return nil when the host does not run Samba or the probe fails.
+local function smb_probe(host)
+  local info = smb_get_os(host)
+  if type(info) == 'table' and type(info.lanmanager) == 'string' then
+    local version = info.lanmanager:match('^Samba%s+([%d%.]+[%w%.]*)')
+    if version then
+      return { cpe = 'cpe:/a:samba:samba', version = version }
+    end
+  end
+  return nil
+end
+
+-- Version probes. A probe fires when its product matches the CPE product
+-- and either the port service or the port number is listed.
+local SMB_PROBE = {
+  name = 'smb',
+  kind = 'version',
+  products = { samba = true },
+  services = SMB_SERVICES,
+  ports = SMB_PORTS,
+  -- One SMB probe per host, shared by all of its SMB ports.
+  cache_key = function(host) return host.ip end,
+  run = smb_probe,
+}
+
+local IRC_SERVICES = { irc = true, ircs = true }
+local IRC_REGISTER = 'NICK cvescan\r\nUSER cvescan 0 * :cvescan\r\n'
+  .. 'VERSION\r\n'
+local IRC_MAX_READS = 10
+local IRC_RETRY_DELAY = 20
+
+--- Return the UnrealIRCd version from a 351 (VERSION) reply line.
+-- Return nil when the server name is not an Unreal version string.
+local function irc_unreal_version(line)
+  local token = line:match('^:%S+ 351 %S+ (%S+)')
+  local version = token and token:match('^Unreal(%d[%w%.]*)')
+  if version == nil then return nil end
+  return (version:gsub('%.$', ''))
+end
+
+--- Return whether an IRC line is the server's throttling error.
+-- UnrealIRCd answers 'ERROR :Closing Link: ... (Throttled ...)'.
+local function irc_is_throttled(line)
+  return line:match('^ERROR') ~= nil and line:find('Throttled', 1, true) ~= nil
+end
+
+--- Read IRC lines until the 351 reply, answering PING with PONG.
+-- Return the UnrealIRCd version, or nil on timeout or error. The second
+-- value is true when the server closed the link as throttled.
+local function irc_read_version(sock)
+  for _ = 1, IRC_MAX_READS do
+    local ok, data = sock:receive_lines(1)
+    if not ok or type(data) ~= 'string' then return nil, false end
+    for line in data:gmatch('[^\r\n]+') do
+      local ping = line:match('^PING :(.*)$')
+      if ping then
+        sock:send('PONG ' .. ping .. '\r\n')
+      elseif irc_is_throttled(line) then
+        return nil, true
+      elseif line:match('^:%S+ 351 ') then
+        return irc_unreal_version(line), false
+      end
+    end
+  end
+  return nil, false
+end
+
+--- Send the registration and VERSION requests on an open socket.
+-- Return the UnrealIRCd version (or nil) and the throttled flag.
+local function irc_exchange(sock, host, port)
+  if not sock:connect(host, port) then return nil, false end
+  sock:send(IRC_REGISTER)
+  return irc_read_version(sock)
+end
+
+--- Run one IRC exchange on a new socket that is always closed.
+-- Return the UnrealIRCd version (or nil) and the throttled flag. Errors
+-- raised by the socket count as a plain failure.
+local function irc_attempt(host, port)
+  local sock = nmap.new_socket()
+  sock:set_timeout(5000)
+  local ok, version, throttled = pcall(irc_exchange, sock, host, port)
+  sock:close()
+  if not ok then return nil, false end
+  return version, throttled
+end
+
+--- Return the UnrealIRCd CPE and exact version from its VERSION reply.
+-- A throttled server is retried once on a new socket after 20 seconds.
+-- Return nil when the service does not answer with a 351 reply.
+local function irc_probe(host, port)
+  local version, throttled = irc_attempt(host, port)
+  if throttled then
+    stdnse.verbose(2, 'irc throttled on %s:%d, retrying', host.ip, port.number)
+    stdnse.sleep(IRC_RETRY_DELAY)
+    version = irc_attempt(host, port)
+  end
+  if version == nil then return nil end
+  return { cpe = 'cpe:/a:unrealircd:unrealircd', version = version }
+end
+
+local IRC_PROBE = {
+  name = 'irc',
+  kind = 'version',
+  products = { unrealircd = true },
+  services = IRC_SERVICES,
+  run = irc_probe,
+}
+-- OS probe: the SMB service reports the OS family of the host. Samba is not
+-- mapped to a family: 'unix' never equals the 'linux' family of
+-- evaluate_platform, which would add false platform_mismatch reasons.
+local function smb_os_probe(host)
+  local info = smb_get_os(host)
+  if type(info) ~= 'table' then return nil end
+  -- Samba on Linux reports 'Windows 6.1' in the os field: skip it.
+  if type(info.lanmanager) == 'string'
+      and info.lanmanager:lower():find('^samba') then
+    return nil
+  end
+  if type(info.os) == 'string' and info.os:find('^Windows') then
+    return { family = 'windows' }
+  end
+  return nil
+end
+
+local SMB_OS_PROBE = {
+  name = 'smb_os',
+  kind = 'os',
+  services = SMB_SERVICES,
+  ports = SMB_PORTS,
+  run = smb_os_probe,
+}
+
+local SERVICE_PROBES = { SMB_PROBE, IRC_PROBE, SMB_OS_PROBE }
+
+--- Return whether the probe 'name' is selected by the probes argument.
+-- The legacy smb=0 argument also disables the smb and smb_os probes.
+local function probe_enabled(name)
+  if (name == 'smb' or name == 'smb_os')
+      and (smb_arg ~= '1' or not smb_ok) then
+    return false
+  end
+  if probes_arg == 'none' then return false end
+  return probes_arg == 'all' or probes_set[name] == true
+end
+
+--- Return whether a probe applies to a port and a CPE product.
+local function probe_applies(probe, port, product)
+  if probe.products ~= nil and not probe.products[product] then
+    return false
+  end
+  return (probe.services ~= nil and probe.services[port.service] == true)
+    or (probe.ports ~= nil and probe.ports[port.number] == true)
+end
+
+--- Run a version probe with a per-key cache and return its result.
+-- Errors and negative results are cached as false, so each key is
+-- probed at most once.
+local function run_version_probe(host, port, probe)
+  if not probe_enabled(probe.name) then return nil end
+  local cache = registry.probes[probe.name]
+  if cache == nil then
+    cache = {}
+    registry.probes[probe.name] = cache
+  end
+  local key = fmt('%s:%s', host.ip, port.number)
+  if probe.cache_key then key = probe.cache_key(host, port) end
+  if cache[key] == nil then
+    local ok, result = pcall(probe.run, host, port)
+    if not ok then
+      stdnse.verbose(2, fmt("%s probe error: %s", probe.name,
+        tostring(result)))
+      result = nil
+    end
+    cache[key] = result or false
+  end
+  return cache[key] or nil
+end
+
+--- Return the first OS family from an 'os' probe on an open TCP port.
+-- Only the probes whose services or ports match an open port run.
+local function first_os_probe(host)
+  for port in nmap.get_ports(host, nil, 'tcp', 'open') do
+    for _, probe in ipairs(SERVICE_PROBES) do
+      if probe.kind == 'os' and probe_enabled(probe.name)
+          and probe_applies(probe, port, nil) then
+        local ok, result = pcall(probe.run, host)
+        if ok and type(result) == 'table' and result.family then
+          return result.family, probe.name
+        end
+      end
+    end
+  end
+  return nil, nil
+end
+
+--- Return the OS family found by the 'os' probes of a host.
+-- Return {family, source} or nil. The round is cached per IP, false marks
+-- a negative result, and a Nmap mutex serializes it when available.
+host_probe_os = function(host)
+  if registry.host_os_probe[host.ip] == nil then
+    local lock = nil
+    if type(nmap.mutex) == 'function' then lock = nmap.mutex(host.ip) end
+    if lock then lock('lock') end
+    if registry.host_os_probe[host.ip] == nil then
+      local ok, family, name = pcall(first_os_probe, host)
+      if ok and family ~= nil then
+        registry.host_os_probe[host.ip] = {
+          family = family,
+          source = 'probe:' .. name,
+        }
+      else
+        registry.host_os_probe[host.ip] = false
+      end
+    end
+    if lock then lock('done') end
+  end
+  return registry.host_os_probe[host.ip] or nil
+end
+
+--- Return whether the Nmap version is precise, so no probe is needed.
+-- Empty and '*' versions are never precise.
+local function nmap_version_precise(version)
+  if empty(version) or version == '*' then return false end
+  return is_precise_version(version)
+end
+
+--- Return the first applicable version probe and its result.
+-- Skip the probes when the Nmap version is already precise.
+local function version_probe_result(host, port, product, nmap_version)
+  if nmap_version_precise(nmap_version) then return nil end
+  for _, probe in ipairs(SERVICE_PROBES) do
+    if probe.kind == 'version' and probe_applies(probe, port, product) then
+      local result = run_version_probe(host, port, probe)
+      if result then return probe, result end
+    end
+  end
+  return nil
+end
+
+--- Return the exact Samba version reported by the SMB service.
+local function smb_version(host, port)
+  if not probe_applies(SMB_PROBE, port, 'samba') then return nil end
+  local result = run_version_probe(host, port, SMB_PROBE)
+  return result and result.version or nil
 end
 
 
---- Add the Nmap CPE of a port, or the SMB version when Samba is detected.
+--- Add the version found by a version probe, or the Nmap CPE of a port.
 local function add_nmap_matches(host, port, matches)
   local cpe = port.version.cpe[1]
   local detected_version = port.version.version
   if empty(detected_version) then detected_version = '*' end
   local _, _, _, _, product = split_cpe(cpe)
-  local smb_ver = nil
-  if product == 'samba' then smb_ver = smb_version(host, port) end
-  if smb_ver then
-    add_cpe_version('cpe:/a:samba:samba', smb_ver, matches, 'smb')
+  local probe, result = version_probe_result(host, port, product,
+    detected_version)
+  if probe then
+    add_cpe_version(result.cpe, result.version, matches, probe.name)
     return
   end
   add_cpe_version(cpe, detected_version, matches, 'nmap')
@@ -2503,9 +2867,34 @@ local function add_nmap_matches(host, port, matches)
 end
 
 
+-- Services that Nmap identifies but that do not speak HTTP, even when
+-- wrapped in TLS. The http engine must skip them.
+local NON_HTTP_SERVICES = {
+  ['ms-wbt-server'] = true, ['ms-sql-s'] = true, ['mysql'] = true,
+  ['postgresql'] = true, ['ssh'] = true, ['ftp'] = true, ['ftps'] = true,
+  ['smtp'] = true, ['smtps'] = true, ['imap'] = true, ['imaps'] = true,
+  ['pop3'] = true, ['pop3s'] = true, ['ldap'] = true, ['ldapssl'] = true,
+  ['ldaps'] = true, ['vnc'] = true, ['microsoft-ds'] = true,
+  ['netbios-ssn'] = true, ['msrpc'] = true, ['telnet'] = true,
+  ['domain'] = true, ['ntp'] = true, ['snmp'] = true,
+}
+
+--- Return true when the http fingerprint engine applies to a port.
+-- Plain HTTP and upnp always qualify. TLS ports qualify unless the
+-- service is known to speak a non-HTTP protocol.
+local function use_http_engine(host, port)
+  if shortport.http(host, port) or port.service == 'upnp' then
+    return true
+  end
+  return shortport.ssl(host, port) and not NON_HTTP_SERVICES[port.service]
+end
+
+
 portaction = function(host, port)
   local matches = {
-    ['data'] = { ['nmap'] = {}, ['http'] = {}, ['smb'] = {} },
+    ['data'] = {
+      ['nmap'] = {}, ['http'] = {}, ['smb'] = {}, ['irc'] = {}
+    },
     ['size'] = 0
   }
   local triggered = {}
@@ -2521,10 +2910,7 @@ portaction = function(host, port)
     add_nmap_matches(host, port, matches)
   end
   match_banner(port, matches, triggered)
-  if http_arg == '1'
-      and (shortport.http(host, port)
-        or shortport.ssl(host, port)
-        or port.service == 'upnp') then
+  if http_arg == '1' and use_http_engine(host, port) then
     http_match(host, port, matches, triggered)
   end
   local vulns

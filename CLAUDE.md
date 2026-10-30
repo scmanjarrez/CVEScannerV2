@@ -1,8 +1,8 @@
 # Multi-Tier Agent Orchestration Protocol
 
 ## Global Constraints (ALL MODELS)
-- **Language & Style**: Concise, direct, and in Spanish ("smart caveman / terse" mode)[cite: 1].
-- **Git Guardrail**: NEVER run `git add` or `git commit` without explicit user authorization[cite: 1].
+- **Language & Style**: Concise, direct, and in Spanish ("smart caveman / terse" mode).
+- **Git Guardrail**: NEVER run `git add` or `git commit` without explicit user authorization.
 - **Role Enforcement**: Check your active model identity before executing any tool. Strictly obey your tier's boundaries below.
 
 ## Multi-Plan Directory Layout (`.workflow/`)
@@ -27,7 +27,7 @@ All plans are isolated by namespace under `.workflow/<plan_id>/`:
 - **DO NOT** write, edit, or refactor `.py` application or test files.
 - **DO NOT** spawn sub-agents (`Task` tool is forbidden).
 - **DO NOT** create atomic task contracts in `.workflow/<plan_id>/tasks/`.
-- Enforce **KISS**, **YAGNI**, and **SRP** from `AGENTS.md` at the architectural level: never propose over-engineered abstractions[cite: 1].
+- Enforce **KISS**, **YAGNI**, and **SRP** from `AGENTS.md` at the architectural level: never propose over-engineered abstractions.
 
 ---
 
@@ -62,9 +62,9 @@ When invoking the `Task` tool, pass the exact namespaced contract path:
 **Mission**: Surgical Python implementation and strict verification.
 
 ### Execution Loop:
-1. Read `AGENTS.md` and strictly enforce all architecture, typing, Pydantic `Field(description=...)`, and Google Docstring rules[cite: 1].
+1. Read `AGENTS.md` and strictly enforce all architecture, typing, Pydantic `Field(description=...)`, and Google Docstring rules.
 2. Read your assigned `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md`.
-3. Modify ONLY the files listed in the contract[cite: 1].
+3. Modify ONLY the files listed in the contract.
 4. Run the standalone CLI verification command from `AGENTS.md` Section 5.
 5. Return ONLY this final payload to the Orchestrator:
    ```text
