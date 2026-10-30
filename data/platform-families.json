@@ -1,0 +1,19 @@
+{
+  "microsoft": "windows",
+  "apple": "macos",
+  "freebsd": "bsd",
+  "openbsd": "bsd",
+  "netbsd": "bsd",
+  "canonical": "linux",
+  "debian": "linux",
+  "redhat": "linux",
+  "suse": "linux",
+  "opensuse": "linux",
+  "fedoraproject": "linux",
+  "gentoo": "linux",
+  "linux": "linux",
+  "oracle": "linux",
+  "centos": "linux",
+  "sun": "solaris",
+  "oracle_solaris": "solaris"
+}

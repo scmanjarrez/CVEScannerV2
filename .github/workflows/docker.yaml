@@ -1,9 +1,12 @@
-name: Update main container on new release
+name: Publish Nmap images
 
 on:
   workflow_dispatch:
   release:
     types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   build-image:
@@ -11,18 +14,66 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
+
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v4
+
+      - name: Docker metadata (with database)
+        id: meta-db
+        uses: docker/metadata-action@v6
         with:
-          push: true
-          tags: scmanjarrez/cvescanner:nodb
+          images: scmanjarrez/cvescanner
+          flavor: latest=false
+          tags: |
+            type=raw,value=db
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=ref,event=branch
+            type=ref,event=tag
+
+      - name: Docker metadata (without database)
+        id: meta-nodb
+        uses: docker/metadata-action@v6
+        with:
+          images: scmanjarrez/cvescanner
+          flavor: latest=false
+          tags: |
+            type=raw,value=nodb
+            type=ref,event=branch,suffix=-nodb
+            type=ref,event=tag,suffix=-nodb
+
+      - name: Build and push image without database
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          target: nodb
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ steps.meta-nodb.outputs.tags }}
+          labels: ${{ steps.meta-nodb.outputs.labels }}
+          cache-from: type=gha,scope=nodb
+          cache-to: type=gha,mode=max,scope=nodb
+
+      - name: Build and push image with database
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          target: db
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          build-args: |
+            DATABASE_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+          tags: ${{ steps.meta-db.outputs.tags }}
+          labels: ${{ steps.meta-db.outputs.labels }}
+          cache-from: type=gha,scope=db
+          cache-to: type=gha,mode=max,scope=db

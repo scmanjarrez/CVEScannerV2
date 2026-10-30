@@ -1,0 +1,6 @@
+# Build context for tests/Dockerfile only (the root .dockerignore excludes
+# tests/ from the scanner image).
+**
+!cvescannerv2.nse
+!tests/
+!data/vendor-aliases.json
