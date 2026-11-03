@@ -70,6 +70,9 @@ CVEs information gathered from nvd.nist.gov.
 -- data/product-aliases.json
 -- vendor_aliases: Vendor aliases file. Default:
 -- data/vendor-aliases.json
+-- product_cpe: Product to CPE overrides for Nmap products, replacing the
+-- CPE that Nmap reports. Default: data/product-cpe.json. Set to none to
+-- disable.
 -- service: Modify the search scope to specific service. Default: all
 -- version: Modify the search scope to specific version. Default: all
 -- smb: Probe SMB (ports 139/445) for the exact Samba version. Default: 1.
@@ -177,6 +180,7 @@ if not nmap.registry[SCRIPT_NAME] then
     regex = nil,
     aliases = {},
     vendor_aliases = {},
+    product_cpe = {},
     platform_families = {},
     host_os = {},
     smb_info = {},
@@ -306,6 +310,14 @@ local function valid_json(arg, ftype)
     registry.aliases = data
   elseif ftype == 'vendor_aliases' then
     registry.vendor_aliases = data
+  elseif ftype == 'product_cpe' then
+    for product, cpe in pairs(data) do
+      if type(product) ~= 'string' or type(cpe) ~= 'string'
+          or cpe:match('^cpe:/a:[^:]+:[^:]+$') == nil then
+        return false
+      end
+    end
+    registry.product_cpe = data
   end
   return true
 end
@@ -767,6 +779,15 @@ local function required_files()
       stdnse.verbose(1, fmt(
         'Invalid vendor aliases file %s; skipping vendor aliases.',
         vendor_aliases_arg))
+    end
+    local product_cpe_arg = stdnse.get_script_args('product_cpe')
+        or 'data/product-cpe.json'
+    registry.product_cpe = {}
+    if product_cpe_arg ~= 'none' and exists(product_cpe_arg)
+        and not valid_json(product_cpe_arg, 'product_cpe') then
+      stdnse.verbose(1, fmt(
+        'Invalid product CPE file %s; skipping CPE overrides.',
+        product_cpe_arg))
     end
     registry.platform_families = load_platform_families()
     if http_arg == '1' and catalog_arg ~= 'none' then
@@ -3139,9 +3160,16 @@ end
 
 --- Add the version found by a version probe, or the CPE of a port.
 -- Without a Nmap CPE, only the 'no_cpe' version probes can add a match.
+-- A product listed in the product CPE table uses the table CPE instead
+-- of the Nmap one, with the first numeric token of the Nmap version.
 local function add_nmap_matches(host, port, matches)
   local cpe = port.version.cpe and port.version.cpe[1] or nil
   local detected_version = port.version.version
+  local override = registry.product_cpe[port.version.product]
+  if override ~= nil then
+    cpe = override
+    detected_version = (detected_version or ''):match('%d[%d%.]*')
+  end
   if empty(detected_version) then detected_version = '*' end
   local product = nil
   if cpe ~= nil then

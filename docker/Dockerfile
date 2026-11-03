@@ -78,6 +78,7 @@ COPY --link data/product-aliases.json /CVEScannerV2/data/product-aliases.json
 COPY --link data/vendor-aliases.json /CVEScannerV2/data/vendor-aliases.json
 COPY --link data/platform-families.json /CVEScannerV2/data/platform-families.json
 COPY --link data/local-catalog.json /CVEScannerV2/data/local-catalog.json
+COPY --link data/product-cpe.json /CVEScannerV2/data/product-cpe.json
 COPY --link --from=catalog-fetcher /catalog/ /CVEScannerV2/data/
 COPY --link cvescannerv2.nse /usr/share/nmap/scripts/cvescannerv2.nse
 

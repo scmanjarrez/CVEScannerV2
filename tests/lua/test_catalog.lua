@@ -1993,3 +1993,108 @@ do
     t.eq(log.calls, 1)
   end)
 end
+
+t.suite('product CPE overrides')
+
+local GLASSFISH_CPE = 'cpe:/a:oracle:glassfish_server'
+local GLASSFISH_TABLE = { ['Oracle GlassFish'] = GLASSFISH_CPE }
+
+-- Build a port whose Nmap product, CPE and version are given.
+local function product_port(product, cpe, version)
+  return { number = 8080, protocol = 'tcp', service = 'http',
+    version = { product = product, cpe = { cpe }, version = version } }
+end
+
+local function product_matches(scanner, port)
+  local matches = new_matches()
+  scanner.add_nmap_matches({ ip = '10.4.0.1' }, port, matches)
+  return matches
+end
+
+t.case('listed product replaces the wrong nmap cpe', function()
+  local scanner = t.load_scanner()
+  scanner.registry.product_cpe = GLASSFISH_TABLE
+  local matches = product_matches(scanner, product_port('Oracle GlassFish',
+    'cpe:/a:oracle:jsp:2.3', '4.0'))
+  t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0'])
+  t.eq(matches.data.nmap['cpe:/a:oracle:jsp:2.3'], nil)
+  t.keys_eq(matches.data.nmap, { GLASSFISH_CPE })
+  t.eq(matches.size, 1)
+end)
+
+t.case('listed product without an nmap cpe uses the table cpe', function()
+  local scanner = t.load_scanner()
+  scanner.registry.product_cpe = GLASSFISH_TABLE
+  local matches = product_matches(scanner, product_port('Oracle GlassFish',
+    nil, '4.0'))
+  t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0'])
+  t.keys_eq(matches.data.nmap, { GLASSFISH_CPE })
+end)
+
+t.case('listed product with empty version uses the wildcard', function()
+  local scanner = t.load_scanner()
+  scanner.registry.product_cpe = GLASSFISH_TABLE
+  local matches = product_matches(scanner, product_port('Oracle GlassFish',
+    'cpe:/a:oracle:jsp:2.3', ''))
+  t.truthy(matches.data.nmap[GLASSFISH_CPE]['*'])
+end)
+
+t.case('listed product keeps the first numeric version token', function()
+  local scanner = t.load_scanner()
+  scanner.registry.product_cpe = GLASSFISH_TABLE
+  local matches = product_matches(scanner, product_port('Oracle GlassFish',
+    'cpe:/a:oracle:jsp:2.3', 'build 4.0.1 x'))
+  t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0.1'])
+end)
+
+t.case('product aliases apply to the table cpe', function()
+  local scanner = t.load_scanner()
+  scanner.registry.product_cpe = GLASSFISH_TABLE
+  scanner.registry.aliases = { glassfish_server = { 'glassfish' } }
+  local matches = product_matches(scanner, product_port('Oracle GlassFish',
+    'cpe:/a:oracle:jsp:2.3', '4.0'))
+  t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0'])
+  t.truthy(matches.data.nmap['cpe:/a:oracle:glassfish']['4.0'])
+  t.eq(matches.size, 2)
+end)
+
+t.case('unlisted product keeps the nmap cpe', function()
+  local scanner = t.load_scanner()
+  scanner.registry.product_cpe = GLASSFISH_TABLE
+  local matches = product_matches(scanner, product_port('Apache Tomcat',
+    'cpe:/a:apache:tomcat:9.0', '9.0'))
+  t.truthy(matches.data.nmap['cpe:/a:apache:tomcat:9.0']['9.0'])
+  t.keys_eq(matches.data.nmap, { 'cpe:/a:apache:tomcat:9.0' })
+end)
+
+t.case('empty table keeps the nmap cpe', function()
+  local scanner = t.load_scanner()
+  local matches = product_matches(scanner, product_port('Oracle GlassFish',
+    'cpe:/a:oracle:jsp:2.3', '4.0'))
+  t.keys_eq(matches.data.nmap, { 'cpe:/a:oracle:jsp:2.3' })
+end)
+
+t.case('invalid product cpe files leave the table empty', function()
+  local broken = overlay_file('{ broken')
+  local scanner = overlay_scanner({})
+  t.eq(scanner.valid_json(broken, 'product_cpe'), false)
+  t.eq(scanner.registry.product_cpe, {})
+
+  local wrong = overlay_file('wrong')
+  local bad = overlay_scanner({ wrong = { ['Oracle GlassFish'] = 42 } })
+  t.eq(bad.valid_json(wrong, 'product_cpe'), false)
+  t.eq(bad.registry.product_cpe, {})
+
+  local versioned = overlay_file('versioned')
+  local versions = overlay_scanner({
+    versioned = { ['Oracle GlassFish'] = 'cpe:/a:oracle:glassfish:4.0' } })
+  t.eq(versions.valid_json(versioned, 'product_cpe'), false)
+  t.eq(versions.registry.product_cpe, {})
+end)
+
+t.case('valid product cpe file fills the table', function()
+  local path = overlay_file('good')
+  local scanner = overlay_scanner({ good = GLASSFISH_TABLE })
+  t.eq(scanner.valid_json(path, 'product_cpe'), true)
+  t.eq(scanner.registry.product_cpe, GLASSFISH_TABLE)
+end)

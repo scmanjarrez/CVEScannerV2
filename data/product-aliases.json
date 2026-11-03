@@ -1,3 +1,4 @@
 {
-  "iis": ["internet_information_services"]
+  "iis": ["internet_information_services"],
+  "glassfish_server": ["glassfish"]
 }

@@ -431,6 +431,12 @@ that `port.version` already holds their result when the analysis runs. Without
 this, WebLogic was analysed with version `*` (race with `weblogic-t3-info`).
 They only run with `-sV`.
 
+**Product to CPE overrides.** `data/product-cpe.json` (arg `product_cpe`,
+`none` disables it) maps an exact Nmap product string to the right CPE and
+replaces the one Nmap reports. Today it holds `Oracle GlassFish`, which Nmap
+reports with the CPE of JSP (`cpe:/a:oracle:jsp`); the alias
+`glassfish_server` also queries `glassfish`.
+
 **Local HTTP catalogue.** `data/local-catalog.json` (arg `local_catalog`,
 `none` disables it) is merged on top of the Vulners catalogue with the same
 schema (`fingerprints`, `paths`, `probes`). Invalid sections are dropped. It is
