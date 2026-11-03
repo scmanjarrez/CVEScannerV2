@@ -462,7 +462,9 @@ local function validate_fingerprints(data)
         or not valid_pattern(rule.regex, 1)
         or (rule.anchor ~= nil
           and (type(rule.anchor) ~= 'string'
-            or #rule.anchor > MAX_CATALOG_STRING)) then
+            or #rule.anchor > MAX_CATALOG_STRING))
+        or (rule.accept_403 ~= nil
+          and type(rule.accept_403) ~= 'boolean') then
       return nil
     end
     local channel_rules = by_channel[rule.channel]
@@ -474,6 +476,7 @@ local function validate_fingerprints(data)
       alias = rule.alias,
       anchor = rule.anchor,
       regex = rule.regex,
+      accept_403 = rule.accept_403 == true,
       name = name
     })
   end
@@ -1069,12 +1072,9 @@ local function response_subjects(response)
   return subjects
 end
 
--- 403 bodies are kept: CUPS and similar servers expose their version in
--- the error page title.
 local function response_is_usable(response)
   local status = tonumber(response.status)
-  return status ~= nil
-      and ((status >= 200 and status < 400) or status == 403)
+  return status ~= nil and status >= 200 and status < 400
 end
 
 local function safe_version(value)
@@ -1168,16 +1168,21 @@ local function probe_detects(probe, subjects)
   return false
 end
 
-local function match_subjects(subjects, matches, location, triggered)
+local function match_subjects(subjects, matches, location, triggered,
+    only_403)
   if not registry.catalog_loaded then return end
   for channel, values in pairs(subjects) do
     local rules = registry.catalog.fingerprints[channel] or {}
     for _, subject in ipairs(values) do
       for _, rule in ipairs(rules) do
-        match_fingerprint_rule(rule, subject, matches, location)
+        if not only_403 or rule.accept_403 then
+          match_fingerprint_rule(rule, subject, matches, location)
+        end
       end
     end
   end
+  -- 403 pages only feed the rules that opt in; no probes are triggered.
+  if only_403 then return end
   for _, probe in ipairs(registry.catalog.probes) do
     if not triggered[probe.alias] and probe_detects(probe, subjects) then
       triggered[probe.alias] = true
@@ -1334,6 +1339,10 @@ local function sweep_catalog(host, port, matches, triggered)
         if type(response) == 'table' and response_is_usable(response) then
           match_subjects(response_subjects(response), matches,
             'http', triggered)
+        elseif type(response) == 'table'
+            and tonumber(response.status) == 403 then
+          match_subjects(response_subjects(response), matches,
+            'http', triggered, true)
         end
       end
     end

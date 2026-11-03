@@ -435,8 +435,10 @@ They only run with `-sV`.
 `none` disables it) is merged on top of the Vulners catalogue with the same
 schema (`fingerprints`, `paths`, `probes`). Invalid sections are dropped. It is
 ignored when the Vulners catalogue is not loaded. Today it holds a CUPS rule
-that reads `CUPS v2.1.3` from the title of the (403) error page; the HTTP
-engine now also reads the body of 403 responses.
+that reads `CUPS v2.1.3` from the title of the (403) error page. 403 bodies
+are only evaluated by rules that opt in with `"accept_403": true`; every
+other rule keeps seeing only 2xx and 3xx responses, so error pages of WAFs or
+proxies cannot be attributed to the wrong service.
 
 **Limits.** Versions hidden on purpose (Apache `ServerTokens Prod`, OpenSSL,
 Dovecot, Postfix) have no network method. Scan by IP (`-n`) when the target

@@ -160,6 +160,7 @@ end)
 t.case('response_is_usable accepts 2xx and 3xx only', function()
   t.eq(s.response_is_usable({ status = 200 }), true)
   t.eq(s.response_is_usable({ status = 302 }), true)
+  t.eq(s.response_is_usable({ status = 403 }), false)
   t.eq(s.response_is_usable({ status = 404 }), false)
   t.eq(s.response_is_usable({}), false)
 end)
@@ -1687,15 +1688,17 @@ local CUPS_403 = '<HTML><HEAD><TITLE>Forbidden - CUPS v2.1.3</TITLE>'
 
 --- Return a scanner whose overlay holds the local CUPS title rule.
 -- The rule text matches data/local-catalog.json; the stubbed parser maps
--- the overlay file to the decoded table.
-local function cups_scanner(http)
+-- the overlay file to the decoded table. Pass accept_403 = true to set
+-- the opt-in flag that the shipped rule carries.
+local function cups_scanner(http, accept_403)
   local path = overlay_file('cups')
   local scanner = t.load_scanner({ http = http, json = {
     parse = function(body)
       if body ~= 'cups' then return false end
       return true, { fingerprints = { rules = { cups = {
         alias = CUPS_CPE, anchor = 'CUPS', channel = 'title',
-        regex = 'CUPS v?(%d+%.%d+[%.%d]*)' } } } }
+        regex = 'CUPS v?(%d+%.%d+[%.%d]*)',
+        accept_403 = accept_403 } } } }
     end,
     generate = function() return '{}' end
   } })
@@ -1758,13 +1761,67 @@ t.case('title without a version number is not matched', function()
   t.eq(matches.data.http[CUPS_CPE], nil)
 end)
 
-t.case('403 body is scanned through the overlay', function()
-  local scanner = cups_scanner(cups_http(403, CUPS_403))
-  t.eq(scanner.response_is_usable({ status = 403 }), true)
-  t.eq(scanner.response_is_usable({ status = 404 }), false)
+t.case('shipped CUPS rule opts in to 403 bodies', function()
+  local file = assert(io.open('data/local-catalog.json', 'r'))
+  local body = file:read('*all')
+  file:close()
+  t.truthy(body:find('"accept_403": true', 1, true))
+end)
+
+t.case('403 with an accept_403 rule yields the CUPS version', function()
+  local scanner = cups_scanner(cups_http(403, CUPS_403), true)
   local matches, triggered = new_matches(), {}
   scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
   t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
+end)
+
+t.case('403 with a rule lacking the flag is not matched', function()
+  local scanner = cups_scanner(cups_http(403, CUPS_403))
+  local matches, triggered = new_matches(), {}
+  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  t.eq(matches.data.http[CUPS_CPE], nil)
+  t.eq(matches.size, 0)
+end)
+
+t.case('403 does not trigger or run targeted probes', function()
+  local gets = 0
+  local http = cups_http(403, CUPS_403)
+  http.get = function()
+    gets = gets + 1
+    return { status = 403, body = CUPS_403, header = {} }
+  end
+  local scanner = cups_scanner(http, true)
+  scanner.registry.catalog.probes = { {
+    alias = CUPS_CPE, name = 'cups',
+    detect = { { channel = 'title', anchor = 'CUPS', regex = 'CUPS' } },
+    extract = { { anchor = 'CUPS', regex = 'CUPS v?(%d+%.%d+[%.%d]*)' } },
+    paths = { '/cups' }
+  } }
+  local matches, triggered = new_matches(), {}
+  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  t.eq(triggered[CUPS_CPE], nil)
+  scanner.run_targeted_probes({}, { number = 631 }, matches, triggered)
+  t.eq(gets, 0)
+end)
+
+t.case('200 with the CUPS title matches a rule without the flag', function()
+  local scanner = cups_scanner(cups_http(200, CUPS_403))
+  local matches, triggered = new_matches(), {}
+  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
+end)
+
+t.case('accept_403 must be boolean or the rule is rejected', function()
+  local rule = { alias = CUPS_CPE, channel = 'title',
+    regex = 'CUPS v?(%d+%.%d+[%.%d]*)' }
+  rule.accept_403 = 'yes'
+  t.eq(s.validate_fingerprints({ rules = { cups = rule } }), nil)
+  rule.accept_403 = true
+  t.eq(s.validate_fingerprints({ rules = { cups = rule } })
+    .title[1].accept_403, true)
+  rule.accept_403 = nil
+  t.eq(s.validate_fingerprints({ rules = { cups = rule } })
+    .title[1].accept_403, false)
 end)
 
 t.case('404 body with the CUPS title is ignored', function()

@@ -2,6 +2,7 @@
   "fingerprints": {
     "rules": {
       "CUPS, title (lab 403)": {
+        "accept_403": true,
         "alias": "cpe:/a:apple:cups",
         "anchor": "CUPS",
         "channel": "title",
