@@ -181,6 +181,7 @@ if not nmap.registry[SCRIPT_NAME] then
     host_os = {},
     smb_info = {},
     ntp_info = {},
+    snmp_info = {},
     host_os_probe = {},
     catalog ={ fingerprints = {}, paths = {}, probes = {} },
     catalog_loaded = false,
@@ -2794,9 +2795,10 @@ local IRC_PROBE = {
   run = irc_probe,
 }
 
--- Holds the 'version' and 'os' probes of the NTP service. A table keeps the
--- main chunk within the Lua limit of 200 local variables.
-local NTP_PROBES
+-- Holds the 'version' and 'os' probes of the NTP service, the 'version'
+-- probe of the UPnP service and the 'os' probe of the SNMP service. A
+-- table keeps the main chunk within the Lua limit of 200 local variables.
+local NET_PROBES
 do
   --- Return the version and system fields of a mode 6 readvar reply.
   -- The payload follows the 12-byte header. Return nil without a version.
@@ -2843,8 +2845,8 @@ do
     }
   end
 
-  NTP_PROBES = {}
-  NTP_PROBES.version = {
+  NET_PROBES = {}
+  NET_PROBES.version = {
     name = 'ntp',
     kind = 'version',
     products = { ntp = true },
@@ -2870,11 +2872,101 @@ do
     return nil
   end
 
-  NTP_PROBES.os = {
+  NET_PROBES.os = {
     name = 'ntp_os',
     kind = 'os',
     services = { ntp = true },
     run = ntp_os_probe,
+  }
+
+  --- Return the value of the SERVER header of an SSDP reply, or nil.
+  local function upnp_server_header(response)
+    for line in response:gmatch('[^\r\n]+') do
+      local value = line:match('^[Ss][Ee][Rr][Vv][Ee][Rr]:%s*(.-)%s*$')
+      if value then return value end
+    end
+    return nil
+  end
+
+  --- Return the miniupnpd CPE and version from the SSDP SERVER header.
+  -- Return nil for other UPnP servers and for failed requests.
+  local function upnp_probe(host, port)
+    -- SSDP M-SEARCH sent unicast to the UPnP port of the host.
+    local msearch = 'M-SEARCH * HTTP/1.1\r\n'
+      .. 'HOST: 239.255.255.250:1900\r\n'
+      .. 'MAN: "ssdp:discover"\r\n'
+      .. 'MX: 1\r\n'
+      .. 'ST: upnp:rootdevice\r\n\r\n'
+    local ok, status, response = pcall(comm.exchange, host, port,
+      msearch, { proto = 'udp', timeout = 3000 })
+    if not ok or not status or type(response) ~= 'string' then
+      stdnse.verbose(2, fmt("upnp probe failed on %s:%d", host.ip,
+        port.number))
+      return nil
+    end
+    local server = upnp_server_header(response)
+    if server == nil then return nil end
+    local version = server:match(
+      '[Mm]ini[Uu][Pp][Nn][Pp][Dd]/(%d+%.%d+[%.%d]*)')
+    if version == nil then return nil end
+    return { cpe = 'cpe:/a:miniupnp_project:miniupnpd', version = version }
+  end
+
+  NET_PROBES.upnp = {
+    name = 'upnp',
+    kind = 'version',
+    services = { upnp = true },
+    -- Nmap gives no CPE for UPnP: the probe also runs on the bare service.
+    no_cpe = true,
+    run = upnp_probe,
+  }
+
+  local snmp_ok, snmp = pcall(require, 'snmp')
+
+  --- Return the sysDescr string of an SNMPv1 service, or nil.
+  -- Community 'public' as in the snmp-sysdescr script. Results and failures
+  -- are cached per host and port, false marks a failure.
+  local function snmp_get_descr(host, port)
+    local key = fmt('%s:%d', host.ip, port.number)
+    local cached = registry.snmp_info[key]
+    if cached == nil then
+      local ok, descr = pcall(function()
+        local helper = snmp.Helper:new(host, port, 'public', { version = 0 })
+        if not helper:connect() then return nil end
+        local status, response = helper:get({ reqId = 28428 },
+          '1.3.6.1.2.1.1.1.0')
+        return status and response and response[1] and response[1][1]
+      end)
+      if not ok then
+        stdnse.verbose(2, fmt("snmp sysdescr failed on %s", key))
+      end
+      cached = ok and descr or false
+      registry.snmp_info[key] = cached
+    end
+    return cached or nil
+  end
+
+  --- Return the OS family from the sysDescr of an SNMP service.
+  -- Return nil for other systems and failed requests.
+  local function snmp_os_probe(host, port)
+    if not snmp_ok then return nil end
+    local descr = snmp_get_descr(host, port)
+    if type(descr) ~= 'string' then return nil end
+    if descr:find('^Linux') then return { family = 'linux' } end
+    if descr:find('^FreeBSD') or descr:find('^NetBSD')
+        or descr:find('^OpenBSD') then
+      return { family = 'bsd' }
+    end
+    if descr:find('Windows') then return { family = 'windows' } end
+    if descr:find('^Darwin') then return { family = 'macos' } end
+    return nil
+  end
+
+  NET_PROBES.snmp_os = {
+    name = 'snmp_os',
+    kind = 'os',
+    services = { snmp = true },
+    run = snmp_os_probe,
   }
 end
 -- OS probe: the SMB service reports the OS family of the host. Samba is not
@@ -2903,7 +2995,8 @@ local SMB_OS_PROBE = {
 }
 
 local SERVICE_PROBES = {
-  SMB_PROBE, IRC_PROBE, NTP_PROBES.version, SMB_OS_PROBE, NTP_PROBES.os,
+  SMB_PROBE, IRC_PROBE, NET_PROBES.version, SMB_OS_PROBE, NET_PROBES.os,
+  NET_PROBES.upnp, NET_PROBES.snmp_os,
 }
 
 --- Return whether the probe 'name' is selected by the probes argument.
@@ -2913,7 +3006,8 @@ local function probe_enabled(name)
       and (smb_arg ~= '1' or not smb_ok) then
     return false
   end
-  if (name == 'ntp' or name == 'ntp_os') and not comm_ok then
+  if (name == 'ntp' or name == 'ntp_os' or name == 'upnp')
+      and not comm_ok then
     return false
   end
   if probes_arg == 'none' then return false end
@@ -3085,7 +3179,7 @@ portaction = function(host, port)
   local matches = {
     ['data'] = {
       ['nmap'] = {}, ['http'] = {}, ['smb'] = {}, ['irc'] = {},
-      ['ntp'] = {}
+      ['ntp'] = {}, ['upnp'] = {}
     },
     ['size'] = 0
   }

@@ -418,6 +418,8 @@ be cheap and safe:
 | `smb_os` | A host with an SMB service, only when a CVE needs a platform and the OS is unknown | Nmap's `smb.get_os` (`os` field) | Reports `windows` for real Windows hosts. See [Operating system context](#operating-system-context). |
 | `ntp` | An `ntp` service (UDP, needs `-sU`) | NTP mode 6 `readvar` (`version="ntpd 4.2.6p5..."`) | Exact ntpd version and patch (`4.2.6p5`) instead of `NTP v4`. `ntpsec`/`chrony` are ignored. Many ntpd block mode 6 (`noquery`): then it falls back to Nmap. |
 | `ntp_os` | Same `ntp` service, only when a CVE needs a platform and the OS is unknown | `system="Linux/..."` from the same reply | Reuses the `ntp` reply, no extra packet. `Linux`, `*BSD`, `Windows`; `UNIX` is ignored. |
+| `upnp` | A `upnp` service (UDP 1900, needs `-sU`) | Unicast SSDP `M-SEARCH`, reads the `SERVER:` header | Exact miniupnpd version (`MiniUPnPd/1.8`) when Nmap gives none. Other UPnP stacks are ignored. |
+| `snmp_os` | An `snmp` service (UDP 161), only when a CVE needs a platform and the OS is unknown | SNMPv1 `GET sysDescr` with community `public` (as `snmp-sysdescr`) | `linux`, `bsd`, `windows` or `macos` from the description. |
 
 Select them with `probes=none`, `probes=all` or `probes=<csv>`.
 

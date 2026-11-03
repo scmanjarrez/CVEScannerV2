@@ -1463,6 +1463,105 @@ t.case('ntp version probe caches the readvar for the os probe', function()
   t.eq(log.calls, 1)
 end)
 
+t.suite('snmp os probe')
+
+local SNMP_UDP_PORT = { number = 161, protocol = 'udp', service = 'snmp' }
+local SNMP_DESCR_OID = '1.3.6.1.2.1.1.1.0'
+
+--- Return an snmp.Helper stub that replays script.descr or script.err.
+-- The log counts the helpers, and records the communities and the OIDs.
+local function snmp_stub(script)
+  local log = { calls = 0, communities = {}, oids = {} }
+  local lib = { Helper = {} }
+  function lib.Helper:new(_, _, community, options)
+    log.calls = log.calls + 1
+    table.insert(log.communities, community)
+    log.version = options.version
+    local helper = {}
+    function helper.connect() return script.connect ~= false end
+    function helper.get(_, _, oid)
+      table.insert(log.oids, oid)
+      if script.err then return false, script.err end
+      return true, { { script.descr } }
+    end
+    return helper
+  end
+  return log, lib
+end
+
+--- Return an os scanner whose SNMP port is open over UDP.
+local function snmp_os_scanner(args, script)
+  local log, lib = snmp_stub(script)
+  package.loaded.snmp = lib
+  local sc = os_scanner(args)
+  package.loaded.snmp = nil
+  open_ports(sc, { HTTP_PORT }, { SNMP_UDP_PORT })
+  return sc, log
+end
+
+t.case('sysdescr sets the os family over SNMPv1', function()
+  local cases = {
+    { 'Linux lab 5.15.0-91-generic', 'linux' },
+    { 'FreeBSD bsd01 13.1-RELEASE', 'bsd' },
+    { 'NetBSD nb01 9.3', 'bsd' },
+    { 'OpenBSD ob01 7.4', 'bsd' },
+    { 'Hardware: Intel64 - Software: Windows Version 6.3', 'windows' },
+    { 'Darwin mac.local 23.1.0', 'macos' },
+  }
+  for i, case in ipairs(cases) do
+    local sc, log = snmp_os_scanner(nil, { descr = case[1] })
+    local _, meta = os_scan(sc, '10.4.0.' .. i)
+    t.eq(meta.os_context.family, case[2], case[1])
+    t.eq(meta.os_context.source, 'probe:snmp_os', case[1])
+    t.eq(log.calls, 1, case[1])
+    t.eq(log.communities[1], 'public', case[1])
+    t.eq(log.version, 0, case[1])
+    t.eq(log.oids[1], SNMP_DESCR_OID, case[1])
+  end
+end)
+
+t.case('other systems and failed replies give no family', function()
+  local cases = {
+    { descr = 'Cisco IOS Software' },
+    { descr = nil },
+    { err = 'timeout' },
+    { connect = false },
+  }
+  for i, script in ipairs(cases) do
+    local ip = '10.4.0.1' .. i
+    local sc = snmp_os_scanner(nil, script)
+    local _, meta = os_scan(sc, ip)
+    t.eq(meta.os_context.family, nil, tostring(i))
+    t.eq(sc.registry.host_os_probe[ip], false, tostring(i))
+  end
+end)
+
+t.case('probes=none, probes=smb and known os skip the snmp probe', function()
+  for _, args in ipairs({ { probes = 'none' }, { probes = 'smb' } }) do
+    local sc, log = snmp_os_scanner(args, { descr = 'Linux lab' })
+    local _, meta = os_scan(sc, '10.4.0.20')
+    t.eq(meta.os_context.family, nil)
+    t.eq(log.calls, 0)
+  end
+  local sc, log = snmp_os_scanner(nil, { descr = 'Linux lab' })
+  local ctx = { os = { family = 'linux', source = 'cpe' }, backport = false }
+  local _, meta = os_scan(sc, '10.4.0.21', ctx)
+  t.eq(meta.os_context.family, 'linux')
+  t.eq(log.calls, 0)
+end)
+
+t.case('udp services other than snmp skip the snmp probe', function()
+  local log, lib = snmp_stub({ descr = 'Linux lab' })
+  package.loaded.snmp = lib
+  local sc = os_scanner()
+  package.loaded.snmp = nil
+  open_ports(sc, { HTTP_PORT },
+    { { number = 161, protocol = 'udp', service = 'unknown' } })
+  local _, meta = os_scan(sc, '10.4.0.30')
+  t.eq(meta.os_context.family, nil)
+  t.eq(log.calls, 0)
+end)
+
 t.suite('local catalogue overlay')
 
 -- The overlay file holds plain text; the stubbed parser maps that text to
@@ -1691,3 +1790,149 @@ t.case('dependencies lists the version scripts', function()
     'mqtt-subscribe', 'amqp-info', 'xmpp-info',
   })
 end)
+
+do
+  t.suite('upnp probe')
+
+  local UPNP_CPE = 'cpe:/a:miniupnp_project:miniupnpd'
+
+  --- Return an SSDP reply with a SERVER header.
+  local function upnp_reply(server)
+    return 'HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=120\r\n'
+      .. 'ST: upnp:rootdevice\r\nSERVER: ' .. server .. '\r\n'
+      .. 'EXT:\r\n\r\n'
+  end
+
+  --- Return a UPnP port that Nmap identified without a CPE.
+  local function upnp_port(service, version)
+    return { number = 1900, protocol = 'udp', service = service or 'upnp',
+      version = { version = version or '' } }
+  end
+
+  --- Run add_nmap_matches on a host and a UPnP port.
+  local function upnp_matches(scanner, ip, port)
+    local matches = new_matches()
+    matches.data.upnp = {}
+    scanner.add_nmap_matches({ ip = ip }, port or upnp_port(), matches)
+    return matches
+  end
+
+  t.case('miniupnpd SERVER header sets the version', function()
+    local log, exchange = ntp_stub({
+      reply = upnp_reply('Debian/stretch/sid UPnP/1.1 MiniUPnPd/1.8'),
+    })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local matches = upnp_matches(scanner, '10.3.0.1')
+    t.eq(log.calls, 1)
+    t.truthy(matches.data.upnp[UPNP_CPE]['1.8'])
+    t.keys_eq(matches.data.nmap, {})
+  end)
+
+  t.case('miniupnpd version with a build suffix keeps all digits', function()
+    local _, exchange = ntp_stub({
+      reply = upnp_reply('Linux/5.4 UPnP/1.1 miniupnpd/2.1.20190625'),
+    })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local matches = upnp_matches(scanner, '10.3.0.2')
+    t.truthy(matches.data.upnp[UPNP_CPE]['2.1.20190625'])
+  end)
+
+  t.case('other UPnP servers add nothing', function()
+    local replies = {
+      'Microsoft-Windows/10.0 UPnP/1.0 Windows-Device/1.0',
+      'Linux/3.10 UPnP/1.0 IGD/1.00',
+      'MiniUPnPd without version',
+    }
+    for i, server in ipairs(replies) do
+      local _, exchange = ntp_stub({ reply = upnp_reply(server) })
+      local scanner = t.load_scanner()
+      scanner.stubs.comm.exchange = exchange
+      local matches = upnp_matches(scanner, '10.3.0.3.' .. i)
+      t.keys_eq(matches.data.upnp, {}, server)
+    end
+  end)
+
+  t.case('empty, timeout and error replies add nothing', function()
+    local scripts = {
+      { reply = '' },
+      { err = 'timeout' },
+    }
+    for i, script in ipairs(scripts) do
+      local log, exchange = ntp_stub(script)
+      local scanner = t.load_scanner()
+      scanner.stubs.comm.exchange = exchange
+      local matches = upnp_matches(scanner, '10.3.0.4.' .. i)
+      t.eq(log.calls, 1, tostring(i))
+      t.keys_eq(matches.data.upnp, {}, tostring(i))
+    end
+  end)
+
+  t.case('exchange errors are caught and add nothing', function()
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = function()
+      error('socket failure')
+    end
+    local matches = upnp_matches(scanner, '10.3.0.5')
+    t.keys_eq(matches.data.upnp, {})
+  end)
+
+  t.case('upnp request is an SSDP M-SEARCH over udp', function()
+    local log, exchange = ntp_stub({
+      reply = upnp_reply('MiniUPnPd/1.8'),
+    })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    upnp_matches(scanner, '10.3.0.6')
+    local request = log.requests[1]
+    t.eq(request.data, 'M-SEARCH * HTTP/1.1\r\n'
+      .. 'HOST: 239.255.255.250:1900\r\n'
+      .. 'MAN: "ssdp:discover"\r\n'
+      .. 'MX: 1\r\n'
+      .. 'ST: upnp:rootdevice\r\n\r\n')
+    t.eq(request.opts.proto, 'udp')
+    t.eq(request.opts.timeout, 3000)
+  end)
+
+  t.case('precise nmap version skips the upnp probe', function()
+    local log, exchange = ntp_stub({ reply = upnp_reply('MiniUPnPd/1.8') })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local matches = upnp_matches(scanner, '10.3.0.7',
+      upnp_port('upnp', '2.1.20190625'))
+    t.eq(log.calls, 0)
+    t.keys_eq(matches.data.upnp, {})
+  end)
+
+  t.case('upnp probe does not run on an http service', function()
+    local log, exchange = ntp_stub({ reply = upnp_reply('MiniUPnPd/1.8') })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local matches = upnp_matches(scanner, '10.3.0.8', upnp_port('http'))
+    t.eq(log.calls, 0)
+    t.keys_eq(matches.data.upnp, {})
+  end)
+
+  t.case('probes=none and probes=ntp skip the upnp probe', function()
+    for _, arg in ipairs({ 'none', 'ntp' }) do
+      local log, exchange = ntp_stub({ reply = upnp_reply('MiniUPnPd/1.8') })
+      local scanner = t.load_scanner({ args = { probes = arg } })
+      scanner.stubs.comm.exchange = exchange
+      local matches = upnp_matches(scanner, '10.3.0.9')
+      t.eq(log.calls, 0, arg)
+      t.keys_eq(matches.data.upnp, {}, arg)
+    end
+  end)
+
+  t.case('upnp probe is cached per ip and port', function()
+    local log, exchange = ntp_stub({ reply = upnp_reply('MiniUPnPd/1.8') })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    for _ = 1, 2 do
+      local matches = upnp_matches(scanner, '10.3.0.10')
+      t.truthy(matches.data.upnp[UPNP_CPE]['1.8'])
+    end
+    t.eq(log.calls, 1)
+  end)
+end

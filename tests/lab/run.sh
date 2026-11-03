@@ -1,7 +1,7 @@
 #!/bin/sh
 # Ejecuta cvescannerv2 contra el lab, con probes=none y probes=all.
 # Uso: tests/lab/run.sh <servicio|all>
-# Servicios: ntp weblogic cups php wordpress drupal mongo redis
+# Servicios: ntp weblogic cups php wordpress drupal mongo redis upnp snmp
 # Salida: results/lab/<servicio>-{none,all}.json
 
 set -eu
@@ -10,7 +10,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 COMPOSE="$ROOT/tests/lab/compose.yaml"
 OUT_DIR="$ROOT/results/lab"
 WAIT_SECS="${LAB_WAIT_SECS:-30}"
-ALL_SERVICES="ntp weblogic cups php wordpress drupal mongo redis"
+ALL_SERVICES="ntp weblogic cups php wordpress drupal mongo redis upnp snmp"
 
 usage() {
     echo "Uso: $0 <servicio|all>" >&2
@@ -29,6 +29,8 @@ port_of() {
         drupal) echo 8058 ;;
         mongo) echo 27017 ;;
         redis) echo 6379 ;;
+        upnp) echo 1900 ;;
+        snmp) echo 161 ;;
         *) return 1 ;;
     esac
 }
@@ -37,7 +39,7 @@ scan_one() {
     svc="$1"
     port=$(port_of "$svc") || usage
     proto_opt=""
-    if [ "$svc" = "ntp" ]; then
+    if [ "$svc" = "ntp" ] || [ "$svc" = "upnp" ] || [ "$svc" = "snmp" ]; then
         proto_opt="-sU"
     fi
     for mode in none all; do
