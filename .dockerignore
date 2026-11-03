@@ -9,3 +9,4 @@ data/*
 !data/product-aliases.json
 !data/vendor-aliases.json
 !data/platform-families.json
+!data/local-catalog.json

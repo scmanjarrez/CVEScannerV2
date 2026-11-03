@@ -781,12 +781,15 @@ local function os_scanner(args, platform)
 end
 
 --- Install an nmap.get_ports stub that yields the given open ports.
-local function open_ports(sc, ports)
-  sc.stubs.nmap.get_ports = function()
+-- The udp_ports argument answers the UDP queries and defaults to none.
+local function open_ports(sc, ports, udp_ports)
+  sc.stubs.nmap.get_ports = function(_, _, proto)
+    local list = ports
+    if proto == 'udp' then list = udp_ports or {} end
     local i = 0
     return function()
       i = i + 1
-      return ports[i]
+      return list[i]
     end
   end
 end
@@ -1175,4 +1178,516 @@ t.case('catalog continues when a batch has one answer', function()
   end)
   scanner.portaction({ ip = '10.4.0.5' }, ABORT_PORT)
   t.eq(calls(), 2)
+end)
+
+t.suite('ntp probe')
+
+local NTP_CPE = 'cpe:/a:ntp:ntp'
+local NTP_PORT = { number = 123, protocol = 'udp', service = 'ntp',
+  version = { cpe = { NTP_CPE }, version = '' } }
+local NTP_READVAR = '\x16\x02\x00\x01' .. string.rep('\0', 8)
+
+--- Return a readvar reply with a version field and a system field.
+local function ntp_reply(version, system)
+  return string.rep('\0', 12) .. 'version="' .. version
+    .. '", system="' .. (system or 'Linux/2.6.24') .. '"'
+end
+
+--- Return a comm.exchange stub that replays script.reply or script.err.
+-- The log counts the calls and records the requests sent.
+local function ntp_stub(script)
+  local log = { calls = 0, requests = {} }
+  local function exchange(_, _, data, opts)
+    log.calls = log.calls + 1
+    table.insert(log.requests, { data = data, opts = opts })
+    if script.err then return false, script.err end
+    return true, script.reply
+  end
+  return log, exchange
+end
+
+--- Run add_nmap_matches on a host and an NTP port.
+local function ntp_matches(scanner, ip, port)
+  local matches = new_matches()
+  matches.data.ntp = {}
+  scanner.add_nmap_matches({ ip = ip }, port or NTP_PORT, matches)
+  return matches
+end
+
+t.case('ntpd 4.2.6p5 reply sets the version and patch level', function()
+  local log, exchange = ntp_stub({
+    reply = ntp_reply('ntpd 4.2.6p5@1.2349-o Mon Dec 1 2008'),
+  })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.1')
+  t.truthy(matches.data.ntp[NTP_CPE]['4.2.6p5'])
+  t.keys_eq(matches.data.nmap, {})
+  t.eq(log.calls, 1)
+  t.eq(log.requests[1].data, NTP_READVAR)
+  t.eq(log.requests[1].opts.proto, 'udp')
+end)
+
+t.case('ntpd 4.2.8p15 reply sets the version and patch level', function()
+  local _, exchange = ntp_stub({
+    reply = ntp_reply('ntpd 4.2.8p15@1.3728-o Thu Jan 1 2026'),
+  })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.2')
+  t.truthy(matches.data.ntp[NTP_CPE]['4.2.8p15'])
+end)
+
+t.case('ntpd reply without a patch level keeps only the version', function()
+  local _, exchange = ntp_stub({
+    reply = ntp_reply('ntpd 4.2.8@1.3728-o'),
+  })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.3')
+  t.truthy(matches.data.ntp[NTP_CPE]['4.2.8'])
+end)
+
+t.case('non-ntpd, garbage and failed replies fall back to nmap', function()
+  local cases = {
+    { reply = ntp_reply('ntpsec 1.2.0') },
+    { reply = ntp_reply('chrony 4.0') },
+    { reply = 'garbage without a header' },
+    { err = 'timeout' },
+  }
+  for i, script in ipairs(cases) do
+    local _, exchange = ntp_stub(script)
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local matches = ntp_matches(scanner, '10.2.0.4')
+    t.keys_eq(matches.data.ntp, {}, tostring(i))
+    t.truthy(matches.data.nmap[NTP_CPE]['*'], tostring(i))
+  end
+end)
+
+t.case('precise nmap version skips the ntp probe', function()
+  local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.6p5') })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local port = { number = 123, service = 'ntp',
+    version = { cpe = { NTP_CPE }, version = '4.2.8p15' } }
+  local matches = ntp_matches(scanner, '10.2.0.5', port)
+  t.eq(log.calls, 0)
+  t.truthy(matches.data.nmap[NTP_CPE]['4.2.8p15'])
+end)
+
+t.case('nmap series versions 4 and v4 still run the ntp probe', function()
+  for _, version in ipairs({ '4', 'v4' }) do
+    local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.6p5') })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local port = { number = 123, service = 'ntp',
+      version = { cpe = { NTP_CPE }, version = version } }
+    local matches = ntp_matches(scanner, '10.2.0.6', port)
+    t.eq(log.calls, 1, version)
+    t.truthy(matches.data.ntp[NTP_CPE]['4.2.6p5'], version)
+  end
+end)
+
+t.case('ntp probe does not run on an http service', function()
+  local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.6p5') })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local port = { number = 123, service = 'http',
+    version = { cpe = { NTP_CPE }, version = '' } }
+  local matches = ntp_matches(scanner, '10.2.0.7', port)
+  t.eq(log.calls, 0)
+  t.truthy(matches.data.nmap[NTP_CPE]['*'])
+end)
+
+t.case('probes=none and probes=irc skip the ntp probe', function()
+  for _, arg in ipairs({ 'none', 'irc' }) do
+    local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.6p5') })
+    local scanner = t.load_scanner({ args = { probes = arg } })
+    scanner.stubs.comm.exchange = exchange
+    local matches = ntp_matches(scanner, '10.2.0.8')
+    t.eq(log.calls, 0, arg)
+    t.truthy(matches.data.nmap[NTP_CPE]['*'], arg)
+  end
+end)
+
+t.case('ntp probe is cached per ip and port', function()
+  local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.6p5') })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  for _ = 1, 2 do
+    local matches = ntp_matches(scanner, '10.2.0.9')
+    t.truthy(matches.data.ntp[NTP_CPE]['4.2.6p5'])
+  end
+  t.eq(log.calls, 1)
+end)
+
+--- Return an NTP port that Nmap identified without a CPE.
+local function ntp_no_cpe_port(version, service)
+  return { number = 123, protocol = 'udp', service = service or 'ntp',
+    version = { version = version } }
+end
+
+t.case('ntp without nmap cpe runs the no_cpe probe', function()
+  for _, version in ipairs({ '', 'NTP v4', 'v4' }) do
+    local log, exchange = ntp_stub({
+      reply = ntp_reply('ntpd 4.2.8p4@1.3265-o'),
+    })
+    local scanner = t.load_scanner()
+    scanner.stubs.comm.exchange = exchange
+    local port = ntp_no_cpe_port(version)
+    local matches = ntp_matches(scanner, '10.2.0.10', port)
+    t.eq(log.calls, 1, version)
+    t.truthy(matches.data.ntp[NTP_CPE]['4.2.8p4'], version)
+    t.keys_eq(matches.data.nmap, {}, version)
+  end
+end)
+
+t.case('ntp without nmap cpe and no reply adds nothing', function()
+  local log, exchange = ntp_stub({ err = 'timeout' })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.11', ntp_no_cpe_port(''))
+  t.eq(log.calls, 1)
+  t.keys_eq(matches.data.ntp, {})
+  t.keys_eq(matches.data.nmap, {})
+end)
+
+t.case('ntp without nmap cpe and precise version skips probe', function()
+  local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.8p4') })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.12',
+    ntp_no_cpe_port('4.2.8p4'))
+  t.eq(log.calls, 0)
+  t.keys_eq(matches.data.ntp, {})
+end)
+
+t.case('no_cpe probe never runs on a non-ntp service', function()
+  local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.8p4') })
+  local scanner = t.load_scanner()
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.13',
+    ntp_no_cpe_port('', 'http'))
+  t.eq(log.calls, 0)
+  t.keys_eq(matches.data.ntp, {})
+end)
+
+t.case('probes=none skips the no_cpe ntp probe', function()
+  local log, exchange = ntp_stub({ reply = ntp_reply('ntpd 4.2.8p4') })
+  local scanner = t.load_scanner({ args = { probes = 'none' } })
+  scanner.stubs.comm.exchange = exchange
+  local matches = ntp_matches(scanner, '10.2.0.14', ntp_no_cpe_port(''))
+  t.eq(log.calls, 0)
+  t.keys_eq(matches.data.ntp, {})
+end)
+
+t.suite('ntp os probe')
+
+local NTP_UDP_PORT = { number = 123, protocol = 'udp', service = 'ntp' }
+
+--- Return an os scanner whose NTP port is open over UDP.
+local function ntp_os_scanner(args, script)
+  local log, exchange = ntp_stub(script)
+  local sc = os_scanner(args)
+  sc.stubs.comm.exchange = exchange
+  open_ports(sc, { HTTP_PORT }, { NTP_UDP_PORT })
+  return sc, log
+end
+
+t.case('ntp system field sets the os family', function()
+  local cases = {
+    { 'Linux/2.6.24', 'linux' },
+    { 'FreeBSD/9.1', 'bsd' },
+    { 'NetBSD/6.0', 'bsd' },
+    { 'OpenBSD/5.2', 'bsd' },
+    { 'Windows', 'windows' },
+  }
+  for i, case in ipairs(cases) do
+    local sc, log = ntp_os_scanner(nil,
+      { reply = ntp_reply('ntpd 4.2.6p5', case[1]) })
+    local _, meta = os_scan(sc, '10.3.0.' .. i)
+    t.eq(meta.os_context.family, case[2], case[1])
+    t.eq(meta.os_context.source, 'probe:ntp_os', case[1])
+    t.eq(log.calls, 1, case[1])
+  end
+end)
+
+t.case('unix, unknown, garbage and failed replies give no family', function()
+  local cases = {
+    { reply = ntp_reply('ntpd 4.2.6p5', 'UNIX') },
+    { reply = ntp_reply('ntpd 4.2.6p5', 'SunOS/5.10') },
+    { reply = 'garbage without a header' },
+    { err = 'timeout' },
+  }
+  for i, script in ipairs(cases) do
+    local ip = '10.3.0.1' .. i
+    local sc = ntp_os_scanner(nil, script)
+    local _, meta = os_scan(sc, ip)
+    t.eq(meta.os_context.family, nil, tostring(i))
+    t.eq(sc.registry.host_os_probe[ip], false, tostring(i))
+  end
+end)
+
+t.case('probes=none and probes=smb skip the ntp os probe', function()
+  for _, args in ipairs({ { probes = 'none' }, { probes = 'smb' } }) do
+    local sc, log = ntp_os_scanner(args,
+      { reply = ntp_reply('ntpd 4.2.6p5', 'Linux/2.6.24') })
+    local _, meta = os_scan(sc, '10.3.0.20')
+    t.eq(meta.os_context.family, nil)
+    t.eq(log.calls, 0)
+  end
+end)
+
+t.case('known os never runs the ntp os probe', function()
+  local sc, log = ntp_os_scanner(nil,
+    { reply = ntp_reply('ntpd 4.2.6p5', 'Linux/2.6.24') })
+  local ctx = { os = { family = 'linux', source = 'cpe' }, backport = false }
+  local _, meta = os_scan(sc, '10.3.0.21', ctx)
+  t.eq(meta.os_context.family, 'linux')
+  t.eq(log.calls, 0)
+end)
+
+t.case('ntp version probe caches the readvar for the os probe', function()
+  local log, exchange = ntp_stub({
+    reply = ntp_reply('ntpd 4.2.6p5', 'FreeBSD/9.1'),
+  })
+  local sc = os_scanner()
+  sc.stubs.comm.exchange = exchange
+  open_ports(sc, { HTTP_PORT }, { NTP_UDP_PORT })
+  local matches = ntp_matches(sc, '10.3.0.30', NTP_PORT)
+  t.truthy(matches.data.ntp[NTP_CPE]['4.2.6p5'])
+  local _, meta = os_scan(sc, '10.3.0.30')
+  t.eq(meta.os_context.family, 'bsd')
+  t.eq(meta.os_context.source, 'probe:ntp_os')
+  t.eq(log.calls, 1)
+end)
+
+t.suite('local catalogue overlay')
+
+-- The overlay file holds plain text; the stubbed parser maps that text to
+-- the decoded table, so no JSON library is needed.
+local function overlay_file(body)
+  local path = os.tmpname()
+  local file = assert(io.open(path, 'w'))
+  file:write(body)
+  file:close()
+  return path
+end
+
+local function overlay_scanner(decoded)
+  return t.load_scanner({ json = {
+    parse = function(body)
+      if decoded[body] then return true, decoded[body] end
+      return false
+    end,
+    generate = function() return '{}' end
+  } })
+end
+
+local function upstream_scanner(decoded)
+  local scanner = overlay_scanner(decoded)
+  scanner.registry.catalog_loaded = true
+  scanner.registry.catalog = {
+    fingerprints = s.validate_fingerprints({ rules = { nginx = rule } }),
+    paths = { '/' },
+    probes = {}
+  }
+  return scanner
+end
+
+local local_rule = { alias = 'cpe:/a:acme:portal', channel = 'hdr:server',
+  regex = 'Portal/([%d.]+)', anchor = 'Portal' }
+
+t.case('valid overlay fingerprint is merged and matches a banner', function()
+  local path = overlay_file('fp')
+  local scanner = upstream_scanner({
+    fp = { fingerprints = { rules = { portal = local_rule } } } })
+  t.eq(scanner.registry.load_local_catalog(path), true)
+  os.remove(path)
+  t.eq(#scanner.registry.catalog.fingerprints['hdr:server'], 2)
+  local matches, triggered = new_matches(), {}
+  scanner.match_subjects({ ['hdr:server'] = { 'Portal/2.3' } },
+    matches, 'http', triggered)
+  t.truthy(matches.data.http['cpe:/a:acme:portal']['2.3'])
+end)
+
+t.case('invalid overlay section is dropped, valid ones are kept', function()
+  local path = overlay_file('mixed')
+  local bad_rule = { alias = 'cpe:/a:x:y', channel = 'body', regex = '([%d' }
+  local scanner = upstream_scanner({ mixed = {
+    fingerprints = { rules = { bad = bad_rule } },
+    paths = { paths = { '/admin/' } } } })
+  scanner.registry.load_local_catalog(path)
+  os.remove(path)
+  t.eq(#scanner.registry.catalog.fingerprints['hdr:server'], 1)
+  t.eq(scanner.registry.catalog.fingerprints.body, nil)
+  t.eq(scanner.registry.catalog.paths, { '/', '/admin/' })
+end)
+
+t.case('absent overlay file leaves the catalogue identical', function()
+  local scanner = upstream_scanner({})
+  local before = t.serialize(scanner.registry.catalog)
+  t.eq(scanner.registry.load_local_catalog('data/no-such-overlay.json'),
+    false)
+  t.eq(t.serialize(scanner.registry.catalog), before)
+end)
+
+t.case('invalid JSON overlay leaves the catalogue identical', function()
+  local path = overlay_file('broken')
+  local scanner = upstream_scanner({})
+  local before = t.serialize(scanner.registry.catalog)
+  t.eq(scanner.registry.load_local_catalog(path), false)
+  os.remove(path)
+  t.eq(t.serialize(scanner.registry.catalog), before)
+end)
+
+t.case('local_catalog=none leaves the catalogue identical', function()
+  local path = overlay_file('fp')
+  local scanner = upstream_scanner({
+    fp = { fingerprints = { rules = { portal = local_rule } } } })
+  local before = t.serialize(scanner.registry.catalog)
+  t.eq(scanner.registry.load_local_catalog('none'), false)
+  os.remove(path)
+  t.eq(t.serialize(scanner.registry.catalog), before)
+end)
+
+t.case('overlay is ignored without an upstream catalogue', function()
+  local path = overlay_file('fp')
+  local scanner = overlay_scanner({
+    fp = { fingerprints = { rules = { portal = local_rule } } } })
+  t.eq(scanner.registry.load_local_catalog(path), false)
+  os.remove(path)
+  t.eq(scanner.registry.catalog.fingerprints, {})
+end)
+
+t.case('overlay never writes files', function()
+  local path = overlay_file('fp')
+  local scanner = upstream_scanner({
+    fp = { fingerprints = { rules = { portal = local_rule } } } })
+  local original_open = io.open
+  local modes = {}
+  io.open = function(name, mode)
+    table.insert(modes, mode or 'r')
+    return original_open(name, mode)
+  end
+  local ok, err = pcall(scanner.registry.load_local_catalog, path)
+  io.open = original_open
+  os.remove(path)
+  t.truthy(ok, err)
+  for _, mode in ipairs(modes) do
+    t.eq(mode:find('[wa+]') == nil, true, 'mode ' .. mode)
+  end
+end)
+
+t.suite('cups title fingerprint')
+
+local CUPS_CPE = 'cpe:/a:apple:cups'
+local CUPS_403 = '<HTML><HEAD><TITLE>Forbidden - CUPS v2.1.3</TITLE>'
+  .. '</HEAD><BODY>403</BODY></HTML>'
+
+--- Return a scanner whose overlay holds the local CUPS title rule.
+-- The rule text matches data/local-catalog.json; the stubbed parser maps
+-- the overlay file to the decoded table.
+local function cups_scanner(http)
+  local path = overlay_file('cups')
+  local scanner = t.load_scanner({ http = http, json = {
+    parse = function(body)
+      if body ~= 'cups' then return false end
+      return true, { fingerprints = { rules = { cups = {
+        alias = CUPS_CPE, anchor = 'CUPS', channel = 'title',
+        regex = 'CUPS v?(%d+%.%d+[%.%d]*)' } } } }
+    end,
+    generate = function() return '{}' end
+  } })
+  scanner.registry.catalog_loaded = true
+  scanner.registry.catalog = { fingerprints = {}, paths = { '/' },
+    probes = {} }
+  scanner.registry.load_local_catalog(path)
+  os.remove(path)
+  return scanner
+end
+
+--- Return an http stub whose pipeline answers with one fixed response.
+local function cups_http(status, body)
+  return {
+    pipeline_add = function(path, _, requests)
+      requests = requests or {}
+      table.insert(requests, path)
+      return requests
+    end,
+    pipeline_go = function()
+      return { { status = status, body = body, header = {} } }
+    end
+  }
+end
+
+t.case('shipped overlay carries the CUPS title rule', function()
+  local file = assert(io.open('data/local-catalog.json', 'r'))
+  local body = file:read('*all')
+  file:close()
+  t.truthy(body:find('"alias": "cpe:/a:apple:cups"', 1, true))
+  t.truthy(body:find('"channel": "title"', 1, true))
+  t.truthy(body:find('"anchor": "CUPS"', 1, true))
+  t.truthy(body:find('"regex": "CUPS v?(%d+%.%d+[%.%d]*)"', 1, true))
+end)
+
+t.case('CUPS title with version is matched as http', function()
+  local scanner = cups_scanner({})
+  t.eq(#scanner.registry.catalog.fingerprints.title, 1)
+  local matches, triggered = new_matches(), {}
+  scanner.match_subjects({ title = { 'Forbidden - CUPS v2.1.3' } },
+    matches, 'http', triggered)
+  t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
+  t.eq(matches.data.nmap[CUPS_CPE], nil)
+end)
+
+t.case('CUPS word without a version is not matched', function()
+  local scanner = cups_scanner({})
+  local matches, triggered = new_matches(), {}
+  scanner.match_subjects({ title = { 'Forbidden - CUPS',
+    'Ubuntu CUPS print server' } }, matches, 'http', triggered)
+  t.eq(matches.data.http[CUPS_CPE], nil)
+  t.eq(matches.size, 0)
+end)
+
+t.case('title without a version number is not matched', function()
+  local scanner = cups_scanner({})
+  local matches, triggered = new_matches(), {}
+  scanner.match_subjects({ title = { 'CUPS version unknown' } },
+    matches, 'http', triggered)
+  t.eq(matches.data.http[CUPS_CPE], nil)
+end)
+
+t.case('403 body is scanned through the overlay', function()
+  local scanner = cups_scanner(cups_http(403, CUPS_403))
+  t.eq(scanner.response_is_usable({ status = 403 }), true)
+  t.eq(scanner.response_is_usable({ status = 404 }), false)
+  local matches, triggered = new_matches(), {}
+  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
+end)
+
+t.case('404 body with the CUPS title is ignored', function()
+  local scanner = cups_scanner(cups_http(404, CUPS_403))
+  local matches, triggered = new_matches(), {}
+  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  t.eq(matches.data.http[CUPS_CPE], nil)
+end)
+
+t.suite('version script dependencies')
+
+t.case('dependencies lists the version scripts', function()
+  local file = assert(io.open('cvescannerv2.nse', 'r'))
+  local body = file:read('*all')
+  file:close()
+  local block = body:match('\ndependencies = (%b{})')
+  t.truthy(block, 'dependencies block missing')
+  local seen = {}
+  for name in block:gmatch('"([^"]+)"') do seen[name] = true end
+  t.keys_eq(seen, {
+    'weblogic-t3-info', 'oracle-tns-version', 'docker-version',
+    'jdwp-version', 'vmware-version', 'db2-das-info', 'ike-version',
+    'mqtt-subscribe', 'amqp-info', 'xmpp-info',
+  })
 end)

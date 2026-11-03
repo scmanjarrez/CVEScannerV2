@@ -84,6 +84,7 @@ function M.load_scanner(opts)
       verbose = function() end,
       sleep = function() end
     },
+    comm = opts.comm or {},
     ['luasql.sqlite3'] = opts.sql or {}
   }
   for name, module in pairs(stubs) do

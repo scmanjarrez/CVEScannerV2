@@ -1,0 +1,182 @@
+# Nmap 7.93 scan initiated Sat Aug 26 18:25:20 2023 as: nmap -sV -n --script cvescannerv2 --script-args log=metasploitable3.log,json=metasploitable3.json -oN metasploitable3 192.168.1.81
+Nmap scan report for 192.168.1.81
+Host is up (0.0010s latency).
+Not shown: 980 closed tcp ports (conn-refused)
+Bug in cvescannerv2: no string output.
+Bug in cvescannerv2: no string output.
+Bug in cvescannerv2: no string output.
+PORT      STATE SERVICE              VERSION
+21/tcp    open  ftp                  Microsoft ftpd
+22/tcp    open  ssh                  OpenSSH 7.1 (protocol 2.0)
+| cvescannerv2: 
+|   product: openssh
+|   version: 7.1
+|   vupdate: *
+|   cves: 29
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2016-1908       	7.5  	9.8  	No        	No        
+|   	CVE-2023-38408      	nil  	9.8  	No        	No        
+|   	CVE-2008-3844       	9.3  	-    	No        	No        
+|   	CVE-2016-0778       	4.6  	8.1  	No        	No        
+|   	CVE-2015-8325       	7.2  	7.8  	No        	No        
+|   	CVE-2016-10012      	7.2  	7.8  	No        	No        
+|   	CVE-2020-15778      	6.8  	7.8  	No        	No        
+|   	CVE-2016-8858       	7.8  	7.5  	No        	No        
+|   	CVE-2016-6515       	7.8  	7.5  	Yes       	No        
+|   	CVE-2016-10708      	5.0  	7.5  	No        	No        
+|_  
+80/tcp    open  http                 Microsoft IIS httpd 7.5
+|_http-server-header: Microsoft-IIS/7.5
+| cvescannerv2: 
+|   product: internet_information_services
+|   version: 7.5
+|   vupdate: *
+|   cves: 3
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2010-3972       	10.0 	-    	Yes       	Yes       
+|   	CVE-2010-2730       	9.3  	-    	No        	No        
+|   	CVE-2010-1899       	4.3  	-    	No        	Yes       
+|_  
+135/tcp   open  msrpc                Microsoft Windows RPC
+139/tcp   open  netbios-ssn          Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds         Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
+3306/tcp  open  mysql                MySQL 5.5.20-log
+| cvescannerv2: 
+|   product: mysql
+|   version: 5.5.20
+|   vupdate: *
+|   cves: 455
+|   	CVE ID              	CVSSv2	CVSSv3	ExploitDB 	Metasploit
+|   	CVE-2012-2750       	10.0 	-    	No        	No        
+|   	CVE-2016-9841       	7.5  	9.8  	No        	No        
+|   	CVE-2016-9843       	7.5  	9.8  	No        	No        
+|   	CVE-2016-6662       	10.0 	9.8  	Yes       	No        
+|   	CVE-2012-3163       	9.0  	-    	No        	No        
+|   	CVE-2016-9840       	6.8  	8.8  	No        	No        
+|   	CVE-2016-9842       	6.8  	8.8  	No        	No        
+|   	CVE-2016-3477       	4.1  	8.1  	No        	No        
+|   	CVE-2017-15945      	7.2  	7.8  	No        	No        
+|   	CVE-2016-3440       	4.0  	7.7  	No        	No        
+|_  
+3389/tcp  open  ssl/ms-wbt-server?
+4848/tcp  open  ssl/http             Oracle GlassFish 4.0 (Servlet 3.1; JSP 2.3; Java 1.8)
+|_http-trane-info: Problem with XML parsing of /evox/about
+|_http-server-header: GlassFish Server Open Source Edition  4.0 
+7676/tcp  open  java-message-service Java Message Service 301
+8009/tcp  open  ajp13                Apache Jserv (Protocol v1.3)
+8080/tcp  open  http                 Sun GlassFish Open Source Edition  4.0
+|_http-server-header: GlassFish Server Open Source Edition  4.0 
+8181/tcp  open  ssl/intermapper?
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Date: Sat, 26 Aug 2023 16:25:45 GMT
+|     Content-Type: text/html
+|     Connection: close
+|     Content-Length: 4626
+|     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+|     <html lang="en">
+|     <!--
+|     ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+|     Copyright (c) 2010, 2013 Oracle and/or its affiliates. All rights reserved.
+|     subject to License Terms
+|     <head>
+|     <style type="text/css">
+|     body{margin-top:0}
+|     body,td,p,div,span,a,ul,ul li, ol, ol li, ol li b, dl,h1,h2,h3,h4,h5,h6,li {font-family:geneva,helvetica,arial,"lucida sans",sans-serif; font-size:10pt}
+|     {font-size:18pt}
+|     {font-size:14pt}
+|     {font-size:12pt}
+|     code,kbd,tt,pre {font-family:monaco,courier,"courier new"; font-size:10pt;}
+|     {padding-bottom: 8px}
+|     p.copy, p.copy a {font-family:geneva,helvetica,arial,"lucida sans",sans-serif; font-size:8pt}
+|     p.copy {text-align: center}
+|     table.grey1,tr.grey1,td.g
+|   RTSPRequest: 
+|     HTTP/1.1 505 HTTP Version Not Supported
+|     Date: Sat, 26 Aug 2023 16:25:45 GMT
+|     Connection: close
+|_    Content-Length: 0
+8383/tcp  open  http                 Apache httpd
+|_http-server-header: Apache
+9200/tcp  open  wap-wsp?
+| fingerprint-strings: 
+|   FourOhFourRequest: 
+|     HTTP/1.0 400 Bad Request
+|     Content-Type: text/plain; charset=UTF-8
+|     Content-Length: 80
+|     handler found for uri [/nice%20ports%2C/Tri%6Eity.txt%2ebak] and method [GET]
+|   GetRequest: 
+|     HTTP/1.0 200 OK
+|     Content-Type: application/json; charset=UTF-8
+|     Content-Length: 317
+|     "status" : 200,
+|     "name" : "Danielle Moonstar",
+|     "version" : {
+|     "number" : "1.1.1",
+|     "build_hash" : "f1585f096d3f3985e73456debdc1a0745f512bbc",
+|     "build_timestamp" : "2014-04-16T14:27:12Z",
+|     "build_snapshot" : false,
+|     "lucene_version" : "4.7"
+|     "tagline" : "You Know, for Search"
+|   HTTPOptions: 
+|     HTTP/1.0 200 OK
+|     Content-Type: text/plain; charset=UTF-8
+|     Content-Length: 0
+|   RTSPRequest, SIPOptions: 
+|     HTTP/1.1 200 OK
+|     Content-Type: text/plain; charset=UTF-8
+|_    Content-Length: 0
+49152/tcp open  msrpc                Microsoft Windows RPC
+49153/tcp open  msrpc                Microsoft Windows RPC
+49154/tcp open  msrpc                Microsoft Windows RPC
+49157/tcp open  msrpc                Microsoft Windows RPC
+49176/tcp open  java-rmi             Java RMI
+2 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port8181-TCP:V=7.93%T=SSL%I=7%D=8/26%Time=64EA2789%P=x86_64-redhat-linu
+SF:x-gnu%r(GetRequest,128C,"HTTP/1\.1\x20200\x20OK\r\nDate:\x20Sat,\x2026\
+SF:x20Aug\x202023\x2016:25:45\x20GMT\r\nContent-Type:\x20text/html\r\nConn
+SF:ection:\x20close\r\nContent-Length:\x204626\r\n\r\n<!DOCTYPE\x20HTML\x2
+SF:0PUBLIC\x20\"-//W3C//DTD\x20HTML\x204\.01\x20Transitional//EN\">\n<html
+SF:\x20lang=\"en\">\n<!--\nDO\x20NOT\x20ALTER\x20OR\x20REMOVE\x20COPYRIGHT
+SF:\x20NOTICES\x20OR\x20THIS\x20HEADER\.\n\nCopyright\x20\(c\)\x202010,\x2
+SF:02013\x20Oracle\x20and/or\x20its\x20affiliates\.\x20All\x20rights\x20re
+SF:served\.\n\nUse\x20is\x20subject\x20to\x20License\x20Terms\n-->\n<head>
+SF:\n<style\x20type=\"text/css\">\n\tbody{margin-top:0}\n\tbody,td,p,div,s
+SF:pan,a,ul,ul\x20li,\x20ol,\x20ol\x20li,\x20ol\x20li\x20b,\x20dl,h1,h2,h3
+SF:,h4,h5,h6,li\x20{font-family:geneva,helvetica,arial,\"lucida\x20sans\",
+SF:sans-serif;\x20font-size:10pt}\n\th1\x20{font-size:18pt}\n\th2\x20{font
+SF:-size:14pt}\n\th3\x20{font-size:12pt}\n\tcode,kbd,tt,pre\x20{font-famil
+SF:y:monaco,courier,\"courier\x20new\";\x20font-size:10pt;}\n\tli\x20{padd
+SF:ing-bottom:\x208px}\n\tp\.copy,\x20p\.copy\x20a\x20{font-family:geneva,
+SF:helvetica,arial,\"lucida\x20sans\",sans-serif;\x20font-size:8pt}\n\tp\.
+SF:copy\x20{text-align:\x20center}\n\ttable\.grey1,tr\.grey1,td\.g")%r(RTS
+SF:PRequest,76,"HTTP/1\.1\x20505\x20HTTP\x20Version\x20Not\x20Supported\r\
+SF:nDate:\x20Sat,\x2026\x20Aug\x202023\x2016:25:45\x20GMT\r\nConnection:\x
+SF:20close\r\nContent-Length:\x200\r\n\r\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port9200-TCP:V=7.93%I=7%D=8/26%Time=64EA277D%P=x86_64-redhat-linux-gnu%
+SF:r(GetRequest,194,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\x20applicatio
+SF:n/json;\x20charset=UTF-8\r\nContent-Length:\x20317\r\n\r\n{\r\n\x20\x20
+SF:\"status\"\x20:\x20200,\r\n\x20\x20\"name\"\x20:\x20\"Danielle\x20Moons
+SF:tar\",\r\n\x20\x20\"version\"\x20:\x20{\r\n\x20\x20\x20\x20\"number\"\x
+SF:20:\x20\"1\.1\.1\",\r\n\x20\x20\x20\x20\"build_hash\"\x20:\x20\"f1585f0
+SF:96d3f3985e73456debdc1a0745f512bbc\",\r\n\x20\x20\x20\x20\"build_timesta
+SF:mp\"\x20:\x20\"2014-04-16T14:27:12Z\",\r\n\x20\x20\x20\x20\"build_snaps
+SF:hot\"\x20:\x20false,\r\n\x20\x20\x20\x20\"lucene_version\"\x20:\x20\"4\
+SF:.7\"\r\n\x20\x20},\r\n\x20\x20\"tagline\"\x20:\x20\"You\x20Know,\x20for
+SF:\x20Search\"\r\n}\n")%r(HTTPOptions,4F,"HTTP/1\.0\x20200\x20OK\r\nConte
+SF:nt-Type:\x20text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\
+SF:n")%r(RTSPRequest,4F,"HTTP/1\.1\x20200\x20OK\r\nContent-Type:\x20text/p
+SF:lain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\r\n")%r(FourOhFourRe
+SF:quest,A9,"HTTP/1\.0\x20400\x20Bad\x20Request\r\nContent-Type:\x20text/p
+SF:lain;\x20charset=UTF-8\r\nContent-Length:\x2080\r\n\r\nNo\x20handler\x2
+SF:0found\x20for\x20uri\x20\[/nice%20ports%2C/Tri%6Eity\.txt%2ebak\]\x20an
+SF:d\x20method\x20\[GET\]")%r(SIPOptions,4F,"HTTP/1\.1\x20200\x20OK\r\nCon
+SF:tent-Type:\x20text/plain;\x20charset=UTF-8\r\nContent-Length:\x200\r\n\
+SF:r\n");
+Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat Aug 26 18:28:32 2023 -- 1 IP address (1 host up) scanned in 192.04 seconds

@@ -416,13 +416,34 @@ be cheap and safe:
 | `smb` | Samba on 139/445 (`netbios-ssn`, `microsoft-ds`) | Nmap's `smb.get_os` (`lanmanager` field) | Gives the exact Samba version instead of `3.X - 4.X`. One query per host, shared by all its SMB ports. |
 | `irc` | UnrealIRCd on an `irc`/`ircs` service | `NICK`/`USER`/`VERSION`, reads reply 351 | Exact UnrealIRCd version. The nick appears in the IRC server log. UnrealIRCd throttles reconnections right after `-sV`: on `Throttled` the probe waits 20 s and retries once. |
 | `smb_os` | A host with an SMB service, only when a CVE needs a platform and the OS is unknown | Nmap's `smb.get_os` (`os` field) | Reports `windows` for real Windows hosts. See [Operating system context](#operating-system-context). |
+| `ntp` | An `ntp` service (UDP, needs `-sU`) | NTP mode 6 `readvar` (`version="ntpd 4.2.6p5..."`) | Exact ntpd version and patch (`4.2.6p5`) instead of `NTP v4`. `ntpsec`/`chrony` are ignored. Many ntpd block mode 6 (`noquery`): then it falls back to Nmap. |
+| `ntp_os` | Same `ntp` service, only when a CVE needs a platform and the OS is unknown | `system="Linux/..."` from the same reply | Reuses the `ntp` reply, no extra packet. `Linux`, `*BSD`, `Windows`; `UNIX` is ignored. |
 
 Select them with `probes=none`, `probes=all` or `probes=<csv>`.
+
+**Version scripts.** The script declares `dependencies` on the Nmap
+`version` scripts that publish a version (`weblogic-t3-info`,
+`oracle-tns-version`, `docker-version`, `jdwp-version`, `vmware-version`,
+`db2-das-info`, `ike-version`, `mqtt-subscribe`, `amqp-info`, `xmpp-info`), so
+that `port.version` already holds their result when the analysis runs. Without
+this, WebLogic was analysed with version `*` (race with `weblogic-t3-info`).
+They only run with `-sV`.
+
+**Local HTTP catalogue.** `data/local-catalog.json` (arg `local_catalog`,
+`none` disables it) is merged on top of the Vulners catalogue with the same
+schema (`fingerprints`, `paths`, `probes`). Invalid sections are dropped. It is
+ignored when the Vulners catalogue is not loaded. Today it holds a CUPS rule
+that reads `CUPS v2.1.3` from the title of the (403) error page; the HTTP
+engine now also reads the body of 403 responses.
+
+**Limits.** Versions hidden on purpose (Apache `ServerTokens Prod`, OpenSSL,
+Dovecot, Postfix) have no network method. Scan by IP (`-n`) when the target
+rejects unknown `Host` names, as CUPS does.
 
 Candidates that were evaluated against lab targets and **discarded** because
 `nmap -sV` already gives the same information, or because no target exposed
 them: `ftp-syst`, `ajp-headers`, NTLM probes (`rdp-ntlm-info`,
-`http-ntlm-info`), `ntp-info`, `snmp-sysdescr` and `mysql-info`.
+`http-ntlm-info`), `snmp-sysdescr` and `mysql-info`.
 
 ## Operating system context
 

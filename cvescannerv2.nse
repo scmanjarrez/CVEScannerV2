@@ -60,6 +60,8 @@ CVEs information gathered from nvd.nist.gov.
 -- catalog: Use upstream fingerprints. Default: auto. Set to none to disable
 -- HTTP fingerprinting.
 -- catalog_url: Override the base URL for the upstream catalogue.
+-- local_catalog: Local catalogue merged on top of the upstream one.
+-- Default: data/local-catalog.json. Set to none to disable.
 -- path: Legacy paths file. Default:
 -- data/http-paths-vulnerscom.json
 -- regex: Legacy regex file. Default:
@@ -81,6 +83,13 @@ CVEs information gathered from nvd.nist.gov.
 ---
 
 categories = { "safe" }
+-- Orden por runlevel: estos scripts fijan la versión en port.version, así
+-- que corren antes. Sin -sV no tienen efecto.
+dependencies = {
+  "weblogic-t3-info", "oracle-tns-version", "docker-version",
+  "jdwp-version", "vmware-version", "db2-das-info", "ike-version",
+  "mqtt-subscribe", "amqp-info", "xmpp-info",
+}
 author = "Sergio Chica"
 version = "4.0"
 
@@ -124,6 +133,7 @@ end
 local sql = load_luasql()
 local stdnse = require 'stdnse'
 local smb_ok, smb = pcall(require, 'smb')
+local comm_ok, comm = pcall(require, 'comm')
 
 local db_arg = stdnse.get_script_args('db') or 'data/cve.db'
 local maxcve_arg = tonumber(stdnse.get_script_args('maxcve')) or 10
@@ -170,6 +180,7 @@ if not nmap.registry[SCRIPT_NAME] then
     platform_families = {},
     host_os = {},
     smb_info = {},
+    ntp_info = {},
     host_os_probe = {},
     catalog ={ fingerprints = {}, paths = {}, probes = {} },
     catalog_loaded = false,
@@ -666,6 +677,73 @@ local function load_platform_families()
 end
 
 
+-- Local catalogue overlay. Its sections are validated with the upstream
+-- validators and appended to the loaded upstream catalogue, so local entries
+-- never replace upstream ones. The overlay is never written to the cache.
+-- Stored in the registry table: the main chunk is at the Lua limit of 200
+-- local variables.
+--- Merge the local catalogue overlay into the upstream catalogue.
+-- Return true when the overlay was merged. Nothing is merged when the path
+-- is 'none', the file is absent or unreadable, or no upstream catalogue was
+-- loaded.
+function registry.load_local_catalog(path)
+  if path == 'none' then return false end
+  if not registry.catalog_loaded then
+    stdnse.verbose(1, 'Local catalogue ignored: no upstream catalogue.')
+    return false
+  end
+  local file = io.open(path, 'rb')
+  if not file then return false end
+  -- Bound reads as read_catalog_json does.
+  local body = file:read(MAX_CATALOG_BYTES + 1)
+  file:close()
+  local parsed, data = false, nil
+  if type(body) == 'string' and #body <= MAX_CATALOG_BYTES then
+    parsed, data = json.parse(body)
+  end
+  if not parsed or type(data) ~= 'table' then
+    stdnse.verbose(1, fmt('Local catalogue %s is invalid; ignored.', path))
+    return false
+  end
+
+  --- Return the validated section 'key' of the overlay, or nil.
+  -- An absent section is skipped silently. An invalid one is logged.
+  local function section(key, validate)
+    if data[key] == nil then return nil end
+    local valid = type(data[key]) == 'table' and validate(data[key])
+    if not valid then
+      stdnse.verbose(1, fmt('Invalid local catalogue section %s; skipped.',
+        key))
+    end
+    return valid or nil
+  end
+
+  local loaded = registry.catalog
+  -- Fingerprints are grouped by channel: append each rule to its list.
+  local by_channel = section('fingerprints', validate_fingerprints)
+  for channel, rules in pairs(by_channel or {}) do
+    loaded.fingerprints[channel] = loaded.fingerprints[channel] or {}
+    for _, rule in ipairs(rules) do
+      table.insert(loaded.fingerprints[channel], rule)
+    end
+  end
+  -- Paths are a flat list: append the ones not already known.
+  local known = {}
+  for _, item in ipairs(loaded.paths) do known[item] = true end
+  for _, item in ipairs(section('paths', validate_paths) or {}) do
+    if not known[item] then
+      known[item] = true
+      table.insert(loaded.paths, item)
+    end
+  end
+  -- Probes are a flat list: append them.
+  for _, probe in ipairs(section('probes', validate_probes) or {}) do
+    table.insert(loaded.probes, probe)
+  end
+  stdnse.verbose(1, fmt('Local catalogue %s merged.', path))
+  return true
+end
+
 local function required_files()
   local ret = ""
   if not exists(db_arg) then
@@ -693,6 +771,8 @@ local function required_files()
           'HTTP catalogue unavailable; continuing with Nmap CPEs.')
       end
     end
+    registry.load_local_catalog(stdnse.get_script_args('local_catalog')
+      or 'data/local-catalog.json')
   end
   return ret
 end
@@ -988,9 +1068,12 @@ local function response_subjects(response)
   return subjects
 end
 
+-- 403 bodies are kept: CUPS and similar servers expose their version in
+-- the error page title.
 local function response_is_usable(response)
   local status = tonumber(response.status)
-  return status ~= nil and status >= 200 and status < 400
+  return status ~= nil
+      and ((status >= 200 and status < 400) or status == 403)
 end
 
 local function safe_version(value)
@@ -2710,6 +2793,90 @@ local IRC_PROBE = {
   services = IRC_SERVICES,
   run = irc_probe,
 }
+
+-- Holds the 'version' and 'os' probes of the NTP service. A table keeps the
+-- main chunk within the Lua limit of 200 local variables.
+local NTP_PROBES
+do
+  --- Return the version and system fields of a mode 6 readvar reply.
+  -- The payload follows the 12-byte header. Return nil without a version.
+  local function ntp_parse_readvar(response)
+    local payload = response:sub(13)
+    local version = payload:match('version="([^"]*)"')
+    if version == nil then return nil end
+    return { version = version, system = payload:match('system="([^"]*)"') }
+  end
+
+  --- Return the readvar fields of an NTP service, calling it at most once.
+  -- Return nil when the request fails. Failures are cached as false.
+  local function ntp_get_info(host, port)
+    local key = fmt('%s:%d', host.ip, port.number)
+    local cached = registry.ntp_info[key]
+    if cached == nil then
+      -- Mode 6 readvar request, the same packet as the ntp-info script.
+      local readvar = '\x16\x02\x00\x01' .. string.rep('\0', 8)
+      local ok, status, response = pcall(comm.exchange, host, port,
+        readvar, { proto = 'udp', timeout = 5000 })
+      if ok and status and type(response) == 'string' then
+        cached = ntp_parse_readvar(response) or false
+      else
+        stdnse.verbose(2, fmt("ntp readvar failed on %s", key))
+        cached = false
+      end
+      registry.ntp_info[key] = cached
+    end
+    return cached or nil
+  end
+
+  --- Return the ntpd CPE, version and patch level from the readvar reply.
+  -- The patch level is the update, as in the NVD rows. Return nil for other
+  -- daemons such as ntpsec or chrony.
+  local function ntp_probe(host, port)
+    local info = ntp_get_info(host, port)
+    if info == nil then return nil end
+    local version, rest = info.version:match('^ntpd (%d+%.%d+%.%d+)(.*)$')
+    if version == nil then return nil end
+    return {
+      cpe = 'cpe:/a:ntp:ntp',
+      version = version,
+      update = rest:match('^(p%d+)'),
+    }
+  end
+
+  NTP_PROBES = {}
+  NTP_PROBES.version = {
+    name = 'ntp',
+    kind = 'version',
+    products = { ntp = true },
+    services = { ntp = true },
+    -- Nmap gives no CPE for NTP: the probe also runs on the bare service.
+    no_cpe = true,
+    run = ntp_probe,
+  }
+
+  --- Return the OS family from the system field of the readvar reply.
+  -- Return nil for UNIX, unknown systems and failed requests. The reply is
+  -- shared with the ntp probe through the ntp_get_info cache.
+  local function ntp_os_probe(host, port)
+    local info = ntp_get_info(host, port)
+    if info == nil or type(info.system) ~= 'string' then return nil end
+    local system = info.system
+    if system:find('^Linux') then return { family = 'linux' } end
+    if system:find('^FreeBSD') or system:find('^NetBSD')
+        or system:find('^OpenBSD') then
+      return { family = 'bsd' }
+    end
+    if system:find('^Windows') then return { family = 'windows' } end
+    return nil
+  end
+
+  NTP_PROBES.os = {
+    name = 'ntp_os',
+    kind = 'os',
+    services = { ntp = true },
+    run = ntp_os_probe,
+  }
+end
 -- OS probe: the SMB service reports the OS family of the host. Samba is not
 -- mapped to a family: 'unix' never equals the 'linux' family of
 -- evaluate_platform, which would add false platform_mismatch reasons.
@@ -2735,13 +2902,18 @@ local SMB_OS_PROBE = {
   run = smb_os_probe,
 }
 
-local SERVICE_PROBES = { SMB_PROBE, IRC_PROBE, SMB_OS_PROBE }
+local SERVICE_PROBES = {
+  SMB_PROBE, IRC_PROBE, NTP_PROBES.version, SMB_OS_PROBE, NTP_PROBES.os,
+}
 
 --- Return whether the probe 'name' is selected by the probes argument.
 -- The legacy smb=0 argument also disables the smb and smb_os probes.
 local function probe_enabled(name)
   if (name == 'smb' or name == 'smb_os')
       and (smb_arg ~= '1' or not smb_ok) then
+    return false
+  end
+  if (name == 'ntp' or name == 'ntp_os') and not comm_ok then
     return false
   end
   if probes_arg == 'none' then return false end
@@ -2781,16 +2953,18 @@ local function run_version_probe(host, port, probe)
   return cache[key] or nil
 end
 
---- Return the first OS family from an 'os' probe on an open TCP port.
+--- Return the first OS family from an 'os' probe on an open TCP or UDP port.
 -- Only the probes whose services or ports match an open port run.
 local function first_os_probe(host)
-  for port in nmap.get_ports(host, nil, 'tcp', 'open') do
-    for _, probe in ipairs(SERVICE_PROBES) do
-      if probe.kind == 'os' and probe_enabled(probe.name)
-          and probe_applies(probe, port, nil) then
-        local ok, result = pcall(probe.run, host)
-        if ok and type(result) == 'table' and result.family then
-          return result.family, probe.name
+  for _, proto in ipairs({ 'tcp', 'udp' }) do
+    for port in nmap.get_ports(host, nil, proto, 'open') do
+      for _, probe in ipairs(SERVICE_PROBES) do
+        if probe.kind == 'os' and probe_enabled(probe.name)
+            and probe_applies(probe, port, nil) then
+          local ok, result = pcall(probe.run, host, port)
+          if ok and type(result) == 'table' and result.family then
+            return result.family, probe.name
+          end
         end
       end
     end
@@ -2826,15 +3000,25 @@ end
 -- Empty and '*' versions are never precise.
 local function nmap_version_precise(version)
   if empty(version) or version == '*' then return false end
+  -- A bare major number such as '4' or 'NTP v4' is a series, not a version.
+  if version:match('^[%a ]*[vV]?%d+$') then return false end
   return is_precise_version(version)
 end
 
 --- Return the first applicable version probe and its result.
--- Skip the probes when the Nmap version is already precise.
+-- Without a product (no Nmap CPE) only the 'no_cpe' probes of the service
+-- apply. Skip the probes when the Nmap version is already precise.
 local function version_probe_result(host, port, product, nmap_version)
   if nmap_version_precise(nmap_version) then return nil end
   for _, probe in ipairs(SERVICE_PROBES) do
-    if probe.kind == 'version' and probe_applies(probe, port, product) then
+    local applies
+    if product ~= nil then
+      applies = probe_applies(probe, port, product)
+    else
+      applies = probe.no_cpe == true and probe.services ~= nil
+        and probe.services[port.service] == true
+    end
+    if probe.kind == 'version' and applies then
       local result = run_version_probe(host, port, probe)
       if result then return probe, result end
     end
@@ -2850,18 +3034,25 @@ local function smb_version(host, port)
 end
 
 
---- Add the version found by a version probe, or the Nmap CPE of a port.
+--- Add the version found by a version probe, or the CPE of a port.
+-- Without a Nmap CPE, only the 'no_cpe' version probes can add a match.
 local function add_nmap_matches(host, port, matches)
-  local cpe = port.version.cpe[1]
+  local cpe = port.version.cpe and port.version.cpe[1] or nil
   local detected_version = port.version.version
   if empty(detected_version) then detected_version = '*' end
-  local _, _, _, _, product = split_cpe(cpe)
+  local product = nil
+  if cpe ~= nil then
+    local _, _, _, _, name = split_cpe(cpe)
+    product = name
+  end
   local probe, result = version_probe_result(host, port, product,
     detected_version)
   if probe then
-    add_cpe_version(result.cpe, result.version, matches, probe.name)
+    local version = result.version .. (result.update or '')
+    add_cpe_version(result.cpe, version, matches, probe.name)
     return
   end
+  if cpe == nil then return end
   add_cpe_version(cpe, detected_version, matches, 'nmap')
   add_cpe_aliases(cpe, detected_version, matches, 'nmap')
 end
@@ -2893,7 +3084,8 @@ end
 portaction = function(host, port)
   local matches = {
     ['data'] = {
-      ['nmap'] = {}, ['http'] = {}, ['smb'] = {}, ['irc'] = {}
+      ['nmap'] = {}, ['http'] = {}, ['smb'] = {}, ['irc'] = {},
+      ['ntp'] = {}
     },
     ['size'] = 0
   }
@@ -2904,9 +3096,7 @@ portaction = function(host, port)
       ['ports'] = {}
     }
   end
-  if port.version ~= nil
-      and port.version.cpe ~= nil
-      and port.version.cpe[1] ~= nil then
+  if port.version ~= nil then
     add_nmap_matches(host, port, matches)
   end
   match_banner(port, matches, triggered)

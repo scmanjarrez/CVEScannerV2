@@ -1,0 +1,93 @@
+# Lab reproducible para validar sondas de servicio de cvescannerv2.
+# Uso: ver tests/lab/run.sh. Manual, sin CI.
+#
+# Puertos publicados solo en 127.0.0.1 (scanner local).
+#
+# Verificado: con 'internal: true' Docker NO publica puertos al host
+# (nmap ve el puerto cerrado), asi que la red es bridge normal. ntp y
+# cups necesitan salida para 'apk add'.
+
+networks:
+  lab: {}
+
+services:
+  # Valida: sonda NTP (ntpd clasico 4.2.x, UDP 123).
+  # Imagen: ubuntu:16.04 + paquete 'ntp' (4.2.8p4) instalado al arrancar.
+  # restrict permisivo: el ntp.conf por defecto trae 'noquery', que
+  # bloquea el mode 6 (readvar) que usa la sonda.
+  ntp:
+    image: ubuntu:16.04
+    command: >-
+      sh -c "apt-get update -qq &&
+      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ntp &&
+      printf 'restrict default\n' > /etc/ntp.conf &&
+      exec ntpd -n -g -c /etc/ntp.conf"
+    cap_add:
+      - SYS_TIME
+    ports:
+      - "127.0.0.1:123:123/udp"
+    networks:
+      - lab
+
+  # Valida: sonda de WebLogic (HTTP, version 10.3.6).
+  weblogic:
+    image: vulhub/weblogic:10.3.6.0-2017
+    ports:
+      - "127.0.0.1:7001:7001"
+    networks:
+      - lab
+
+  # Valida: sonda CUPS antiguo (IPP/HTTP 631).
+  # Imagen: ubuntu:16.04 + paquete 'cups' (2.1.3) instalado al arrancar.
+  cups:
+    image: ubuntu:16.04
+    command: >-
+      sh -c "apt-get update -qq &&
+      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq cups &&
+      sed -i 's/^Listen localhost:631/Listen 0.0.0.0:631/'
+      /etc/cups/cupsd.conf &&
+      exec cupsd -f"
+    ports:
+      - "127.0.0.1:1631:631"
+    networks:
+      - lab
+
+  # Valida: sonda PHP 5.6 (cabeceras HTTP / Apache).
+  php:
+    image: php:5.6-apache
+    ports:
+      - "127.0.0.1:8056:80"
+    networks:
+      - lab
+
+  # Valida: sonda WordPress 4.x (sin BD: instalador web).
+  wordpress:
+    image: wordpress:4.9.8-php5.6-apache
+    ports:
+      - "127.0.0.1:8057:80"
+    networks:
+      - lab
+
+  # Valida: sonda Drupal 7 (sin BD: instalador web).
+  drupal:
+    image: drupal:7-apache
+    ports:
+      - "127.0.0.1:8058:80"
+    networks:
+      - lab
+
+  # Valida: sonda MongoDB 3.6 (protocolo wire, 27017).
+  mongo:
+    image: mongo:3.6
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - lab
+
+  # Valida: sonda Redis 3.2 (RESP, 6379).
+  redis:
+    image: redis:3.2
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - lab

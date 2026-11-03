@@ -16,6 +16,21 @@ RUN test -n "$DATABASE_REFRESH" \
     && test -s /output/cve.db \
     && sqlite3 /output/cve.db 'PRAGMA quick_check;' | grep -qx ok
 
+FROM alpine:3.23 AS catalog-fetcher
+
+# Vulners HTTP catalogue, stored under the names the NSE reads from its cache.
+# The source marker must equal the catalogue base URL, without a newline.
+ARG CATALOG_BASE=https://raw.githubusercontent.com/vulnersCom/nmap-vulners/catalog/
+ARG CATALOG_REFRESH=latest
+RUN --mount=type=cache,id=apk-3.23-catalog,target=/var/cache/apk,sharing=locked     apk add --update-cache ca-certificates curl
+RUN test -n "$CATALOG_REFRESH" \
+    && mkdir -p /catalog \
+    && for name in index fingerprints paths probes; do \
+        curl -fsSL --retry 3 -o "/catalog/$name.json" \
+            "${CATALOG_BASE}$name.json" || exit 1; \
+    done \
+    && printf '%s' "$CATALOG_BASE" > /catalog/.vulners-catalog-source
+
 FROM alpine:3.23 AS nmap-builder
 
 ARG TARGETARCH
@@ -62,6 +77,8 @@ COPY --link LICENSE /usr/share/licenses/cvescannerv2/LICENSE
 COPY --link data/product-aliases.json /CVEScannerV2/data/product-aliases.json
 COPY --link data/vendor-aliases.json /CVEScannerV2/data/vendor-aliases.json
 COPY --link data/platform-families.json /CVEScannerV2/data/platform-families.json
+COPY --link data/local-catalog.json /CVEScannerV2/data/local-catalog.json
+COPY --link --from=catalog-fetcher /catalog/ /CVEScannerV2/data/
 COPY --link cvescannerv2.nse /usr/share/nmap/scripts/cvescannerv2.nse
 
 FROM scratch AS runtime
