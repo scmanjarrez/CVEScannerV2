@@ -11,7 +11,11 @@ RUN apk add --no-cache lua5.4 lua5.4-sql-sqlite3
 WORKDIR /src
 COPY cvescannerv2.nse ./
 COPY tests/ ./tests/
-COPY data/vendor-aliases.json ./data/vendor-aliases.json
+COPY docker/Dockerfile ./docker/Dockerfile
+COPY .dockerignore ./.dockerignore
+COPY data/product-aliases.json data/vendor-aliases.json \
+    data/platform-families.json data/local-catalog.json \
+    data/product-cpe.json ./data/
 
 ENV LUA=lua5.4
 ENTRYPOINT ["sh", "tests/run.sh"]

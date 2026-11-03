@@ -1,20 +1,4 @@
 {
-  "fingerprints": {
-    "rules": {
-      "CUPS, title (lab 403)": {
-        "accept_403": true,
-        "alias": "cpe:/a:apple:cups",
-        "anchor": "CUPS",
-        "channel": "title",
-        "example": {
-          "subject": "Forbidden - CUPS v2.1.3",
-          "version": "2.1.3"
-        },
-        "regex": "CUPS v?(%d+%.%d+[%.%d]*)",
-        "source": "local:cups-403-title"
-      }
-    }
-  },
   "probes": {
     "schema": 1,
     "probes": []

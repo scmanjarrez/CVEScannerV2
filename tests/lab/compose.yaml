@@ -69,21 +69,6 @@ services:
     networks:
       - lab
 
-  # Valida: sonda snmp_os (F8, sysDescr -> linux, UDP 161, comunidad public).
-  # Imagen: ubuntu:16.04 + paquete 'snmpd'.
-  snmp:
-    image: ubuntu:16.04
-    command: >-
-      sh -c "apt-get update -qq &&
-      DEBIAN_FRONTEND=noninteractive apt-get install -y -qq snmpd &&
-      printf 'rocommunity public default\nagentAddress udp:161\n'
-      > /tmp/snmpd.conf &&
-      exec snmpd -f -Lo -C -c /tmp/snmpd.conf"
-    ports:
-      - "127.0.0.1:161:161/udp"
-    networks:
-      - lab
-
   # Valida: sonda PHP 5.6 (cabeceras HTTP / Apache).
   php:
     image: php:5.6-apache

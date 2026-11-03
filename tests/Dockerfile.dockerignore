@@ -3,4 +3,10 @@
 **
 !cvescannerv2.nse
 !tests/
+!docker/Dockerfile
+!.dockerignore
+!data/product-aliases.json
 !data/vendor-aliases.json
+!data/platform-families.json
+!data/local-catalog.json
+!data/product-cpe.json

@@ -417,9 +417,8 @@ be cheap and safe:
 | `irc` | UnrealIRCd on an `irc`/`ircs` service | `NICK`/`USER`/`VERSION`, reads reply 351 | Exact UnrealIRCd version. The nick appears in the IRC server log. UnrealIRCd throttles reconnections right after `-sV`: on `Throttled` the probe waits 20 s and retries once. |
 | `smb_os` | A host with an SMB service, only when a CVE needs a platform and the OS is unknown | Nmap's `smb.get_os` (`os` field) | Reports `windows` for real Windows hosts. See [Operating system context](#operating-system-context). |
 | `ntp` | An `ntp` service (UDP, needs `-sU`) | NTP mode 6 `readvar` (`version="ntpd 4.2.6p5..."`) | Exact ntpd version and patch (`4.2.6p5`) instead of `NTP v4`. `ntpsec`/`chrony` are ignored. Many ntpd block mode 6 (`noquery`): then it falls back to Nmap. |
-| `ntp_os` | Same `ntp` service, only when a CVE needs a platform and the OS is unknown | `system="Linux/..."` from the same reply | Reuses the `ntp` reply, no extra packet. `Linux`, `*BSD`, `Windows`; `UNIX` is ignored. |
+| `cups` | A CUPS service (`ipp`, product `cups`) with a series version | `GET /` and reads the page title (`Home - CUPS 2.1.3`, also on a 403 page) | Exact CUPS version instead of `2.1`. One request, no catalogue involved. |
 | `upnp` | A `upnp` service (UDP 1900, needs `-sU`) | Unicast SSDP `M-SEARCH`, reads the `SERVER:` header | Exact miniupnpd version (`MiniUPnPd/1.8`) when Nmap gives none. Other UPnP stacks are ignored. |
-| `snmp_os` | An `snmp` service (UDP 161), only when a CVE needs a platform and the OS is unknown | SNMPv1 `GET sysDescr` with community `public` (as `snmp-sysdescr`) | `linux`, `bsd`, `windows` or `macos` from the description. |
 
 Select them with `probes=none`, `probes=all` or `probes=<csv>`.
 
@@ -440,9 +439,9 @@ reports with the CPE of JSP (`cpe:/a:oracle:jsp`); the alias
 **Local HTTP catalogue.** `data/local-catalog.json` (arg `local_catalog`,
 `none` disables it) is merged on top of the Vulners catalogue with the same
 schema (`fingerprints`, `paths`, `probes`). Invalid sections are dropped. It is
-ignored when the Vulners catalogue is not loaded. Today it holds a CUPS rule
-that reads `CUPS v2.1.3` from the title of the (403) error page. 403 bodies
-are only evaluated by rules that opt in with `"accept_403": true`; every
+ignored when the Vulners catalogue is not loaded. It ships empty: anything a
+targeted probe can read (such as CUPS) is a probe, not a catalogue rule. A rule
+may opt in with `"accept_403": true` to be evaluated on 403 bodies; every
 other rule keeps seeing only 2xx and 3xx responses, so error pages of WAFs or
 proxies cannot be attributed to the wrong service.
 

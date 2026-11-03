@@ -46,6 +46,30 @@ sh tests/run.sh
 docker run --rm -e CVESCANNER_FILTER=openssl cvescannerv2-tests
 ```
 
+## Packaging tests
+
+Dos comprobaciones del empaquetado de la imagen del escáner:
+
+- Estática (`lua/test_docker.lua`, suite `docker packaging`): sin Docker.
+  Comprueba que cada fichero `data/` que lee el NSE está copiado o generado
+  por `docker/Dockerfile`, que los `COPY data/...` existen y no los excluye
+  `.dockerignore`, y que `CATALOG_BASE` coincide con el del NSE. Tarda
+  menos de un segundo y se ejecuta dentro de `sh tests/run.sh`.
+- Integración (`docker/check.sh [--fresh]`): requiere Docker y red. Construye
+  las imágenes `nodb` y `db`, comprueba su contenido, valida `cve.db` con
+  `python3` y escanea un `php:5.6-apache` en una red temporal. No entra en
+  `run.sh`. Tarda varios minutos (la primera vez, más por la descarga de la
+  base de datos y del catálogo). `--fresh` fuerza regenerar la base de datos
+  y el catálogo sin caché. Imprime `PASS`/`FAIL` por comprobación y devuelve
+  código distinto de cero si alguna falla. Limpia contenedores, red y
+  ficheros temporales al terminar.
+
+```bash
+sh tests/run.sh                     # estática, sin Docker
+sh tests/docker/check.sh            # integración
+sh tests/docker/check.sh --fresh    # integración sin caché
+```
+
 ## Estructura
 
 | Fichero | Contenido |
@@ -56,6 +80,8 @@ docker run --rm -e CVESCANNER_FILTER=openssl cvescannerv2-tests
 | `lua/test_scoping.lua` | `scoped_multi_versions`, `scoped_versions`, orden CVSS y escape SQL. |
 | `lua/test_catalog.lua` | Validación del catálogo de Vulners y extracción de huellas HTTP. |
 | `lua/test_database.lua` | `portaction`/`postaction` de extremo a extremo sobre la fixture SQLite. |
+| `lua/test_docker.lua` | Empaquetado: rutas `data/` del NSE frente a `docker/Dockerfile` y `.dockerignore`. |
+| `docker/check.sh` | Integración: construye las imágenes, valida su contenido y escanea un objetivo real. |
 | `lua/run.lua` | Ejecuta las suites de `lua/` y devuelve el código de salida. |
 
 ## Resultados

@@ -15,6 +15,7 @@ local SUITES = {
   'tests/lua/test_scoping.lua',
   'tests/lua/test_catalog.lua',
   'tests/lua/test_database.lua',
+  'tests/lua/test_docker.lua',
 }
 
 for _, suite in ipairs(SUITES) do

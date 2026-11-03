@@ -1,5 +1,5 @@
 #!/bin/sh
-# Ejecuta el lab UDP (ntp, upnp, snmp) con probes=none y probes=all.
+# Ejecuta el lab UDP (ntp, upnp) con probes=none y probes=all.
 # Requiere root (nmap -sU): sudo sh tests/lab/run-udp.sh
 # Salida: results/lab/<servicio>-{none,all}.json, results/lab/udp-summary.txt
 # Variables: LAB_WAIT_SECS (espera de arranque, defecto 90: apt-get install)
@@ -9,7 +9,7 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT_DIR="$ROOT/results/lab"
 SUMMARY="$OUT_DIR/udp-summary.txt"
-SERVICES="ntp upnp snmp"
+SERVICES="ntp upnp"
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "Ejecuta con sudo: sudo sh $0" >&2

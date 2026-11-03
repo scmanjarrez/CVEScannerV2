@@ -782,15 +782,12 @@ local function os_scanner(args, platform)
 end
 
 --- Install an nmap.get_ports stub that yields the given open ports.
--- The udp_ports argument answers the UDP queries and defaults to none.
-local function open_ports(sc, ports, udp_ports)
-  sc.stubs.nmap.get_ports = function(_, _, proto)
-    local list = ports
-    if proto == 'udp' then list = udp_ports or {} end
+local function open_ports(sc, ports)
+  sc.stubs.nmap.get_ports = function()
     local i = 0
     return function()
       i = i + 1
-      return list[i]
+      return ports[i]
     end
   end
 end
@@ -1383,186 +1380,6 @@ t.case('probes=none skips the no_cpe ntp probe', function()
   t.keys_eq(matches.data.ntp, {})
 end)
 
-t.suite('ntp os probe')
-
-local NTP_UDP_PORT = { number = 123, protocol = 'udp', service = 'ntp' }
-
---- Return an os scanner whose NTP port is open over UDP.
-local function ntp_os_scanner(args, script)
-  local log, exchange = ntp_stub(script)
-  local sc = os_scanner(args)
-  sc.stubs.comm.exchange = exchange
-  open_ports(sc, { HTTP_PORT }, { NTP_UDP_PORT })
-  return sc, log
-end
-
-t.case('ntp system field sets the os family', function()
-  local cases = {
-    { 'Linux/2.6.24', 'linux' },
-    { 'FreeBSD/9.1', 'bsd' },
-    { 'NetBSD/6.0', 'bsd' },
-    { 'OpenBSD/5.2', 'bsd' },
-    { 'Windows', 'windows' },
-  }
-  for i, case in ipairs(cases) do
-    local sc, log = ntp_os_scanner(nil,
-      { reply = ntp_reply('ntpd 4.2.6p5', case[1]) })
-    local _, meta = os_scan(sc, '10.3.0.' .. i)
-    t.eq(meta.os_context.family, case[2], case[1])
-    t.eq(meta.os_context.source, 'probe:ntp_os', case[1])
-    t.eq(log.calls, 1, case[1])
-  end
-end)
-
-t.case('unix, unknown, garbage and failed replies give no family', function()
-  local cases = {
-    { reply = ntp_reply('ntpd 4.2.6p5', 'UNIX') },
-    { reply = ntp_reply('ntpd 4.2.6p5', 'SunOS/5.10') },
-    { reply = 'garbage without a header' },
-    { err = 'timeout' },
-  }
-  for i, script in ipairs(cases) do
-    local ip = '10.3.0.1' .. i
-    local sc = ntp_os_scanner(nil, script)
-    local _, meta = os_scan(sc, ip)
-    t.eq(meta.os_context.family, nil, tostring(i))
-    t.eq(sc.registry.host_os_probe[ip], false, tostring(i))
-  end
-end)
-
-t.case('probes=none and probes=smb skip the ntp os probe', function()
-  for _, args in ipairs({ { probes = 'none' }, { probes = 'smb' } }) do
-    local sc, log = ntp_os_scanner(args,
-      { reply = ntp_reply('ntpd 4.2.6p5', 'Linux/2.6.24') })
-    local _, meta = os_scan(sc, '10.3.0.20')
-    t.eq(meta.os_context.family, nil)
-    t.eq(log.calls, 0)
-  end
-end)
-
-t.case('known os never runs the ntp os probe', function()
-  local sc, log = ntp_os_scanner(nil,
-    { reply = ntp_reply('ntpd 4.2.6p5', 'Linux/2.6.24') })
-  local ctx = { os = { family = 'linux', source = 'cpe' }, backport = false }
-  local _, meta = os_scan(sc, '10.3.0.21', ctx)
-  t.eq(meta.os_context.family, 'linux')
-  t.eq(log.calls, 0)
-end)
-
-t.case('ntp version probe caches the readvar for the os probe', function()
-  local log, exchange = ntp_stub({
-    reply = ntp_reply('ntpd 4.2.6p5', 'FreeBSD/9.1'),
-  })
-  local sc = os_scanner()
-  sc.stubs.comm.exchange = exchange
-  open_ports(sc, { HTTP_PORT }, { NTP_UDP_PORT })
-  local matches = ntp_matches(sc, '10.3.0.30', NTP_PORT)
-  t.truthy(matches.data.ntp[NTP_CPE]['4.2.6p5'])
-  local _, meta = os_scan(sc, '10.3.0.30')
-  t.eq(meta.os_context.family, 'bsd')
-  t.eq(meta.os_context.source, 'probe:ntp_os')
-  t.eq(log.calls, 1)
-end)
-
-t.suite('snmp os probe')
-
-local SNMP_UDP_PORT = { number = 161, protocol = 'udp', service = 'snmp' }
-local SNMP_DESCR_OID = '1.3.6.1.2.1.1.1.0'
-
---- Return an snmp.Helper stub that replays script.descr or script.err.
--- The log counts the helpers, and records the communities and the OIDs.
-local function snmp_stub(script)
-  local log = { calls = 0, communities = {}, oids = {} }
-  local lib = { Helper = {} }
-  function lib.Helper:new(_, _, community, options)
-    log.calls = log.calls + 1
-    table.insert(log.communities, community)
-    log.version = options.version
-    local helper = {}
-    function helper.connect() return script.connect ~= false end
-    function helper.get(_, _, oid)
-      table.insert(log.oids, oid)
-      if script.err then return false, script.err end
-      return true, { { script.descr } }
-    end
-    return helper
-  end
-  return log, lib
-end
-
---- Return an os scanner whose SNMP port is open over UDP.
-local function snmp_os_scanner(args, script)
-  local log, lib = snmp_stub(script)
-  package.loaded.snmp = lib
-  local sc = os_scanner(args)
-  package.loaded.snmp = nil
-  open_ports(sc, { HTTP_PORT }, { SNMP_UDP_PORT })
-  return sc, log
-end
-
-t.case('sysdescr sets the os family over SNMPv1', function()
-  local cases = {
-    { 'Linux lab 5.15.0-91-generic', 'linux' },
-    { 'FreeBSD bsd01 13.1-RELEASE', 'bsd' },
-    { 'NetBSD nb01 9.3', 'bsd' },
-    { 'OpenBSD ob01 7.4', 'bsd' },
-    { 'Hardware: Intel64 - Software: Windows Version 6.3', 'windows' },
-    { 'Darwin mac.local 23.1.0', 'macos' },
-  }
-  for i, case in ipairs(cases) do
-    local sc, log = snmp_os_scanner(nil, { descr = case[1] })
-    local _, meta = os_scan(sc, '10.4.0.' .. i)
-    t.eq(meta.os_context.family, case[2], case[1])
-    t.eq(meta.os_context.source, 'probe:snmp_os', case[1])
-    t.eq(log.calls, 1, case[1])
-    t.eq(log.communities[1], 'public', case[1])
-    t.eq(log.version, 0, case[1])
-    t.eq(log.oids[1], SNMP_DESCR_OID, case[1])
-  end
-end)
-
-t.case('other systems and failed replies give no family', function()
-  local cases = {
-    { descr = 'Cisco IOS Software' },
-    { descr = nil },
-    { err = 'timeout' },
-    { connect = false },
-  }
-  for i, script in ipairs(cases) do
-    local ip = '10.4.0.1' .. i
-    local sc = snmp_os_scanner(nil, script)
-    local _, meta = os_scan(sc, ip)
-    t.eq(meta.os_context.family, nil, tostring(i))
-    t.eq(sc.registry.host_os_probe[ip], false, tostring(i))
-  end
-end)
-
-t.case('probes=none, probes=smb and known os skip the snmp probe', function()
-  for _, args in ipairs({ { probes = 'none' }, { probes = 'smb' } }) do
-    local sc, log = snmp_os_scanner(args, { descr = 'Linux lab' })
-    local _, meta = os_scan(sc, '10.4.0.20')
-    t.eq(meta.os_context.family, nil)
-    t.eq(log.calls, 0)
-  end
-  local sc, log = snmp_os_scanner(nil, { descr = 'Linux lab' })
-  local ctx = { os = { family = 'linux', source = 'cpe' }, backport = false }
-  local _, meta = os_scan(sc, '10.4.0.21', ctx)
-  t.eq(meta.os_context.family, 'linux')
-  t.eq(log.calls, 0)
-end)
-
-t.case('udp services other than snmp skip the snmp probe', function()
-  local log, lib = snmp_stub({ descr = 'Linux lab' })
-  package.loaded.snmp = lib
-  local sc = os_scanner()
-  package.loaded.snmp = nil
-  open_ports(sc, { HTTP_PORT },
-    { { number = 161, protocol = 'udp', service = 'unknown' } })
-  local _, meta = os_scan(sc, '10.4.0.30')
-  t.eq(meta.os_context.family, nil)
-  t.eq(log.calls, 0)
-end)
-
 t.suite('local catalogue overlay')
 
 -- The overlay file holds plain text; the stubbed parser maps that text to
@@ -1724,14 +1541,12 @@ local function cups_http(status, body)
   }
 end
 
-t.case('shipped overlay carries the CUPS title rule', function()
+t.case('shipped overlay has no CUPS rule (cups probe covers it)', function()
   local file = assert(io.open('data/local-catalog.json', 'r'))
   local body = file:read('*all')
   file:close()
-  t.truthy(body:find('"alias": "cpe:/a:apple:cups"', 1, true))
-  t.truthy(body:find('"channel": "title"', 1, true))
-  t.truthy(body:find('"anchor": "CUPS"', 1, true))
-  t.truthy(body:find('"regex": "CUPS v?(%d+%.%d+[%.%d]*)"', 1, true))
+  t.eq(body:find('cpe:/a:apple:cups', 1, true), nil)
+  t.eq(body:find('accept_403', 1, true), nil)
 end)
 
 t.case('CUPS title with version is matched as http', function()
@@ -1759,13 +1574,6 @@ t.case('title without a version number is not matched', function()
   scanner.match_subjects({ title = { 'CUPS version unknown' } },
     matches, 'http', triggered)
   t.eq(matches.data.http[CUPS_CPE], nil)
-end)
-
-t.case('shipped CUPS rule opts in to 403 bodies', function()
-  local file = assert(io.open('data/local-catalog.json', 'r'))
-  local body = file:read('*all')
-  file:close()
-  t.truthy(body:find('"accept_403": true', 1, true))
 end)
 
 t.case('403 with an accept_403 rule yields the CUPS version', function()
@@ -1830,6 +1638,142 @@ t.case('404 body with the CUPS title is ignored', function()
   scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
   t.eq(matches.data.http[CUPS_CPE], nil)
 end)
+
+do
+  local port_ipp = { number = 631, service = 'ipp',
+    version = { cpe = { CUPS_CPE }, version = '2.1' } }
+
+  --- Return a scanner whose http.get is get, and the request counter.
+  local function cups_probe_scanner(get, args)
+    local calls = { gets = 0 }
+    local scanner = t.load_scanner({ args = args, http = { get = function(...)
+      calls.gets = calls.gets + 1
+      return get(...)
+    end } })
+    return scanner, calls
+  end
+
+  --- Add the CUPS port to the matches through add_nmap_matches.
+  local function cups_add(scanner, port)
+    local matches = new_matches()
+    matches.data.cups = {}
+    scanner.add_nmap_matches({ ip = '10.2.0.1' }, port or port_ipp, matches)
+    return matches
+  end
+
+  --- Return a get function that answers one fixed page.
+  local function page(status, body)
+    return function()
+      return { status = status, body = body, header = {} }
+    end
+  end
+
+  t.suite('cups ipp probe')
+
+  t.case('200 title with CUPS version sets the probe version', function()
+    local scanner, calls = cups_probe_scanner(page(200,
+      '<HTML><HEAD><TITLE>Home - CUPS 2.1.3</TITLE></HEAD></HTML>'))
+    local matches = cups_add(scanner)
+    t.keys_eq(matches.data.cups[CUPS_CPE], { '2.1.3' })
+    t.eq(calls.gets, 1)
+    t.keys_eq(matches.data.nmap, {})
+  end)
+
+  t.case('403 title with CUPS version sets the probe version', function()
+    local scanner = cups_probe_scanner(page(403, CUPS_403))
+    local matches = cups_add(scanner)
+    t.keys_eq(matches.data.cups[CUPS_CPE], { '2.1.3' })
+    t.keys_eq(matches.data.nmap, {})
+  end)
+
+  t.case('title tag is matched in any letter case', function()
+    local scanner = cups_probe_scanner(page(200,
+      '<title>Home - CUPS 2.1.3</title>'))
+    local matches = cups_add(scanner)
+    t.keys_eq(matches.data.cups[CUPS_CPE], { '2.1.3' })
+  end)
+
+  t.case('other product title keeps the nmap cpe', function()
+    local scanner = cups_probe_scanner(page(200,
+      '<TITLE>Apache 2.4.7</TITLE>'))
+    local matches = cups_add(scanner)
+    t.keys_eq(matches.data.cups, {})
+    t.truthy(matches.data.nmap[CUPS_CPE]['2.1'])
+  end)
+
+  t.case('body without a title tag is ignored', function()
+    local scanner = cups_probe_scanner(page(200, 'CUPS 2.1.3'))
+    local matches = cups_add(scanner)
+    t.keys_eq(matches.data.cups, {})
+    t.truthy(matches.data.nmap[CUPS_CPE]['2.1'])
+  end)
+
+  t.case('other status codes keep the nmap cpe', function()
+    for _, status in ipairs({ 404, 500 }) do
+      local scanner = cups_probe_scanner(page(status, CUPS_403))
+      local matches = cups_add(scanner)
+      t.keys_eq(matches.data.cups, {}, tostring(status))
+      t.truthy(matches.data.nmap[CUPS_CPE]['2.1'], tostring(status))
+    end
+  end)
+
+  t.case('failed or raising http.get keeps the nmap cpe', function()
+    local failures = {
+      function() return nil end,
+      function() error('boom') end,
+    }
+    for i, get in ipairs(failures) do
+      local scanner = cups_probe_scanner(get)
+      local matches = cups_add(scanner)
+      t.keys_eq(matches.data.cups, {}, tostring(i))
+      t.truthy(matches.data.nmap[CUPS_CPE]['2.1'], tostring(i))
+    end
+  end)
+
+  t.case('precise nmap version skips the cups probe', function()
+    local scanner, calls = cups_probe_scanner(page(200, CUPS_403))
+    local port = { number = 631, service = 'ipp',
+      version = { cpe = { CUPS_CPE }, version = '2.1.3' } }
+    local matches = cups_add(scanner, port)
+    t.eq(calls.gets, 0)
+    t.truthy(matches.data.nmap[CUPS_CPE]['2.1.3'])
+  end)
+
+  t.case('http service on 631 skips the cups probe', function()
+    local scanner, calls = cups_probe_scanner(page(200, CUPS_403))
+    local port = { number = 631, service = 'http',
+      version = { cpe = { CUPS_CPE }, version = '2.1' } }
+    cups_add(scanner, port)
+    t.eq(calls.gets, 0)
+  end)
+
+  t.case('other product on an ipp port skips the cups probe', function()
+    local scanner, calls = cups_probe_scanner(page(200, CUPS_403))
+    local port = { number = 631, service = 'ipp',
+      version = { cpe = { 'cpe:/a:ngircd:ngircd' }, version = '' } }
+    cups_add(scanner, port)
+    t.eq(calls.gets, 0)
+  end)
+
+  t.case('probes=none and probes=smb skip the cups probe', function()
+    for _, arg in ipairs({ 'none', 'smb' }) do
+      local scanner, calls = cups_probe_scanner(page(200, CUPS_403),
+        { probes = arg })
+      local matches = cups_add(scanner)
+      t.eq(calls.gets, 0, arg)
+      t.truthy(matches.data.nmap[CUPS_CPE]['2.1'], arg)
+    end
+  end)
+
+  t.case('cups probe is cached per host and port', function()
+    local scanner, calls = cups_probe_scanner(page(200, CUPS_403))
+    for _ = 1, 2 do
+      local matches = cups_add(scanner)
+      t.keys_eq(matches.data.cups[CUPS_CPE], { '2.1.3' })
+    end
+    t.eq(calls.gets, 1)
+  end)
+end
 
 t.suite('version script dependencies')
 
@@ -2097,4 +2041,63 @@ t.case('valid product cpe file fills the table', function()
   local scanner = overlay_scanner({ good = GLASSFISH_TABLE })
   t.eq(scanner.valid_json(path, 'product_cpe'), true)
   t.eq(scanner.registry.product_cpe, GLASSFISH_TABLE)
+end)
+
+t.suite('version probe matches init')
+
+--- Return the matches table of portaction, which has no cups key.
+local function default_matches()
+  return { data = { nmap = {}, http = {}, smb = {}, irc = {}, ntp = {},
+    upnp = {} }, size = 0 }
+end
+
+--- Return a copy of a version probe whose run returns a fixed result.
+local function stub_version_probe(probe)
+  return {
+    name = probe.name,
+    kind = 'version',
+    products = probe.products,
+    services = probe.services,
+    ports = probe.ports,
+    no_cpe = probe.no_cpe,
+    run = function()
+      return { cpe = 'cpe:/a:stub:' .. probe.name, version = '9.9' }
+    end,
+  }
+end
+
+--- Return a scanner whose version probes all answer a fixed result.
+-- The smb library is stubbed only while the scanner loads, so smb is on.
+local function stub_scanner()
+  package.loaded.smb = { get_os = function() return false end }
+  local scanner = t.load_scanner()
+  package.loaded.smb = nil
+  local probes = scanner.SERVICE_PROBES
+  for i, probe in ipairs(probes) do
+    if probe.kind == 'version' then
+      probes[i] = stub_version_probe(probe)
+    end
+  end
+  return scanner
+end
+
+t.case('every version probe fills its own matches key', function()
+  for _, probe in ipairs(t.load_scanner().SERVICE_PROBES) do
+    if probe.kind == 'version' then
+      local scanner = stub_scanner()
+      local product = next(probe.products or {}) or probe.name
+      local port = {
+        number = next(probe.ports or {}) or 1,
+        protocol = 'tcp',
+        service = next(probe.services or {}),
+        version = { cpe = { 'cpe:/a:stub:' .. product }, version = '' },
+      }
+      local matches = default_matches()
+      scanner.add_nmap_matches({ ip = '10.9.0.1' }, port, matches)
+      local cpe = 'cpe:/a:stub:' .. probe.name
+      t.truthy(matches.data[probe.name], probe.name)
+      t.eq(matches.data[probe.name][cpe]['9.9'], true, probe.name)
+      t.keys_eq(matches.data.nmap, {}, probe.name)
+    end
+  end
 end)
