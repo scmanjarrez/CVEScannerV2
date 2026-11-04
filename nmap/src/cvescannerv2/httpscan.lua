@@ -64,23 +64,101 @@ end
 
 local HTTP_MAX_FAILURES = 5
 
+local function legacy_get(host, port, file)
+  return http.get(host, port, file,
+    {
+      redirect_ok = config.maxredirect,
+      timeout = 10000,
+      max_body_size = 131072,
+      truncated_ok = true,
+      bypass_cache = true,
+      no_cache = true,
+      no_cache_body = true
+    }
+  )
+end
+
+local function legacy_scan_response(resp, matches)
+  if resp.rawheader and #resp.rawheader > 0 then
+    for _, header in pairs(resp.rawheader) do
+      regex_match(header, 'header', matches)
+    end
+  end
+  local rawbody = resp.rawbody or ''
+  if rawbody ~= '' then
+    regex_match(rawbody, 'body', matches)
+  end
+end
+
+-- Record the library versions declared in one JavaScript comment.
+local function record_comment_versions(lib_comm, libs)
+  local idy = 0
+  local comm_lib = nil
+  local comm_ver = nil
+  while true do
+    _, idy, comm_lib, comm_ver = lib_comm:find(
+      state.regex['external']['version_regex'],
+      idy + 1)
+    if comm_lib and comm_ver then
+      if comm_lib:lower() ~= 'version' then
+        stdnse.verbose(2,
+          "Matched version in js " ..
+          "comment: " .. comm_lib ..
+          " ver: " .. comm_ver)
+        libs[comm_lib] = comm_ver
+        libs['size'] = libs['size'] + 1
+      end
+    end
+    if idy == nil then break end
+  end
+end
+
+-- Fetch the scripts referenced by the root page and collect their versions.
+local function collect_js_libs(host, port, rawbody)
+  local idx = 0
+  local lib_path = nil
+  local libs = { ['size'] = 0 }
+  while true do
+    _, idx, lib_path = rawbody:find(
+      state.regex['external']['path_regex'], idx + 1)
+    if lib_path and lib_path:sub(1, 1) == '/' then
+      local lib_resp = legacy_get(host, port, lib_path)
+      if lib_resp.status and lib_resp.rawbody ~= nil then
+        local _, _, lib_comm = lib_resp.rawbody:find(
+          state.regex['external']['comment_regex'])
+        if lib_comm then
+          stdnse.verbose(3, "Comment: " .. lib_comm)
+          record_comment_versions(lib_comm, libs)
+        end
+      end
+    end
+    if idx == nil then break end
+  end
+  return libs
+end
+
+local function match_js_libs(libs, matches)
+  if libs['size'] > 0 then
+    for name, data in pairs(state.regex['body']) do
+      for k, v in pairs(libs) do
+        if k ~= 'size' then
+          local k_stripped = (k:gsub('%.js$', '')):lower()
+          if (name:lower()):find(k_stripped, 1, true) then
+            add_cpe_version(data['cpe'], v, matches, 'http')
+          end
+        end
+      end
+    end
+  end
+end
+
 local function http_match_legacy(host, port, matches)
   local failures = 0
   for _, path in pairs(state.path['path']) do
     for _, ext in pairs(state.path['extension']) do
       local file = "/" .. path .. ext
       if (path == '' and ext == '') or path ~= '' then
-        local resp = http.get(host, port, file,
-          {
-            redirect_ok = config.maxredirect,
-            timeout = 10000,
-            max_body_size = 131072,
-            truncated_ok = true,
-            bypass_cache = true,
-            no_cache = true,
-            no_cache_body = true
-          }
-        )
+        local resp = legacy_get(host, port, file)
         if not resp.status then
           failures = failures + 1
           stdnse.verbose(2,
@@ -93,77 +171,11 @@ local function http_match_legacy(host, port, matches)
           end
         else
           failures = 0
-          local rawbody = resp.rawbody or ''
-          if resp.rawheader and #resp.rawheader > 0 then
-            for _, header in pairs(resp.rawheader) do
-              regex_match(header, 'header', matches)
-            end
-          end
-          if rawbody ~= '' then
-            regex_match(rawbody, 'body', matches)
-          end
+          legacy_scan_response(resp, matches)
         end
         if path == '' and ext == '' and resp.status then
-          local rawbody = resp.rawbody or ''
-          local idx = 0
-          local lib_path = nil
-          local libs = { ['size'] = 0 }
-          while true do
-            _, idx, lib_path = rawbody:find(
-              state.regex['external']['path_regex'], idx + 1)
-            if lib_path and lib_path:sub(1, 1) == '/' then
-              local lib_resp = http.get(host, port, lib_path,
-                {
-                  redirect_ok = config.maxredirect,
-                  timeout = 10000,
-                  max_body_size = 131072,
-                  truncated_ok = true,
-                  bypass_cache = true,
-                  no_cache = true,
-                  no_cache_body = true
-                }
-              )
-              if lib_resp.status and lib_resp.rawbody ~= nil then
-                local _, _, lib_comm = lib_resp.rawbody:find(
-                  state.regex['external']['comment_regex'])
-                if lib_comm then
-                  stdnse.verbose(3, "Comment: " .. lib_comm)
-                  local idy = 0
-                  local comm_lib = nil
-                  local comm_ver = nil
-                  while true do
-                    _, idy, comm_lib, comm_ver = lib_comm:find(
-                      state.regex['external']['version_regex'],
-                      idy + 1)
-                    if comm_lib and comm_ver then
-                      if comm_lib:lower() ~= 'version' then
-                        stdnse.verbose(2,
-                          "Matched version in js " ..
-                          "comment: " .. comm_lib ..
-                          " ver: " .. comm_ver)
-                        libs[comm_lib] = comm_ver
-                        libs['size'] = libs['size'] + 1
-                      end
-                    end
-                    if idy == nil then break end
-                  end
-                end
-              end
-            end
-            if idx == nil then break end
-          end
-          if libs['size'] > 0 then
-            for name, data in pairs(state.regex['body']) do
-              for k, v in pairs(libs) do
-                if k ~= 'size' then
-                  local k_stripped = (k:gsub('%.js$', '')):lower()
-                  if (name:lower()):find(k_stripped, 1, true) then
-                    add_cpe_version(data['cpe'], v, matches, 'http')
-                  end
-                end
-              end
-            end
-          end
+          local libs = collect_js_libs(host, port, resp.rawbody or '')
+          match_js_libs(libs, matches)
         end
       end
     end

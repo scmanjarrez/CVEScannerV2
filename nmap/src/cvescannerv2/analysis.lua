@@ -45,6 +45,138 @@ local function service_cache_key(host, vendor, product, v, vu, ctx)
 end
 
 
+-- True when the config filter selects this product and version.
+local function selected(product, version_str)
+  local svc, ver = config.service, config.version
+  if svc == 'all' and ver == 'all' then
+    return true
+  end
+  if svc ~= 'all' and ver ~= 'all' then
+    return product == svc and version_str == ver
+  end
+  if svc ~= 'all' then
+    return product == svc
+  end
+  return version_str == ver
+end
+
+
+-- Scans a service missing from the cache and stores the result.
+-- Returns the vulnerability lines of the service.
+local function scan_service(host, port, cpe, vendor, product, v, vu, info,
+    vctx, cache_key)
+  local tmp_vulns, meta = vulnerabilities(host, port, cpe, vendor,
+    product, info, vctx)
+  if meta.os_context.family ~= vctx.os.family then
+    -- An OS probe changed the context: key by the new one.
+    cache_key = service_cache_key(host, vendor, product, v, vu,
+      { os = meta.os_context,
+        backport = vctx.backport,
+        version_source = vctx.version_source })
+  end
+  local nvulns = table.remove(tmp_vulns, 1)
+  if nvulns > 0 then
+    local serv_fmt = fmt('%s/%s', port.number, port.protocol)
+    report.set_total(host.ip, serv_fmt, nvulns)
+    tmp_vulns = service_lines(vendor, product, v, vu, nvulns, meta,
+      tmp_vulns)
+    stdnse.verbose(2, "Caching " .. product .. "|" ..
+      v .. "|" .. vu .. " vulnerabilities.")
+    state.cache[cache_key] = { nvulns, tmp_vulns, meta }
+  end
+  return tmp_vulns
+end
+
+
+-- Reuses a cached service: reports it and returns its vulnerability lines.
+local function reuse_cache(host, port, cpe, vendor, product, v, vu, cache)
+  log("[+] cves: cached")
+  if cache[1] > 0 then
+    local port_proto = fmt('%s/%s', port.number, port.protocol)
+    report.ensure_port(host.ip, port_proto)
+    report.add_service(host.ip, port_proto,
+      {
+        name = port.service,
+        cpe = cpe,
+        vendor = vendor,
+        product = product,
+        version = v,
+        vupdate = vu,
+        version_source = cache[3].version_source,
+        os_context = cache[3].os_context,
+        warnings = cache[3].warnings,
+        summary = cache[3].summary,
+        vulnerabilities = {
+          ['total'] = cache[1],
+          ['info'] = 'cache'
+        }
+      }
+    )
+  end
+  log_separator()
+  stdnse.verbose(2, "Using cached " .. product .. "|" ..
+    v .. "|" .. vu .. " vulnerabilities.")
+  return cache[2]
+end
+
+
+-- Returns the vulnerability lines of a service, from cache when possible.
+local function service_vulns(host, port, cpe, vendor, product, v, vu, info,
+    vctx)
+  local cache_key = service_cache_key(host, vendor, product, v, vu, vctx)
+  if not state.cache[cache_key] then
+    return scan_service(host, port, cpe, vendor, product, v, vu, info,
+      vctx, cache_key)
+  end
+  return reuse_cache(host, port, cpe, vendor, product, v, vu,
+    state.cache[cache_key])
+end
+
+
+-- Appends the vulnerability lines of a service once per vendor and version.
+local function add_lines(vulns_out, logged, vendor, product, v, vu,
+    tmp_vulns)
+  local log_key = fmt("%s|%s|%s|%s", vendor, product, v, vu)
+  if tmp_vulns ~= nil and #tmp_vulns > 0 and logged[log_key] == nil then
+    logged[log_key] = 1
+    for _, value in pairs(tmp_vulns) do
+      table.insert(vulns_out, value)
+    end
+    table.insert(vulns_out, "")
+  end
+end
+
+
+-- Handles one CPE and version pair of the matches of a port.
+local function analyze_match(host, port, ctx, origin, cpe, version_str,
+    vulns_out, logged)
+  stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe, version_str))
+  local vendor, product, info, source = cpe_parser(cpe, version_str)
+  local version_source = source
+  if origin ~= 'nmap' then
+    version_source = origin
+  end
+  if not selected(product, version_str) then
+    return
+  end
+  stdnse.verbose(2, fmt("product => %s | version => %s", product,
+    version_str))
+  if info == nil then
+    return
+  end
+  log_info(host, port, cpe, vendor, product, info)
+  local v, vu = correct_version(info)
+  local vctx = {
+    os = ctx.os,
+    backport = ctx.backport,
+    version_source = version_source,
+  }
+  local tmp_vulns = service_vulns(host, port, cpe, vendor, product, v, vu,
+    info, vctx)
+  add_lines(vulns_out, logged, vendor, product, v, vu, tmp_vulns)
+end
+
+
 -- ctx: OS and distro context from os_context and distro_backport.
 local function analysis(host, port, matches, ctx)
   local vulns_out = {}
@@ -52,96 +184,8 @@ local function analysis(host, port, matches, ctx)
   for origin, data in pairs(matches['data']) do
     for cpe, versions in pairs(data) do
       for version_str, _ in pairs(versions) do
-        stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe,
-          version_str))
-        local vendor, product, info, source = cpe_parser(cpe, version_str)
-        local version_source = source
-        if origin ~= 'nmap' then
-          version_source = origin
-        end
-        if ((config.service == 'all' and config.version == 'all')
-              or (config.service ~= 'all' and config.version ~= 'all'
-                and product == config.service
-                and version_str == config.version)
-              or (config.service ~= 'all' and config.version == 'all'
-                and product == config.service)
-              or (config.service == 'all' and config.version ~= 'all'
-                and version_str == config.version)) then
-          stdnse.verbose(2, fmt("product => %s | version => %s", product,
-            version_str))
-          if info ~= nil then
-            log_info(host, port, cpe, vendor, product, info)
-            local v, vu = correct_version(info)
-            local tmp_vulns = nil
-            local vctx = {
-              os = ctx.os,
-              backport = ctx.backport,
-              version_source = version_source,
-            }
-            local cache_key = service_cache_key(host, vendor, product, v,
-              vu, vctx)
-            if not state.cache[cache_key] then
-              local meta
-              tmp_vulns, meta = vulnerabilities(host, port, cpe, vendor,
-                product, info, vctx)
-              if meta.os_context.family ~= vctx.os.family then
-                -- An OS probe changed the context: key by the new one.
-                cache_key = service_cache_key(host, vendor, product, v, vu,
-                  { os = meta.os_context,
-                    backport = vctx.backport,
-                    version_source = vctx.version_source })
-              end
-              local nvulns = table.remove(tmp_vulns, 1)
-              if nvulns > 0 then
-                local serv_fmt = fmt('%s/%s', port.number, port.protocol)
-                report.set_total(host.ip, serv_fmt, nvulns)
-                tmp_vulns = service_lines(vendor, product, v, vu, nvulns,
-                  meta, tmp_vulns)
-                stdnse.verbose(2, "Caching " .. product .. "|" ..
-                  v .. "|" .. vu .. " vulnerabilities.")
-                state.cache[cache_key] = { nvulns, tmp_vulns, meta }
-              end
-            else
-              log("[+] cves: cached")
-              local cache = state.cache[cache_key]
-              if cache[1] > 0 then
-                local port_proto = fmt('%s/%s', port.number, port.protocol)
-                report.ensure_port(host.ip, port_proto)
-                report.add_service(host.ip, port_proto,
-                  {
-                    name = port.service,
-                    cpe = cpe,
-                    vendor = vendor,
-                    product = product,
-                    version = v,
-                    vupdate = vu,
-                    version_source = cache[3].version_source,
-                    os_context = cache[3].os_context,
-                    warnings = cache[3].warnings,
-                    summary = cache[3].summary,
-                    vulnerabilities = {
-                      ['total'] = cache[1],
-                      ['info'] = 'cache'
-                    }
-                  }
-                )
-              end
-              log_separator()
-              stdnse.verbose(2, "Using cached " .. product .. "|" ..
-                v .. "|" .. vu .. " vulnerabilities.")
-              tmp_vulns = cache[2]
-            end
-            local log_key = fmt("%s|%s|%s|%s", vendor, product, v, vu)
-            if (tmp_vulns ~= nil and #tmp_vulns > 0
-                  and logged[log_key] == nil) then
-              logged[log_key] = 1
-              for _, value in pairs(tmp_vulns) do
-                table.insert(vulns_out, value)
-              end
-              table.insert(vulns_out, "")
-            end
-          end
-        end
+        analyze_match(host, port, ctx, origin, cpe, version_str,
+          vulns_out, logged)
       end
     end
   end

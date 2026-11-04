@@ -46,89 +46,32 @@ local function strip_build_suffix(suffix)
 end
 
 
-local function version_parser(product, version, cpe_update)
-  if version then
-    -- remove Nmap comment of version
-    version = version:gsub('for_windows_', '')
-    -- remove a leading 'v' before the number (v1.2.3 -> 1.2.3)
-    version = version:gsub('^[vV](%d)', '%1')
-  end
+-- Remove Nmap comments and a leading 'v' before the version number.
+local function clean_version(version)
+  if not version then return nil end
+  local cleaned = version:gsub('for_windows_', '')
+  -- remove a leading 'v' before the number (v1.2.3 -> 1.2.3)
+  cleaned = cleaned:gsub('^[vV](%d)', '%1')
+  return cleaned
+end
 
-  -- if Nmap could not detect version, assume all versions and vupdates possible
-  if version == '-' then
-    return product, {
-      ver = '-',
-      vup = '-',
-      from = nil,
-      to = nil,
-      empty = false,
-      range = false
-    }
-  end
-  if empty(version) or version == '*' then
-    return product, {
-      ver = '*',
-      vup = '*',
-      from = nil,
-      to = nil,
-      empty = true,
-      range = false
-    }
-  end
 
-  -- if version matches patterns: 3.x - 4.x | 3.3.x - 3.4.x ...
-  local p1, p2 = version:match('^(.-)%s+%-%s+(.+)$')
-  if not empty(p1) and not empty(p2) then
-    local f1, f2 = p1:match('([^%a]*)(.*)')
-    local t1, t2 = p2:match('([^%a]*)(.*)')
-    return product, {
-      ver = nil,
-      vup = nil,
-      from = f1 .. f2,
-      to = t1 .. t2,
-      empty = false,
-      range = true
-    }
-  end
+-- Info record for a version Nmap could not detect ('-').
+local function unknown_info()
+  return {
+    ver = '-',
+    vup = '-',
+    from = nil,
+    to = nil,
+    empty = false,
+    range = false
+  }
+end
 
-  -- Treat a trailing x as an unknown patch component (for example, 2.4.x).
-  local wildcard_prefix = version:match('^([%d%.]+)[xX]$')
-  if wildcard_prefix then
-    return product, {
-      ver = nil,
-      vup = nil,
-      from = wildcard_prefix .. '0',
-      to = wildcard_prefix .. '9999999999',
-      empty = false,
-      range = true
-    }
-  end
 
-  -- If version matches patterns: 4.3 | 4.3p1 | 4.3.1sp1 ...
-  p1, p2 = version:match('^([%d%.]+)(.*)$')
-  if p1 then
-    p2 = strip_build_suffix(p2)
-    if p2:sub(1, 1) == '-' then
-      p1 = p1 .. p2
-      p2 = ''
-    end
-    if cpe_update and cpe_update ~= '' and cpe_update ~= '*'
-        and cpe_update ~= '-' then
-      p2 = cpe_update
-    elseif empty(p2) then
-      p2 = cpe_update == '-' and '-' or '*'
-    end
-    return product, {
-      ver = p1,
-      vup = p2,
-      from = nil,
-      to = nil,
-      empty = false,
-      range = false
-    }
-  end
-
-  return product, {
+-- Info record for a missing version, or '*', that matches any version.
+local function any_info()
+  return {
     ver = '*',
     vup = '*',
     from = nil,
@@ -136,6 +79,79 @@ local function version_parser(product, version, cpe_update)
     empty = true,
     range = false
   }
+end
+
+
+-- Info record for a range such as 3.x - 4.x or 3.3.x - 3.4.x, or nil.
+local function range_info(version)
+  local p1, p2 = version:match('^(.-)%s+%-%s+(.+)$')
+  if empty(p1) or empty(p2) then return nil end
+  local f1, f2 = p1:match('([^%a]*)(.*)')
+  local t1, t2 = p2:match('([^%a]*)(.*)')
+  return {
+    ver = nil,
+    vup = nil,
+    from = f1 .. f2,
+    to = t1 .. t2,
+    empty = false,
+    range = true
+  }
+end
+
+
+-- Info record for a trailing x patch component (2.4.x), or nil.
+local function wildcard_range(version)
+  local wildcard_prefix = version:match('^([%d%.]+)[xX]$')
+  if not wildcard_prefix then return nil end
+  return {
+    ver = nil,
+    vup = nil,
+    from = wildcard_prefix .. '0',
+    to = wildcard_prefix .. '9999999999',
+    empty = false,
+    range = true
+  }
+end
+
+
+-- Info record for a numeric version such as 4.3, 4.3p1 or 4.3.1sp1, or nil.
+local function numeric_info(version, cpe_update)
+  local p1, p2 = version:match('^([%d%.]+)(.*)$')
+  if not p1 then return nil end
+  p2 = strip_build_suffix(p2)
+  if p2:sub(1, 1) == '-' then
+    p1 = p1 .. p2
+    p2 = ''
+  end
+  if cpe_update and cpe_update ~= '' and cpe_update ~= '*'
+      and cpe_update ~= '-' then
+    p2 = cpe_update
+  elseif empty(p2) then
+    p2 = cpe_update == '-' and '-' or '*'
+  end
+  return {
+    ver = p1,
+    vup = p2,
+    from = nil,
+    to = nil,
+    empty = false,
+    range = false
+  }
+end
+
+
+local function version_parser(product, version, cpe_update)
+  version = clean_version(version)
+  if version == '-' then
+    return product, unknown_info()
+  end
+  if empty(version) or version == '*' then
+    return product, any_info()
+  end
+  local info = range_info(version)
+    or wildcard_range(version)
+    or numeric_info(version, cpe_update)
+  return product, info or any_info()
 end
 
 

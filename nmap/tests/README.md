@@ -81,6 +81,7 @@ sh nmap/tests/docker/check.sh --fresh    # integración sin caché
 | `lua/test_catalog.lua` | Validación del catálogo de Vulners y extracción de huellas HTTP. |
 | `lua/test_database.lua` | `portaction`/`postaction` de extremo a extremo sobre la fixture SQLite. |
 | `lua/test_docker.lua` | Empaquetado: rutas `data/` del NSE frente a `docker/Dockerfile` y `.dockerignore`. |
+| `lua/test_architecture.lua` | Estática: grafo de capas de `nmap/src/cvescannerv2/`, ciclos, dueños de E/S y globales implícitas. |
 | `docker/check.sh` | Integración: construye las imágenes, valida su contenido y escanea un objetivo real. |
 | `lua/run.lua` | Ejecuta las suites de `lua/` y devuelve el código de salida. |
 
@@ -102,3 +103,18 @@ código fuente un `return { nombre = nombre, ... }` y lo carga con `load()`,
 de modo que las funciones se exportan desde el mismo chunk sin tocar el
 script. Si una función se renombra, hay que actualizar `EXPORTS` en
 `harness.lua`.
+
+Las funciones movidas a `nmap/src/cvescannerv2/**.lua` se cargan con
+`require()`. El harness aplana sus campos en la tabla del escáner: cada campo
+de un módulo `cvescannerv2.*` que el entrypoint no define queda expuesto con
+su nombre original, así los tests las usan igual que antes. Los módulos se
+recorren en orden alfabético, con `vulns` primero porque su envoltorio de
+`add_platform_reasons` oculta el de `platform`. El registro se expone desde
+`cvescannerv2.state` si el entrypoint no define uno.
+
+`lua/test_architecture.lua` impone el grafo de capas: un módulo solo puede
+hacer `require` de módulos de una capa estrictamente inferior, y no hay
+ciclos. También fija los dueños de las APIs de Nmap y de E/S (`get_script_args`
+solo en `config`, `luasql` solo en `db`, `io.open` solo en `util`,
+`catalog.store`, `refdata`, `log` y `report`). Si un módulo nuevo necesita una
+de estas APIs, hay que añadirlo a la regla correspondiente en ese fichero.

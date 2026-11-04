@@ -105,60 +105,83 @@ local function add_platform_reasons(vulns, vendors, product, os_ctx)
 end
 
 
--- Return the CVE count, the output lines, and the meta table with the
--- confidence summary and the service warnings.
-local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
-  local vendors = vendor_scope(vendor, product)
-  local from = info.ver
-  local to = info.ver
-  local multi_from = from
-  local multi_to = to
-  local upd = info.vup or '*'
-
+-- Return the version bounds of the service as a table with the fields
+-- from, to, multi_from, multi_to and upd.
+local function version_bounds(info)
+  local bounds = {
+    from = info.ver,
+    to = info.ver,
+    upd = info.vup or '*',
+  }
+  bounds.multi_from = bounds.from
+  bounds.multi_to = bounds.to
   if not info.empty then
     if info.range then
-      from = info.from:gsub('[xX]', '0')
-      to = info.to:gsub('[xX]', '9999999999')
-      multi_from = from
-      multi_to = to
-    elseif not empty(upd) and upd ~= '*' and upd ~= '-' then
-      multi_from = info.ver .. upd
-      multi_to = multi_from
+      bounds.from = info.from:gsub('[xX]', '0')
+      bounds.to = info.to:gsub('[xX]', '9999999999')
+      bounds.multi_from = bounds.from
+      bounds.multi_to = bounds.to
+    elseif not empty(bounds.upd) and bounds.upd ~= '*'
+        and bounds.upd ~= '-' then
+      bounds.multi_from = info.ver .. bounds.upd
+      bounds.multi_to = bounds.multi_from
     end
   end
+  return bounds
+end
 
-  -- Search vulnerabilities affecting multiple versions (this one included).
+
+-- Collect the CVEs whose multi-version ranges match the service.
+-- Return the CVE table and whether the series children are expanded.
+local function collect_multi(vendors, product, info, bounds, series)
+  local vulns = {}
   -- Given that we assumed '*' as version and vupdate when empty, we can't
   -- search vulnerabilities for specific versions.
   local tmp_vulns = db.affected_multi(vendors, product, info.empty)
-
-  local series = series_prefix(info)
-  local expand = series ~= nil and series_has_children(vendors, product, series)
-
-  local vulns = {}
-  scoped_multi_versions(tmp_vulns, multi_from, multi_to, vulns, info.empty)
+  scoped_multi_versions(tmp_vulns, bounds.multi_from, bounds.multi_to,
+    vulns, info.empty)
+  local expand = series ~= nil
+    and series_has_children(vendors, product, series)
   if expand then
     local found = {}
     scoped_multi_versions(tmp_vulns, series .. '.0',
       series .. '.9999999999', found, false)
     merge_series(found, vulns)
   end
+  return vulns, expand
+end
 
-  if not info.empty then
-    -- Search vulnerabilities affecting specific version
-    tmp_vulns = db.affected_exact(vendors, product)
-    scoped_versions(tmp_vulns, from, to, upd, vulns)
-    if expand then
-      local found = {}
-      scoped_versions(tmp_vulns, series .. '.0',
-        series .. '.9999999999', '*', found)
-      merge_series(found, vulns)
-    end
+
+-- Add to vulns the CVEs that affect the exact service version.
+local function collect_exact(vendors, product, bounds, series, expand, vulns)
+  local tmp_vulns = db.affected_exact(vendors, product)
+  scoped_versions(tmp_vulns, bounds.from, bounds.to, bounds.upd, vulns)
+  if expand then
+    local found = {}
+    scoped_versions(tmp_vulns, series .. '.0',
+      series .. '.9999999999', '*', found)
+    merge_series(found, vulns)
   end
+end
 
+
+-- Return the CVEs that affect the service, with their scope reasons.
+local function find_cves(vendors, product, info, bounds)
+  local series = series_prefix(info)
+  local vulns, expand = collect_multi(vendors, product, info, bounds, series)
+  if not info.empty then
+    collect_exact(vendors, product, bounds, series, expand, vulns)
+  end
   if info.range and spans_series(info.from, info.to) then
     add_reason(vulns, 'observed_range')
   end
+  return vulns
+end
+
+
+-- Add the platform reasons and re-check them when the OS is unknown.
+-- Return the OS context used for the service.
+local function resolve_os_context(host, vulns, vendors, product, ctx)
   local os_ctx = ctx and ctx.os or {}
   add_platform_reasons(vulns, vendors, product, os_ctx)
   if platform_probe_needed(vulns, os_ctx) then
@@ -169,6 +192,12 @@ local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
       add_platform_reasons(vulns, vendors, product, os_ctx)
     end
   end
+  return os_ctx
+end
+
+
+-- Build the meta table with the confidence summary and the warnings.
+local function build_meta(vulns, ctx, os_ctx)
   local meta = {
     summary = score_vulns(vulns),
     warnings = {},
@@ -179,8 +208,12 @@ local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
   if ctx and ctx.backport then
     table.insert(meta.warnings, 'distro_backport')
   end
+  return meta
+end
 
-  -- Sort CVEs by confidence, then by CVSSv3 and CVSSv2
+
+-- Return the CVEs as sorted tuples by confidence, CVSSv3 and CVSSv2.
+local function sort_cves(vulns)
   local sorted = {}
   for key, value in pairs(vulns) do
     table.insert(sorted, { key,
@@ -191,37 +224,42 @@ local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
   end
   table.sort(sorted, confidence_comparator)
   log("[+] cves: %d", #sorted)
+  return sorted
+end
 
-  -- Insert total vulnerabilities found
-  local output = {}
-  table.insert(output, #sorted)
 
-  -- Pretty print the output
-  local cnt = 0
-  if #sorted > 0 then
-    local port_proto = fmt('%s/%s', port.number, port.protocol)
-    report.ensure_port(host.ip, port_proto)
-    local v, vu = correct_version(info)
-    report.add_service(host.ip, port_proto,
-      {
-        name = port.service,
-        cpe = cpe,
-        vendor = vendor,
-        product = product,
-        version = v,
-        vupdate = vu,
-        version_source = meta.version_source,
-        os_context = meta.os_context,
-        warnings = meta.warnings,
-        summary = meta.summary,
-        vulnerabilities = {
-          ['total'] = 0,
-          ['info'] = 'scan',
-          ['cves'] = {}
-        }
+-- Store the service and its version data in the JSON report.
+local function add_service_entry(host, port, cpe, vendor, product, info,
+    meta)
+  local port_proto = fmt('%s/%s', port.number, port.protocol)
+  report.ensure_port(host.ip, port_proto)
+  local v, vu = correct_version(info)
+  report.add_service(host.ip, port_proto,
+    {
+      name = port.service,
+      cpe = cpe,
+      vendor = vendor,
+      product = product,
+      version = v,
+      vupdate = vu,
+      version_source = meta.version_source,
+      os_context = meta.os_context,
+      warnings = meta.warnings,
+      summary = meta.summary,
+      vulnerabilities = {
+        ['total'] = 0,
+        ['info'] = 'scan',
+        ['cves'] = {}
       }
-    )
-  end
+    }
+  )
+end
+
+
+-- Dump each CVE in the report and append the shown rows to output.
+-- Return the number of CVEs shown.
+local function emit_cve_rows(host, port, sorted, vulns, output)
+  local cnt = 0
   for _, value in ipairs(sorted) do
     local show = LEVEL_RANK[value[6]] >= LEVEL_RANK[config.minconf]
     dump_exploit(host, port, value[1], vulns[value[1]], show)
@@ -235,7 +273,26 @@ local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
       cnt = cnt + 1
     end
   end
-  meta.shown = cnt
+  return cnt
+end
+
+
+-- Return the CVE count, the output lines, and the meta table with the
+-- confidence summary and the service warnings.
+local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
+  local vendors = vendor_scope(vendor, product)
+  local bounds = version_bounds(info)
+  local vulns = find_cves(vendors, product, info, bounds)
+  local os_ctx = resolve_os_context(host, vulns, vendors, product, ctx)
+  local meta = build_meta(vulns, ctx, os_ctx)
+
+  local sorted = sort_cves(vulns)
+  local output = {}
+  table.insert(output, #sorted)
+  if #sorted > 0 then
+    add_service_entry(host, port, cpe, vendor, product, info, meta)
+  end
+  meta.shown = emit_cve_rows(host, port, sorted, vulns, output)
   log_separator()
   return output, meta
 end

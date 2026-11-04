@@ -23,6 +23,7 @@ local LAYER = {
   collect = 6, render = 6,
   vulns = 7,
   analysis = 8,
+  lifecycle = 9,
 }
 
 -- Matches 'require "cvescannerv2.X"' with optional parentheses.

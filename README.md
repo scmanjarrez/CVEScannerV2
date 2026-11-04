@@ -217,9 +217,12 @@ nmap -sV --script cvescannerv2 --script-args catalog_url=http://127.0.0.1:8000/ 
 
 </details>
 
-> **Note**: `nmap/src/cvescannerv2.nse` can be placed in Nmap's default script
-> directory to run it globally; a **symbolic link** keeps it in sync with the
-> repository.
+> **Note**: copy `nmap/src/cvescannerv2.nse` **and** the `nmap/src/cvescannerv2/`
+> directory together into the same Nmap script directory. The script loads its
+> modules relative to its own path, with priority over older copies in
+> `nselib/`. A **symbolic link** to each keeps them in sync with the repository.
+> Data paths (`data/cve.db`, ...) are relative to the current working directory:
+> run the script from the repository root or pass absolute paths.
 >
 > - Linux and macOS: `/usr/local/share/nmap/scripts/`,
 >   `/usr/share/nmap/scripts/`, `/opt/local/share/nmap/scripts/`,
@@ -667,8 +670,51 @@ BuildKit is required for the cache mounts and linked copies.
 
 The repository has two runtime components:
 
-- `cvescannerv2.nse` scans discovered services and reads CVE data from SQLite.
+- `nmap/src/cvescannerv2.nse` is the entrypoint. It scans discovered services
+  and reads CVE data from SQLite. Its logic lives in the Lua modules under
+  `nmap/src/cvescannerv2/`.
 - `db-manager/` is a Python package that updates and queries that database.
+
+The NSE modules form layers. Each layer number is listed below.
+
+| Module | Layer | Responsibility |
+|--------|-------|----------------|
+| `util` | L0 | Pure string and file helpers. |
+| `state` | L0 | Shared state, the only place where data is shared between threads. |
+| `config` | L0 | Reads and normalizes every script argument. |
+| `cpe` | L0 | Pure CPE 2.2 and 2.3 string parser. |
+| `version` | L1 | Version parsing and comparison. |
+| `matches` | L2 | Records detected versions and prunes series entries. |
+| `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
+| `refdata` | L2 | Loads and validates the reference data files. |
+| `db` | L2 | SQLite access. |
+| `log` | L2 | Log file helpers. |
+| `report` | L2 | JSON report helpers. |
+| `catalog.store` | L3 | Upstream and local catalogue loading with the on-disk cache. |
+| `fingerprint` | L3 | Fingerprint matching against catalogue rules and response text. |
+| `oscontext` | L3 | Operating system context from Nmap and catalogue data. |
+| `probes.smb` | L3 | SMB version and OS probes. |
+| `probes.irc` | L3 | UnrealIRCd version probe. |
+| `probes.ntp` | L3 | ntpd version probe (readvar). |
+| `probes.upnp` | L3 | miniupnpd version probe (SSDP). |
+| `httpscan` | L4 | HTTP fingerprint engine: catalogue sweep and targeted probes. |
+| `probes.cups` | L4 | CUPS version probe from the GET / page title. |
+| `probes.init` | L5 | Probe list, selection and dispatch with a per-key cache. |
+| `scope` | L5 | Scope matching of NVD rows against the observed version. |
+| `platform` | L5 | OS platform compatibility of CVE configurations. |
+| `confidence` | L5 | Confidence levels and ordering of CVE rows. |
+| `collect` | L6 | Match collection for one port. |
+| `render` | L6 | Text output lines for one service. |
+| `vulns` | L7 | Vulnerability lookup for one service and JSON report entries. |
+| `analysis` | L8 | Analysis of the matches of one port. |
+| `lifecycle` | L9 | Rules that decide whether the script runs and the Nmap script actions. |
+
+A module only imports modules from strictly lower layers. The rule is checked by
+`nmap/tests/lua/test_architecture.lua`.
+
+To add a service probe, create a new file under `nmap/src/cvescannerv2/probes/`
+that returns a probe table, then register it in `probes/init`: add a `require`
+line and an entry in the `SERVICE_PROBES` list.
 
 The database package separates command-line and Textual interfaces,
 application workflows, domain data and CPE parsing, and infrastructure
@@ -711,6 +757,10 @@ PYTHONPATH=db-manager/src uv run --project db-manager \
 # Scanner (requires lua5.4; the SQLite suite also needs luasql.sqlite3 and is
 # skipped when it is missing)
 sh nmap/tests/run.sh
+
+# Scanner suites run directly
+lua5.4 nmap/tests/lua/run.lua
+lua5.4 nmap/tests/test_scanner.lua
 ```
 
 `nmap/tests/run.sh` runs the HTTP and catalogue-cache tests plus the Lua suites for
