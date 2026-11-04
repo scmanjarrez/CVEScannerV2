@@ -7,13 +7,9 @@
 
 local json = require 'json'
 
-local config = require 'cvescannerv2.config'
 local state = require 'cvescannerv2.state'
-local util = require 'cvescannerv2.util'
 
 local M = {}
-
-local exists = util.exists
 
 
 -- Decode the JSON file at arg and store it in the state for ftype.

@@ -47,13 +47,6 @@ local function add_cpe_aliases(cpe, version, matches, location)
 end
 
 
-local function cpe_has_version(matches, cpe)
-  for _, source in pairs(matches.data) do
-    if source[cpe] and next(source[cpe]) ~= nil then return true end
-  end
-  return false
-end
-
 local function cpe_has_precise_version(matches, cpe)
   for _, source in pairs(matches.data) do
     for version in pairs(source[cpe] or {}) do

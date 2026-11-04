@@ -25,10 +25,10 @@ local validate_fingerprints = validate.validate_fingerprints
 local validate_paths = validate.validate_paths
 local validate_probes = validate.validate_probes
 
-local CATALOG_CACHE_DIR = 'data'
+local CATALOG_DIR = 'data'
 
 local function catalog_file_path(filename)
-  return CATALOG_CACHE_DIR .. '/' .. filename
+  return CATALOG_DIR .. '/' .. filename
 end
 
 local function read_catalog_json(filename)
@@ -56,7 +56,7 @@ local function load_catalog_files()
   state.catalog = loaded
   state.catalog_loaded = true
   stdnse.verbose(1, fmt('Using Vulners catalogue from %s.',
-    CATALOG_CACHE_DIR))
+    CATALOG_DIR))
   return true
 end
 
