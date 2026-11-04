@@ -1,11 +1,13 @@
--- Confidence levels of CVE matches.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Confidence levels of CVE matches.  (Layer L5)
 --
 -- Pure scoring over the reasons attached to each CVE. A reason maps to a
 -- level, a CVE takes the lowest level of its reasons, and rows are ordered
--- by level and then by CVSS scores. Nothing here touches the shared state.
+-- by level and then by CVSS scores. No I/O and no access to shared state.
 
 local M = {}
 
+--- Compare two rows by CVSS score, highest first.
 local function cvss_comparator(a, b)
   local score_a = tonumber(a[3]) or tonumber(a[2]) or -1
   local score_b = tonumber(b[3]) or tonumber(b[2]) or -1
@@ -30,7 +32,7 @@ local LEVEL_RANK = { low = 1, medium = 2, high = 3 }
 
 local CONF_LABEL = { high = 'HIGH', medium = 'MED', low = 'LOW' }
 
--- Order rows by confidence first, then by CVSSv3 and CVSSv2.
+--- Order rows by confidence first, then by CVSSv3 and CVSSv2.
 local function confidence_comparator(a, b)
   if a[6] ~= b[6] then return LEVEL_RANK[a[6]] > LEVEL_RANK[b[6]] end
   return cvss_comparator(a, b)
@@ -44,7 +46,7 @@ local function reason_level(reason)
 end
 
 
--- Return the lowest level among the reasons. No reasons means high.
+--- Return the lowest level among the reasons. No reasons means high.
 local function confidence_of(reasons)
   local level = 'high'
   for _, reason in ipairs(reasons) do
@@ -55,7 +57,7 @@ local function confidence_of(reasons)
 end
 
 
--- Set rec.confidence on every CVE and count the levels.
+--- Set rec.confidence on every CVE and count the levels.
 local function score_vulns(vulns)
   local summary = { high = 0, medium = 0, low = 0 }
   for _, rec in pairs(vulns) do
@@ -66,7 +68,7 @@ local function score_vulns(vulns)
 end
 
 
--- Add one reason to every CVE of a scan, such as observed_range.
+--- Add one reason to every CVE of a scan, such as observed_range.
 local function add_reason(vulns, reason)
   for _, rec in pairs(vulns) do
     table.insert(rec.reasons, reason)
@@ -74,11 +76,9 @@ local function add_reason(vulns, reason)
 end
 
 M.cvss_comparator = cvss_comparator
-M.REASON_LEVEL = REASON_LEVEL
 M.LEVEL_RANK = LEVEL_RANK
 M.CONF_LABEL = CONF_LABEL
 M.confidence_comparator = confidence_comparator
-M.reason_level = reason_level
 M.confidence_of = confidence_of
 M.score_vulns = score_vulns
 M.add_reason = add_reason

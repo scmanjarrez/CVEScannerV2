@@ -1,8 +1,10 @@
--- Fingerprint matching against catalogue rules and response text.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Fingerprint matching against catalogue rules and response text.  (Layer L3)
 --
 -- Pure text matching over HTTP response subjects, banners and probe
--- extractors. The catalogue is read from the shared state; detected
--- versions are recorded through the matches module.
+-- extractors: no network, file or database I/O. Reads the catalogue
+-- (fingerprints, probes) from state; detected versions are recorded
+-- through the matches module.
 
 local state = require 'cvescannerv2.state'
 local match_mod = require 'cvescannerv2.matches'
@@ -24,6 +26,7 @@ local function case_insensitive_pattern(value)
   return pattern
 end
 
+--- Return the value of an HTML attribute in a tag, or nil.
 local function html_attribute(tag, name)
   local pattern = case_insensitive_pattern(name)
   local value = tag:match(pattern .. '%s*=%s*"([^"]*)"')
@@ -33,6 +36,7 @@ local function html_attribute(tag, name)
   return tag:match(pattern .. '%s*=%s*([^%s>]+)')
 end
 
+--- Return the response text grouped by subject channel.
 local function response_subjects(response)
   local subjects = {}
   local raw_headers = response.rawheader
@@ -86,6 +90,7 @@ local function response_subjects(response)
   return subjects
 end
 
+--- Return a trimmed version string, or nil when unsafe.
 local function safe_version(value)
   if type(value) ~= 'string' or #value == 0 or #value > 128
       or value:find('[%c]') ~= nil then
@@ -110,6 +115,7 @@ local function anchor_matches(anchor, subject)
       or subject:lower():find(anchor:lower(), 1, true) ~= nil
 end
 
+--- Return the version captured near an anchor, or nil.
 local function anchored_capture(pattern, anchor, subject)
   if not anchor or anchor == ''
       or pattern:sub(1, 1) == '^' or pattern:sub(-1) == '$' then
@@ -177,6 +183,7 @@ local function probe_detects(probe, subjects)
   return false
 end
 
+--- Record rule matches and triggered probes for subjects.
 local function match_subjects(subjects, matches, location, triggered,
     only_403)
   if not state.catalog_loaded then return end
@@ -199,6 +206,7 @@ local function match_subjects(subjects, matches, location, triggered,
   end
 end
 
+--- Match the Nmap service banner against catalogue rules.
 local function match_banner(port, matches, triggered)
   if not state.catalog_loaded or not port.version then return end
   local banner = port.version.service_fp
@@ -210,6 +218,7 @@ local function match_banner(port, matches, triggered)
   match_subjects(subjects, matches, 'nmap', triggered)
 end
 
+--- Return the version extracted by a probe from body, or nil.
 local function probe_version(probe, body)
   for _, extractor in ipairs(probe.extract) do
     if anchor_matches(extractor.anchor, body) then
@@ -221,17 +230,10 @@ local function probe_version(probe, body)
   return nil
 end
 
-M.add_subject = add_subject
-M.case_insensitive_pattern = case_insensitive_pattern
 M.html_attribute = html_attribute
 M.response_subjects = response_subjects
 M.safe_version = safe_version
-M.pattern_match = pattern_match
-M.anchor_matches = anchor_matches
 M.anchored_capture = anchored_capture
-M.match_fingerprint_rule = match_fingerprint_rule
-M.pattern_found = pattern_found
-M.probe_detects = probe_detects
 M.match_subjects = match_subjects
 M.match_banner = match_banner
 M.probe_version = probe_version

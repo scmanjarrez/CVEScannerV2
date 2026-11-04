@@ -1,8 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- NTP version probe for the cvescannerv2 NSE script.
-
+-- NTP version probe for the cvescannerv2 NSE script.  (Layer L3)
+--
 -- Reads the ntpd readvar reply (mode 6) to get the exact ntpd version and
--- the patch level. The reply is cached per host and port in the state.
+-- the patch level. I/O: network only (comm.exchange over UDP), no files or
+-- SQL. Reads and writes state.ntp_info, cached per host and port; no config.
 
 local stdnse = require 'stdnse'
 local state = require 'cvescannerv2.state'
@@ -22,7 +23,6 @@ local function ntp_parse_readvar(response)
   if version == nil then return nil end
   return { version = version, system = payload:match('system="([^"]*)"') }
 end
-M.ntp_parse_readvar = ntp_parse_readvar
 
 --- Return the readvar fields of an NTP service, calling it at most once.
 -- Return nil when the request fails. Failures are cached as false.
@@ -44,7 +44,6 @@ local function ntp_get_info(host, port)
   end
   return cached or nil
 end
-M.ntp_get_info = ntp_get_info
 
 --- Return the ntpd CPE, version and patch level from the readvar reply.
 -- The patch level is the update, as in the NVD rows. Return nil for other
@@ -60,7 +59,6 @@ local function ntp_probe(host, port)
     update = rest:match('^(p%d+)'),
   }
 end
-M.ntp_probe = ntp_probe
 
 --- The 'version' probe of the NTP service, as used by the scanner.
 M.NTP_PROBE = {

@@ -1,9 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Platform (operating system) compatibility of CVE configurations.
-
+-- Platform (operating system) compatibility of CVE configurations.  (Layer L5)
+--
 -- Pure comparison of the OS platform rows of each CVE with the OS context
 -- of the host. Only the family table is read from the shared state, on
 -- every call. No SQL and no logging here: the caller loads the rows.
+-- E/S: ninguna (no red, no fichero, no SQL).
 
 local state = require 'cvescannerv2.state'
 
@@ -127,13 +128,13 @@ local function strip_platform_reasons(vulns)
 end
 
 
-M.PLATFORM_RANK = PLATFORM_RANK
-M.os_platform_status = os_platform_status
-M.config_status = config_status
+--- Return the platform reason of one CVE, or nil when it is compatible.
 M.evaluate_platform = evaluate_platform
+--- Append the platform reasons of each CVE in vulns to its reasons.
 M.add_platform_reasons = add_platform_reasons
-M.is_platform_reason = is_platform_reason
+--- True when a CVE needs an OS probe to be evaluated.
 M.platform_probe_needed = platform_probe_needed
+--- Remove the platform reasons added earlier from vulns.
 M.strip_platform_reasons = strip_platform_reasons
 
 

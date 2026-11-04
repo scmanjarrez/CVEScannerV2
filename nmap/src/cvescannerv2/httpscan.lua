@@ -1,9 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- HTTP fingerprint engine for the cvescannerv2 NSE script.
-
--- Reads HTTP responses from a port and feeds the headers and bodies to the
--- fingerprint and version matchers. The catalogue sweep and the targeted
--- probes run when the catalogue is loaded. The legacy path runs otherwise.
+-- HTTP fingerprint engine for the cvescannerv2 NSE script.  (Layer L4)
+--
+-- Reads HTTP responses from a port (network I/O through the Nmap http
+-- library, paced by nmap.timing_level) and feeds them to the fingerprint
+-- and version matchers: targeted probes and the optional catalogue sweep.
+-- Reads state.catalog and config (sweep, maxredirect, options_for_target).
 
 local http = require 'http'
 local nmap = require 'nmap'
@@ -28,166 +29,14 @@ local probe_version = fingerprint.probe_version
 local response_subjects = fingerprint.response_subjects
 
 
-local function find_version(cpe, text, regex, matches)
-  local idx = 0
-  local sidx = 0
-  local version
-  while true do
-    sidx, idx, version = text:find(regex, idx + 1)
-    if version then
-      if version == '' then
-        version = '*'
-      end
-      local msg = add_cpe_version(cpe, version, matches, 'http')
-      if msg then
-        stdnse.verbose(2, "http find_version matched text: " ..
-          text:sub(sidx, idx) ..
-          " | version: " .. version)
-      end
-    end
-    if idx == nil then break end
-  end
-end
-
-
-local function regex_match(text, location, matches)
-  for _, software in pairs(state.regex[location]) do
-    if type(software.regex) == 'table' then
-      for _, regex in pairs(software.regex) do
-        find_version(software.cpe, text, regex, matches)
-      end
-    else
-      find_version(software.cpe, text, software.regex, matches)
-    end
-  end
-end
-
-local HTTP_MAX_FAILURES = 5
-
-local function legacy_get(host, port, file)
-  return http.get(host, port, file,
-    {
-      redirect_ok = config.maxredirect,
-      timeout = 10000,
-      max_body_size = 131072,
-      truncated_ok = true,
-      bypass_cache = true,
-      no_cache = true,
-      no_cache_body = true
-    }
-  )
-end
-
-local function legacy_scan_response(resp, matches)
-  if resp.rawheader and #resp.rawheader > 0 then
-    for _, header in pairs(resp.rawheader) do
-      regex_match(header, 'header', matches)
-    end
-  end
-  local rawbody = resp.rawbody or ''
-  if rawbody ~= '' then
-    regex_match(rawbody, 'body', matches)
-  end
-end
-
--- Record the library versions declared in one JavaScript comment.
-local function record_comment_versions(lib_comm, libs)
-  local idy = 0
-  local comm_lib = nil
-  local comm_ver = nil
-  while true do
-    _, idy, comm_lib, comm_ver = lib_comm:find(
-      state.regex['external']['version_regex'],
-      idy + 1)
-    if comm_lib and comm_ver then
-      if comm_lib:lower() ~= 'version' then
-        stdnse.verbose(2,
-          "Matched version in js " ..
-          "comment: " .. comm_lib ..
-          " ver: " .. comm_ver)
-        libs[comm_lib] = comm_ver
-        libs['size'] = libs['size'] + 1
-      end
-    end
-    if idy == nil then break end
-  end
-end
-
--- Fetch the scripts referenced by the root page and collect their versions.
-local function collect_js_libs(host, port, rawbody)
-  local idx = 0
-  local lib_path = nil
-  local libs = { ['size'] = 0 }
-  while true do
-    _, idx, lib_path = rawbody:find(
-      state.regex['external']['path_regex'], idx + 1)
-    if lib_path and lib_path:sub(1, 1) == '/' then
-      local lib_resp = legacy_get(host, port, lib_path)
-      if lib_resp.status and lib_resp.rawbody ~= nil then
-        local _, _, lib_comm = lib_resp.rawbody:find(
-          state.regex['external']['comment_regex'])
-        if lib_comm then
-          stdnse.verbose(3, "Comment: " .. lib_comm)
-          record_comment_versions(lib_comm, libs)
-        end
-      end
-    end
-    if idx == nil then break end
-  end
-  return libs
-end
-
-local function match_js_libs(libs, matches)
-  if libs['size'] > 0 then
-    for name, data in pairs(state.regex['body']) do
-      for k, v in pairs(libs) do
-        if k ~= 'size' then
-          local k_stripped = (k:gsub('%.js$', '')):lower()
-          if (name:lower()):find(k_stripped, 1, true) then
-            add_cpe_version(data['cpe'], v, matches, 'http')
-          end
-        end
-      end
-    end
-  end
-end
-
-local function http_match_legacy(host, port, matches)
-  local failures = 0
-  for _, path in pairs(state.path['path']) do
-    for _, ext in pairs(state.path['extension']) do
-      local file = "/" .. path .. ext
-      if (path == '' and ext == '') or path ~= '' then
-        local resp = legacy_get(host, port, file)
-        if not resp.status then
-          failures = failures + 1
-          stdnse.verbose(2,
-            fmt("Error processing request http://%s:%s%s => %s",
-              host.ip, port.number, file, resp['status-line']))
-          if failures >= HTTP_MAX_FAILURES then
-            stdnse.verbose(2, fmt("Stopping http checks on %s:%s "
-              .. "after %d failures", host.ip, port.number, failures))
-            return
-          end
-        else
-          failures = 0
-          legacy_scan_response(resp, matches)
-        end
-        if path == '' and ext == '' and resp.status then
-          local libs = collect_js_libs(host, port, resp.rawbody or '')
-          match_js_libs(libs, matches)
-        end
-      end
-    end
-  end
-end
-
+--- Return true when the response status is 2xx or 3xx.
 local function response_is_usable(response)
   local status = tonumber(response.status)
   return status ~= nil and status >= 200 and status < 400
 end
 
 
+--- Fetch the paths of triggered probes and record their versions.
 local function run_targeted_probes(host, port, matches, triggered)
   local probes_used = 0
   for _, probe in ipairs(state.catalog.probes) do
@@ -221,6 +70,7 @@ local function run_targeted_probes(host, port, matches, triggered)
   end
 end
 
+--- Request every catalogue path in paced batches and match replies.
 local function sweep_catalog(host, port, matches, triggered)
   local pace = {
     [0] = { 5, 2.0 },
@@ -279,15 +129,14 @@ local function sweep_catalog(host, port, matches, triggered)
   end
 end
 
+--- Run the catalogue sweep and targeted probes when catalogue is loaded.
 local function http_match(host, port, matches, triggered)
   if state.catalog_loaded then
-    -- The catalogue sweep is opt-in (sweep=1) because it is slow.
-    if config.sweep == '1' then
+    -- The catalogue sweep only runs with sweep=1 because it is slow.
+    if config.sweep then
       sweep_catalog(host, port, matches, triggered)
     end
     run_targeted_probes(host, port, matches, triggered)
-  elseif state.legacy_catalog then
-    http_match_legacy(host, port, matches)
   end
 end
 
@@ -315,15 +164,10 @@ local function use_http_engine(host, port)
 end
 
 
-M.find_version = find_version
-M.regex_match = regex_match
-M.HTTP_MAX_FAILURES = HTTP_MAX_FAILURES
-M.http_match_legacy = http_match_legacy
 M.response_is_usable = response_is_usable
 M.run_targeted_probes = run_targeted_probes
 M.sweep_catalog = sweep_catalog
 M.http_match = http_match
-M.NON_HTTP_SERVICES = NON_HTTP_SERVICES
 M.use_http_engine = use_http_engine
 
 return M

@@ -1,8 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Pure validation of the vulners catalogue JSON files.
-
+-- Pure validation of the vulners catalogue JSON files.  (Layer L2)
+--
 -- Checks the decoded fingerprints, paths and probes tables and builds the
--- in-memory catalogue. Performs no network or file I/O.
+-- in-memory catalogue. Performs no network or file I/O and reads neither
+-- state nor config.
 
 local M = {}
 
@@ -236,15 +237,23 @@ local function build_catalog(index, load_json)
 end
 
 M.MAX_CATALOG_BYTES = MAX_CATALOG_BYTES
-M.class_end = class_end
+--- Return the number of captures, or nil when parentheses are unbalanced.
 M.capture_count = capture_count
+--- Return true when the pattern is valid and has the expected captures.
 M.valid_pattern = valid_pattern
+--- Return true when the alias is a well-formed CPE 2.2 URI.
 M.valid_alias = valid_alias
+--- Return true when the channel name is one of the allowed channels.
 M.valid_channel = valid_channel
+--- Return true when the path is a safe absolute catalogue path.
 M.valid_path = valid_path
+--- Return the fingerprint rules grouped by channel, or nil if invalid.
 M.validate_fingerprints = validate_fingerprints
+--- Return the deduplicated catalogue paths, or nil if invalid.
 M.validate_paths = validate_paths
+--- Return the validated probe definitions, or nil if invalid.
 M.validate_probes = validate_probes
+--- Return the loaded catalogue tables, or nil if any file is invalid.
 M.build_catalog = build_catalog
 
 return M

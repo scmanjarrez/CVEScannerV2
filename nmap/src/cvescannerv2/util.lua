@@ -1,9 +1,13 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Pure string and file helpers shared by the cvescannerv2 NSE script.
+-- Pure string and file helpers for the cvescannerv2 script.  (Layer L0)
+--
+-- Formats and escapes strings and checks that a file can be opened for
+-- reading (io.open). No network, database, state or config access.
 
 local M = {}
 
 
+--- Return whether a value is nil or the empty string.
 local function empty(str)
   return str == nil or str == ''
 end
@@ -25,7 +29,6 @@ M.fmt = fmt
 local function sql_escape(value)
   return (tostring(value):gsub("'", "''"))
 end
-M.sql_escape = sql_escape
 
 -- Implementation of named parameters from RiciLake@lua-users. A table value
 -- becomes a comma-separated list of quoted literals, e.g. 'a', 'b'.

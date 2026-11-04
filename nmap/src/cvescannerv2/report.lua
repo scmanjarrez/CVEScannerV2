@@ -1,6 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- JSON report helpers for the cvescannerv2 NSE script.
--- The report is kept in state.json_out and written by postaction.
+-- JSON report helpers for the cvescannerv2 NSE script.  (Layer L2)
+--
+-- Builds the host, port and service entries kept in state.json_out and
+-- writes the JSON report to a file (io.open in append mode, in write).
+-- Reads state.time and state.json_out; no network or SQL access.
+-- The report is written by lifecycle.postaction.
 
 local M = {}
 

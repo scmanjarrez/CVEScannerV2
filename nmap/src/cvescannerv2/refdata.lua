@@ -1,8 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Loads and validates the reference data files of the cvescannerv2 NSE script.
-
+-- Loads and validates the reference data files of cvescannerv2.  (Layer L2)
+--
 -- Each loader decodes one JSON file, checks its shape and stores the result
--- in the shared state. Legacy catalogue files are checked here as well.
+-- in the shared state. File reads only (io.open); no network, SQL or config
+-- access. Writes state.aliases, state.vendor_aliases and state.product_cpe.
 
 local json = require 'json'
 
@@ -23,19 +24,7 @@ local function valid_json(arg, ftype)
   f:close()
   local status, data = json.parse(content)
   if not status or type(data) ~= 'table' then return false end
-  if ftype == 'path' then
-    if type(data.path) ~= 'table' or type(data.extension) ~= 'table' then
-      return false
-    end
-    state.path = data
-  elseif ftype == 'regex' then
-    if type(data.header) ~= 'table'
-        or type(data.body) ~= 'table'
-        or type(data.external) ~= 'table' then
-      return false
-    end
-    state.regex = data
-  elseif ftype == 'aliases' then
+  if ftype == 'aliases' then
     state.aliases = data
   elseif ftype == 'vendor_aliases' then
     state.vendor_aliases = data
@@ -50,20 +39,8 @@ local function valid_json(arg, ftype)
   end
   return true
 end
+--- Load the JSON file arg into the state; return false if it is invalid.
 M.valid_json = valid_json
-
-
--- Mark the legacy catalogue as loaded when both its files are valid.
-local function load_legacy_catalog()
-  if not exists(config.path) or not exists(config.regex) then return false end
-  if not valid_json(config.path, 'path')
-      or not valid_json(config.regex, 'regex') then
-    return false
-  end
-  state.legacy_catalog = true
-  return true
-end
-M.load_legacy_catalog = load_legacy_catalog
 
 
 return M

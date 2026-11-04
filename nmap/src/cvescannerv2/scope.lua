@@ -1,9 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Scope matching of NVD rows against the observed version.
-
+-- Scope matching of NVD rows against the observed version.  (Layer L5)
+--
 -- Pure decisions: whether an NVD row applies to an observed version or
 -- range, and the reason that explains the match. Nothing here touches the
--- shared state.
+-- shared state. No I/O and no state or config reads.
 
 local M = {}
 
@@ -156,14 +156,13 @@ local function merge_series(found, vulns)
 end
 
 
-M.add_scoped_vulnerability = add_scoped_vulnerability
-M.is_bounded = is_bounded
+--- Return true when the NVD row interval contains the observed one.
 M.range_contains = range_contains
-M.multi_reason = multi_reason
+--- Add the range-based NVD rows that overlap the observed range.
 M.scoped_multi_versions = scoped_multi_versions
-M.concrete_update = concrete_update
-M.exact_reason = exact_reason
+--- Add the exact-version NVD rows that match the observed version.
 M.scoped_versions = scoped_versions
+--- Merge series-expanded CVEs into vulns, skipping known IDs.
 M.merge_series = merge_series
 
 

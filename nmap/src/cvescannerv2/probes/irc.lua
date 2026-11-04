@@ -1,7 +1,10 @@
--- IRC version probe for UnrealIRCd services.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- IRC version probe for UnrealIRCd services.  (Layer L3)
 --
 -- Registers on the IRC port and reads the 351 (VERSION) reply to get
--- the exact UnrealIRCd version.
+-- the exact UnrealIRCd version. Network I/O: TCP through nmap sockets
+-- (5 s timeout, one retry after 20 s when throttled). Reads and writes no
+-- state or config.
 
 local nmap = require 'nmap'
 local stdnse = require 'stdnse'
@@ -92,16 +95,6 @@ local IRC_PROBE = {
   run = irc_probe,
 }
 
-M.IRC_SERVICES = IRC_SERVICES
-M.IRC_REGISTER = IRC_REGISTER
-M.IRC_MAX_READS = IRC_MAX_READS
-M.IRC_RETRY_DELAY = IRC_RETRY_DELAY
-M.irc_unreal_version = irc_unreal_version
-M.irc_is_throttled = irc_is_throttled
-M.irc_read_version = irc_read_version
-M.irc_exchange = irc_exchange
-M.irc_attempt = irc_attempt
-M.irc_probe = irc_probe
 M.IRC_PROBE = IRC_PROBE
 
 return M

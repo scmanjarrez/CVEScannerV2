@@ -29,10 +29,12 @@ CVEs information gathered from nvd.nist.gov.
 ]]
 --- Prerequisite: data/cve.db. Generate it with db-manager or obtain it from
 -- https://github.com/scmanjarrez/CVEScannerV2DB
+-- Catalogue: run scripts/download-catalog.sh (Docker already includes it).
 --
 --- Run: Execute CVEscannerV2
 -- @usage nmap -sV --script cvescannerv2 <target-ip>
 -- @usage nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <target-ip>
+-- @usage nmap -sV --script cvescannerv2 --script-args sweep=1 <target-ip>
 --
 -- @output
 -- PORT      STATE SERVICE       VERSION
@@ -50,42 +52,42 @@ CVEs information gathered from nvd.nist.gov.
 -- |       CVE-2019-13401   LOW   6.8     8.8     No         No
 -- |_      CVE-2016-3976    LOW   5.0     7.5     Yes        Yes
 --
---- Optional arguments
--- db: Modify the database file location. Default: data/cve.db
--- maxcve: Limit the number of CVEs printed on screen. Default: 10
--- http: Modify HTTP analysis behaviour. Default: 1 (enabled). Possible values: 0, 1
--- maxredirect: Limit the number of redirections. Default: 1
--- sweep: Enable the catalogue path sweep over HTTP ports (slow, asks every
--- catalogue path). Default: 0 (disabled). Possible values: 0, 1.
--- Transitional: it will be removed.
--- log: Modify the output .log file location. Default: cvescannerv2.log
--- json: Modify the output .json file location. Default: cvescannerv2.json
--- catalog: Use upstream fingerprints. Default: auto. Set to none to disable
--- HTTP fingerprinting.
--- catalog_url: Override the base URL for the upstream catalogue.
--- local_catalog: Local catalogue merged on top of the upstream one.
--- Default: data/local-catalog.json. Set to none to disable.
--- path: Legacy paths file. Default:
--- data/http-paths-vulnerscom.json
--- regex: Legacy regex file. Default:
--- data/http-regex-vulnerscom.json
--- aliases: Product aliases file. Default:
--- data/product-aliases.json
--- vendor_aliases: Vendor aliases file. Default:
--- data/vendor-aliases.json
--- product_cpe: Product to CPE overrides for Nmap products, replacing the
--- CPE that Nmap reports. Default: data/product-cpe.json. Set to none to
--- disable.
--- service: Modify the search scope to specific service. Default: all
--- version: Modify the search scope to specific version. Default: all
--- smb: Probe SMB (ports 139/445) for the exact Samba version. Default: 1.
--- Possible values: 0, 1
--- probes: Service version probes to run: all, none or a comma-separated
--- list of probe names (e.g. smb, irc). Default: all. The irc probe reads
--- the exact UnrealIRCd version with a read-only IRC VERSION request.
--- minconf: Minimum confidence of the CVEs shown in the table and the log:
--- low, medium or high. Default: low. Invalid values use low. The JSON
--- report always keeps every CVE.
+-- @args cvescannerv2.db Database file. Default: data/cve.db
+-- @args cvescannerv2.maxcve Maximum number of CVEs printed on screen.
+--       Default: 10
+-- @args cvescannerv2.maxredirect Maximum number of redirections followed.
+--       Default: 1
+-- @args cvescannerv2.sweep Request every catalogue path on HTTP ports
+--       (slow). Default: 0. Values: 0, 1
+-- @args cvescannerv2.log Output .log file location.
+--       Default: cvescannerv2.log
+-- @args cvescannerv2.json Output .json file location.
+--       Default: cvescannerv2.json
+-- @args cvescannerv2.catalog Vulners catalogue read from data/ (index.json,
+--       fingerprints.json, paths.json, probes.json). Default: auto. Set to
+--       none to disable HTTP fingerprinting. The catalogue can be downloaded
+--       by running scripts/download-catalog.sh.
+-- @args cvescannerv2.local_catalog Local catalogue merged on top of the
+--       upstream one. Default: data/local-catalog.json. Set to none to
+--       disable.
+-- @args cvescannerv2.aliases Product aliases file.
+--       Default: data/product-aliases.json
+-- @args cvescannerv2.vendor_aliases Vendor aliases file.
+--       Default: data/vendor-aliases.json
+-- @args cvescannerv2.product_cpe Product to CPE overrides for Nmap products,
+--       replacing the CPE that Nmap reports. Default:
+--       data/product-cpe.json. Set to none to disable.
+-- @args cvescannerv2.service Restrict the search to a specific service.
+--       Default: all
+-- @args cvescannerv2.version Restrict the search to a specific version.
+--       Default: all
+-- @args cvescannerv2.probes Service version probes to run: all, none or a
+--       comma-separated list of probe names (e.g. smb, irc). Default: all.
+--       The irc probe reads the exact UnrealIRCd version with a read-only
+--       IRC VERSION request.
+-- @args cvescannerv2.minconf Minimum confidence of the CVEs shown in the
+--       table and the log: low, medium or high. Default: low. Invalid
+--       values use low. The JSON report always keeps every CVE.
 ---
 
 categories = { "safe" }
@@ -124,12 +126,6 @@ end
 
 -- Script arguments are read once by the config module, before any rule.
 require 'cvescannerv2.config'.load()
--- Names read by the test suites from the script chunk.
-local registry = require 'cvescannerv2.state'
-local sweep_catalog = require 'cvescannerv2.httpscan'.sweep_catalog
-registry.load_local_catalog = require 'cvescannerv2.catalog.store'
-    .load_local_catalog
-
 local lifecycle = require 'cvescannerv2.lifecycle'
 prerule = lifecycle.prerule
 hostrule = lifecycle.hostrule

@@ -1,5 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Reads and normalizes every script argument of the cvescannerv2 NSE script.
+-- Reads and normalizes the cvescannerv2 script arguments.  (Layer L0)
+--
+-- Only this module calls stdnse.get_script_args. It keeps the normalized
+-- values in its own table and does no file, network or state I/O.
 
 local stdnse = require 'stdnse'
 
@@ -9,29 +12,22 @@ local M = {}
 local MINCONF_LEVELS = { low = true, medium = true, high = true }
 
 
--- Read all script arguments once and store the normalized values in M.
+--- Read all script arguments once and store the normalized values in M.
 function M.load()
   M.db = stdnse.get_script_args('db') or 'data/cve.db'
   M.maxcve = tonumber(stdnse.get_script_args('maxcve')) or 10
-  M.http = stdnse.get_script_args('http') or '1'
   M.maxredirect = math.max(
     0, tonumber(stdnse.get_script_args('maxredirect')) or 1)
   M.log = stdnse.get_script_args('log') or 'cvescannerv2.log'
   M.json = stdnse.get_script_args('json') or 'cvescannerv2.json'
-  M.path = stdnse.get_script_args('path')
-      or 'data/http-paths-vulnerscom.json'
-  M.regex = stdnse.get_script_args('regex')
-      or 'data/http-regex-vulnerscom.json'
   M.aliases = stdnse.get_script_args('aliases')
       or 'data/product-aliases.json'
   M.vendor_aliases = stdnse.get_script_args('vendor_aliases')
       or 'data/vendor-aliases.json'
   M.catalog = (stdnse.get_script_args('catalog') or 'auto'):lower()
-  M.catalog_url = stdnse.get_script_args('catalog_url')
   M.service = stdnse.get_script_args('service') or 'all'
   M.version = stdnse.get_script_args('version') or 'all'
-  M.smb = stdnse.get_script_args('smb') or '1'
-  M.sweep = stdnse.get_script_args('sweep') or '0'
+  M.sweep = stdnse.get_script_args('sweep') == '1'
   M.probes = (stdnse.get_script_args('probes') or 'all'):lower()
   M.probes_set = {}
   for name in M.probes:gmatch('[^,%s]+') do M.probes_set[name] = true end
@@ -46,7 +42,7 @@ function M.load()
 end
 
 
--- Build the HTTP options shared by every request to a target.
+--- Build the HTTP options shared by every request to a target.
 function M.options_for_target()
   return {
     redirect_ok = M.maxredirect,

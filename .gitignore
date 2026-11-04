@@ -1,6 +1,5 @@
 # Custom
 results/
-data/vulnerscom-*.json
 .workflow/
 CVEScannerV2DB/
 tmp/

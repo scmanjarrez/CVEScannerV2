@@ -53,7 +53,8 @@ Dos comprobaciones del empaquetado de la imagen del escáner:
 - Estática (`lua/test_docker.lua`, suite `docker packaging`): sin Docker.
   Comprueba que cada fichero `data/` que lee el NSE está copiado o generado
   por `docker/Dockerfile`, que los `COPY data/...` existen y no los excluye
-  `.dockerignore`, y que `CATALOG_BASE` coincide con el del NSE. Tarda
+  `.dockerignore`, y que la URL por defecto de `scripts/download-catalog.sh`
+  coincide con `ARG CATALOG_BASE` de `docker/Dockerfile`. Tarda
   menos de un segundo y se ejecuta dentro de `sh nmap/tests/run.sh`.
 - Integración (`docker/check.sh [--fresh]`): requiere Docker y red. Construye
   las imágenes `nodb` y `db`, comprueba su contenido, valida `cve.db` con
@@ -72,18 +73,22 @@ sh nmap/tests/docker/check.sh --fresh    # integración sin caché
 
 ## Estructura
 
-| Fichero | Contenido |
-| --- | --- |
-| `test_scanner.lua` | Suite original: redirecciones HTTP, caché del catálogo y puerto sin CVE. |
-| `lua/harness.lua` | Mini framework (`case`, `known_bug`, `skip`) y cargador del NSE con stubs. |
-| `lua/test_versions.lua` | `compare_version`, `version_parser`, `split_cpe`, `cpe_parser`, aliases. |
-| `lua/test_scoping.lua` | `scoped_multi_versions`, `scoped_versions`, orden CVSS y escape SQL. |
-| `lua/test_catalog.lua` | Validación del catálogo de Vulners y extracción de huellas HTTP. |
-| `lua/test_database.lua` | `portaction`/`postaction` de extremo a extremo sobre la fixture SQLite. |
-| `lua/test_docker.lua` | Empaquetado: rutas `data/` del NSE frente a `docker/Dockerfile` y `.dockerignore`. |
-| `lua/test_architecture.lua` | Estática: grafo de capas de `nmap/src/cvescannerv2/`, ciclos, dueños de E/S y globales implícitas. |
-| `docker/check.sh` | Integración: construye las imágenes, valida su contenido y escanea un objetivo real. |
-| `lua/run.lua` | Ejecuta las suites de `lua/` y devuelve el código de salida. |
+| Fichero | Contenido | Casos |
+| --- | --- | --- |
+| `test_scanner.lua` | Redirecciones HTTP, lectura local del catálogo y puerto sin CVE. | - |
+| `lua/harness.lua` | Mini framework (`case`, `known_bug`, `skip`) y cargador del NSE con stubs. | - |
+| `lua/test_versions.lua` | `compare_version`, `version_parser`, `split_cpe`, `cpe_parser`, aliases. | 38 |
+| `lua/test_scoping.lua` | `scoped_multi_versions`, `scoped_versions`, orden CVSS y escape SQL. | 65 |
+| `lua/test_catalog.lua` | Validación del catálogo de Vulners y extracción de huellas HTTP. | 107 |
+| `lua/test_database.lua` | `portaction`/`postaction` de extremo a extremo sobre la fixture SQLite. | 23 |
+| `lua/test_docker.lua` | Empaquetado: rutas `data/` del NSE frente a `docker/Dockerfile` y `.dockerignore`. | 6 |
+| `lua/test_architecture.lua` | Estática: grafo de capas de `nmap/src/cvescannerv2/`, ciclos, dueños de E/S y globales implícitas. | 5 |
+| `docker/check.sh` | Integración: construye las imágenes, valida su contenido y escanea un objetivo real. | - |
+| `lua/run.lua` | Ejecuta las suites de `lua/` y devuelve el código de salida. | - |
+
+Los recuentos son los `t.case(` de nivel superior de cada fichero. El total
+de `lua5.4 nmap/tests/lua/run.lua` (282 casos) es mayor porque algunos casos
+se generan en bucles (por ejemplo, `compare_version`).
 
 ## Resultados
 

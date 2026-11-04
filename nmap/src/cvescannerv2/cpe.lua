@@ -1,9 +1,13 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Pure CPE 2.2 and 2.3 string parser used by the cvescannerv2 NSE script.
+-- Pure CPE 2.2 and 2.3 string parser.  (Layer L0)
+--
+-- Splits a CPE string into its fields and unescapes them. It does no I/O,
+-- reads neither state nor config, and requires no other module.
 
 local M = {}
 
 
+--- Split a CPE 2.2 or 2.3 string into unescaped fields, nil if invalid.
 local function split_cpe(cpe)
   local parts = {}
   local field = {}

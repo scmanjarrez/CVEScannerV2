@@ -1,8 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Operating system context derived from Nmap and catalogue data.
-
+-- Operating system context derived from Nmap and catalogue data. (Layer L3)
+--
 -- Read-only with respect to probes: only a cached host_probe_os result is
--- used. State is read on every call from the shared state module.
+-- used, never a new probe. No network or file I/O.
+-- Reads state.host_os_probe, state.platform_families and the per-IP
+-- state.host_os cache on every call; no config.
 
 local cpe_lib = require 'cvescannerv2.cpe'
 local state = require 'cvescannerv2.state'
@@ -129,18 +131,9 @@ local function distro_backport(port)
   return false
 end
 
-M.OS_NAME_FAMILIES = OS_NAME_FAMILIES
-M.DISTRO_NAMES = DISTRO_NAMES
-M.BACKPORT_PATTERNS = BACKPORT_PATTERNS
-M.version_text = version_text
-M.name_family = name_family
-M.vendor_family = vendor_family
-M.family_from_cpe = family_from_cpe
-M.cpes_family = cpes_family
-M.first_host_os_family = first_host_os_family
-M.host_os_family = host_os_family
-M.text_os = text_os
+--- Returns {family, distro, source} for the port, or {} if unknown.
 M.os_context = os_context
+--- Returns true if the port version text suggests a distro backport.
 M.distro_backport = distro_backport
 
 

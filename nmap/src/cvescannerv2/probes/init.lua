@@ -1,9 +1,11 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Probe list and dispatch for the cvescannerv2 NSE script.
-
+-- Probe list and dispatch for the cvescannerv2 NSE script.  (Layer L5)
+--
 -- Lists the version and OS probes of the SMB, IRC, NTP, UPnP and CUPS
--- services, selects the ones enabled by the probes argument, and runs them
--- with a per-key cache.
+-- services, selects them with the probes argument and runs them with a
+-- per-key cache. No direct I/O: the probe modules do the network work.
+-- Reads config.probes and config.probes_set; uses state.probes and
+-- state.host_os_probe as caches.
 
 local nmap = require 'nmap'
 local stdnse = require 'stdnse'
@@ -34,10 +36,9 @@ local SERVICE_PROBES = {
 M.SERVICE_PROBES = SERVICE_PROBES
 
 --- Return whether the probe 'name' is selected by the probes argument.
--- The legacy smb=0 argument also disables the smb and smb_os probes.
+-- The smb and smb_os probes also need smb.available.
 local function probe_enabled(name)
-  if (name == 'smb' or name == 'smb_os')
-      and (config.smb ~= '1' or not smb.available) then
+  if (name == 'smb' or name == 'smb_os') and not smb.available then
     return false
   end
   if (name == 'ntp' or name == 'upnp')
@@ -57,7 +58,6 @@ local function probe_applies(probe, port, product)
   return (probe.services ~= nil and probe.services[port.service] == true)
     or (probe.ports ~= nil and probe.ports[port.number] == true)
 end
-M.probe_applies = probe_applies
 
 --- Run a version probe with a per-key cache and return its result.
 -- Errors and negative results are cached as false, so each key is
@@ -100,7 +100,6 @@ local function first_os_probe(host)
   end
   return nil, nil
 end
-M.first_os_probe = first_os_probe
 
 --- Return the OS family found by the 'os' probes of a host.
 -- Return {family, source} or nil. The round is cached per IP, false marks

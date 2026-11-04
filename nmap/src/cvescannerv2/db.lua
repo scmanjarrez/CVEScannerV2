@@ -1,6 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- SQLite access for the cvescannerv2 NSE script.
-
+-- SQLite access for the cvescannerv2 NSE script.  (Layer L2)
+--
+-- Opens and closes the luasql connection and runs the catalogue queries.
+-- Its only I/O is the SQLite file. It reads state.vendor_aliases and
+-- writes state.env, state.conn and state.has_conditions.
 -- The connection lives in the state module and is read on every call, so
 -- tests can replace state.conn with a fake connection.
 
@@ -43,6 +46,7 @@ end
 
 local sql = load_luasql()
 
+--- Return the SQL template for qtype, nil when qtype is unknown.
 local function query(qtype)
   if qtype == 'cve_score' then
     return [[
@@ -162,7 +166,7 @@ local function vendor_scope(vendor, product)
   return names
 end
 
--- True when the database has rows 'series.%' for the product.
+--- True when the database has rows 'series.%' for the product.
 local function series_has_children(vendors, product, series)
   local cur = state.conn:execute(fmtn(query('series_children'),
     { v = vendors, p = product, s = series }))
@@ -185,7 +189,7 @@ local function has_conditions()
 end
 
 
--- Return the CVSS v2 and v3 scores of a CVE, nil when unknown.
+--- Return the CVSS v2 and v3 scores of a CVE, nil when unknown.
 local function cve_score(vuln)
   local cur = state.conn:execute(fmt(query('cve_score'), vuln))
   local cvssv2, cvssv3 = cur:fetch()
@@ -194,7 +198,7 @@ local function cve_score(vuln)
 end
 
 
--- Return the Exploit-DB entries of a CVE as {id, name} in query order.
+--- Return the Exploit-DB entries of a CVE as {id, name} in query order.
 local function exploitdb(vuln)
   local cur = state.conn:execute(fmt(query('exploit_info'), vuln))
   local list = {}
@@ -208,7 +212,7 @@ local function exploitdb(vuln)
 end
 
 
--- Return the Metasploit module names of a CVE in query order.
+--- Return the Metasploit module names of a CVE in query order.
 local function metasploit(vuln)
   local cur = state.conn:execute(fmt(query('metasploit_info'), vuln))
   local names = {}
@@ -302,7 +306,7 @@ local function platform_rows(vendors, product)
 end
 
 
--- Open the database file at path and keep the connection in the state.
+--- Open the database file at path and keep the connection in the state.
 function M.open(path)
   state.env = sql.sqlite3()
   state.conn = state.env:connect(path)

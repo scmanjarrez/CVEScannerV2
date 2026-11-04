@@ -68,14 +68,6 @@ export_image() { # image container list-file
     | sed -e 's#^\./##' -e 's#^/##' >"$3"
 }
 
-marker_has_no_newline() { # file
-  [ -s "$1" ] && [ "$(tail -c 1 "$1" | od -An -tx1 | tr -d ' \n')" != 0a ]
-}
-
-marker_matches_dockerfile() { # file
-  [ "$(cat "$1")" = "$(sed -n 's/^ARG CATALOG_BASE=//p' docker/Dockerfile)" ]
-}
-
 scan_logged() { # pattern
   grep -q "$1" "$TMP/scan.log"
 }
@@ -121,20 +113,13 @@ export_image "$DB" "$EXP_DB" "$TMP/db.list" \
   && report 'export db image' ok || report 'export db image' fail
 
 for name in index.json fingerprints.json paths.json probes.json \
-    .vulners-catalog-source local-catalog.json product-aliases.json \
+    local-catalog.json product-aliases.json \
     vendor-aliases.json platform-families.json product-cpe.json; do
   check "nodb has data/$name" in_list "$TMP/nodb.list" "$name"
   check "db has data/$name" in_list "$TMP/db.list" "$name"
 done
 check 'nodb has no data/cve.db' not_in_list "$TMP/nodb.list" cve.db
 check 'db has data/cve.db' in_list "$TMP/db.list" cve.db
-
-docker cp "$EXP_DB:/CVEScannerV2/data/.vulners-catalog-source" \
-  "$TMP/marker" >/dev/null 2>&1
-check 'catalogue marker has no trailing newline' \
-  marker_has_no_newline "$TMP/marker"
-check 'catalogue marker equals CATALOG_BASE' \
-  marker_matches_dockerfile "$TMP/marker"
 
 echo '### cve.db'
 docker cp "$EXP_DB:/CVEScannerV2/data/cve.db" "$TMP/cve.db" >/dev/null 2>&1

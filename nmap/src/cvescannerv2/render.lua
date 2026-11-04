@@ -1,7 +1,9 @@
--- Text output of the NSE script.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Text output of the NSE script.  (Layer L6)
 --
 -- Builds the lines printed for one service and the CVE rows inside them.
--- Pure formatting: nothing here touches the shared state.
+-- No I/O (no network, file or SQL) and no access to state or config:
+-- it only formats the values it receives.
 
 local util = require 'cvescannerv2.util'
 local confidence = require 'cvescannerv2.confidence'
@@ -15,7 +17,6 @@ local M = {}
 local WARNING_TEXT = {
   distro_backport = 'CVEs pueden estar parcheadas por backport',
 }
-M.WARNING_TEXT = WARNING_TEXT
 
 -- One CVE row of the service table, with the columns of the table header.
 function M.cve_row(id, level, cvssv2, cvssv3, exploitdb, metasploit)

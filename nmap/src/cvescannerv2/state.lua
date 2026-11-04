@@ -1,6 +1,9 @@
--- Shared state for the cvescannerv2 NSE script.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Shared state for the cvescannerv2 NSE script.  (Layer L0)
+--
 -- This module is the only place where data is shared between script threads.
 -- It replaces nmap.registry[SCRIPT_NAME]. The module table is the state.
+-- No I/O and no config reads. Other modules read and write its fields.
 
 local M = {}
 
@@ -17,13 +20,12 @@ local function defaults()
     host_os_probe = {},
     catalog = { fingerprints = {}, paths = {}, probes = {} },
     catalog_loaded = false,
-    legacy_catalog = false,
     probes = {},
     status = true,
   }
 end
 
--- Reset the state to its initial values. Functions are kept.
+--- Reset the state to its initial values. Functions are kept.
 function M.reset()
   for key, value in pairs(M) do
     if type(value) ~= 'function' then M[key] = nil end

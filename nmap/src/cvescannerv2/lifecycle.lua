@@ -1,7 +1,12 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Script lifecycle of the cvescannerv2 NSE script: the rules that decide
--- whether it runs and the actions Nmap calls before, per host, per port and
--- after the scan.
+-- Script lifecycle of the cvescannerv2 NSE script.  (Layer L9)
+--
+-- Decides whether the script runs (prerule, hostrule, portrule, postrule)
+-- and runs the pre, host, port and post actions. Opens and closes the
+-- database and the log, writes the JSON report, and loads catalogue data
+-- from data files (store.load_catalog, aliases, CPE overrides, local
+-- catalogue). Reads config; writes status, time, cache, json_out and
+-- the alias and CPE tables in state.
 
 local datetime = require 'datetime'
 local stdnse = require 'stdnse'
@@ -51,11 +56,9 @@ local function required_files()
         product_cpe_arg))
     end
     state.platform_families = store.load_platform_families()
-    if config.http == '1' and config.catalog ~= 'none' then
-      if not store.load_catalog() and not refdata.load_legacy_catalog() then
-        stdnse.verbose(1,
-          'HTTP catalogue unavailable; continuing with Nmap CPEs.')
-      end
+    if not store.load_catalog() then
+      stdnse.verbose(1,
+        'Vulners catalogue unavailable; continuing with Nmap CPEs.')
     end
     store.load_local_catalog(config.local_catalog)
   end
@@ -63,6 +66,7 @@ local function required_files()
 end
 
 
+--- Load the data files and return whether the script runs.
 function M.prerule()
   local req = required_files()
   if req ~= "" then
@@ -73,11 +77,13 @@ function M.prerule()
 end
 
 
+--- Return whether the script runs against a host.
 function M.hostrule(_)
   return state.status
 end
 
 
+--- Return whether the script runs against a port.
 function M.portrule(_, port)
   return state.status and
       port.service ~= 'tcpwrapped' and
@@ -85,12 +91,13 @@ function M.portrule(_, port)
 end
 
 
+--- Return whether the script runs its post actions.
 function M.postrule()
   return state.status
 end
 
 
--- Open the database and the log, and reset the per-run state.
+--- Open the database and the log, and reset the per-run state.
 function M.preaction(script_version)
   db.open(config.db)
   log.open(config.log)
@@ -104,12 +111,13 @@ function M.preaction(script_version)
 end
 
 
+--- Create the report entry for one host.
 function M.hostaction(host)
   report.ensure_host(host.ip)
 end
 
 
--- Collect and analyse the matches of one port; return the vulnerabilities.
+--- Collect and analyse the matches of one port; return the vulnerabilities.
 function M.portaction(host, port)
   report.ensure_host(host.ip)
   local matches = collect.port(host, port)
@@ -125,7 +133,7 @@ function M.portaction(host, port)
 end
 
 
--- Close the database and the log, and write the JSON report.
+--- Close the database and the log, and write the JSON report.
 function M.postaction()
   local closed, close_err = db.close()
   if not closed then

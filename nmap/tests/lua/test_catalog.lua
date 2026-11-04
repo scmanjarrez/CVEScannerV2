@@ -257,15 +257,6 @@ t.case('targeted probe runs without any version', function()
   t.eq(matches.size, 1)
 end)
 
-t.case('legacy regex files extract versions from headers', function()
-  local scanner = t.load_scanner()
-  scanner.registry.regex = { header = { apache = {
-    cpe = 'cpe:/a:apache:http_server', regex = 'Apache/([%d.]+)' } } }
-  local matches = new_matches()
-  scanner.regex_match('Server: Apache/2.2.8 (Ubuntu)', 'header', matches)
-  t.truthy(matches.data.http['cpe:/a:apache:http_server']['2.2.8'])
-end)
-
 t.suite('smb samba probe')
 
 local samba_port = { number = 445, service = 'microsoft-ds',
@@ -310,21 +301,6 @@ t.case('smb probe error falls back to nmap cpe', function()
     matches.data.smb = {}
     scanner.add_nmap_matches({ ip = '10.0.0.2' }, samba_port, matches)
     t.keys_eq(matches.data.smb, {})
-    t.truthy(matches.data.nmap['cpe:/a:samba:samba']['3.X - 4.X'])
-  end)
-end)
-
-t.case('smb=0 never calls get_os', function()
-  local calls = 0
-  with_smb(function()
-    calls = calls + 1
-    return true, { lanmanager = 'Samba 3.0.20' }
-  end, function()
-    local scanner = t.load_scanner({ args = { smb = '0' } })
-    local matches = new_matches()
-    matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.0.3' }, samba_port, matches)
-    t.eq(calls, 0)
     t.truthy(matches.data.nmap['cpe:/a:samba:samba']['3.X - 4.X'])
   end)
 end)
@@ -415,13 +391,6 @@ t.case('probes csv list enables each named probe', function()
     t.eq(scanner.probe_enabled('smb'), true)
     t.eq(scanner.probe_enabled('irc'), true)
     t.eq(scanner.probe_enabled('http'), false)
-  end)
-end)
-
-t.case('smb=0 disables the smb probe even with probes=all', function()
-  with_smb(function() return true, {} end, function()
-    local scanner = t.load_scanner({ args = { probes = 'all', smb = '0' } })
-    t.eq(scanner.probe_enabled('smb'), false)
   end)
 end)
 
@@ -870,9 +839,9 @@ t.case('no smb port open means get_os is never called', function()
   end)
 end)
 
-t.case('probes=none, probes=smb and smb=0 skip the os probe', function()
+t.case('probes=none, probes=smb and probes=irc skip the os probe', function()
   for _, args in ipairs({
-    { probes = 'none' }, { probes = 'smb' }, { smb = '0' } }) do
+    { probes = 'none' }, { probes = 'smb' }, { probes = 'irc' } }) do
     local calls = 0
     with_smb(function()
       calls = calls + 1
@@ -1030,115 +999,9 @@ t.case('known os cache is shared across hosts', function()
   t.eq(second.vulnerabilities.info, 'cache')
 end)
 
-t.suite('http engine gating')
-
---- Scanner whose http stub records calls; the legacy path makes one GET.
-local function gated_scanner(opts)
-  local calls = {}
-  local function record(name)
-    return function()
-      table.insert(calls, name)
-      return {}
-    end
-  end
-  local scanner = t.load_scanner({ http = {
-    get = record('get'),
-    pipeline_add = record('pipeline_add'),
-    pipeline_go = record('pipeline_go'),
-  } })
-  scanner.registry.json_out = {}
-  scanner.registry.legacy_catalog = true
-  scanner.registry.path = { path = { 'probe' }, extension = { '' } }
-  scanner.stubs.shortport.http = function() return opts.http end
-  scanner.stubs.shortport.ssl = function() return opts.ssl end
-  return scanner, calls
-end
-
---- Run portaction on one port and return the recorded http calls.
-local function gate_calls(opts, number, service)
-  local scanner, calls = gated_scanner(opts)
-  local port = { number = number, protocol = 'tcp', service = service }
-  scanner.portaction({ ip = '10.0.3.1' }, port)
-  return calls
-end
-
-t.case('ms-wbt-server with tls skips the http engine', function()
-  local calls = gate_calls({ ssl = true, http = false }, 3389,
-    'ms-wbt-server')
-  t.eq(#calls, 0)
-end)
-
-t.case('https with tls enters the http engine', function()
-  local calls = gate_calls({ ssl = true, http = false }, 443, 'https')
-  t.truthy(#calls > 0, 'expected the http stub to be called')
-end)
-
-t.case('plain http enters the http engine', function()
-  local calls = gate_calls({ ssl = false, http = true }, 8080, 'http')
-  t.truthy(#calls > 0, 'expected the http stub to be called')
-end)
-
-t.case('upnp enters the http engine', function()
-  local calls = gate_calls({ ssl = false, http = false }, 1900, 'upnp')
-  t.truthy(#calls > 0, 'expected the http stub to be called')
-end)
-
-t.case('ssh with tls skips the http engine', function()
-  local calls = gate_calls({ ssl = true, http = false }, 22, 'ssh')
-  t.eq(#calls, 0)
-end)
-
 t.suite('http engine abort')
 
---- Scanner whose legacy http.get replies with the given sequence.
--- seq(n) returns the reply for the n-th GET; nil means no status.
-local function abort_legacy(seq, paths)
-  local calls = 0
-  local scanner = t.load_scanner({ http = {
-    get = function()
-      calls = calls + 1
-      return seq(calls)
-    end,
-  } })
-  scanner.registry.json_out = {}
-  scanner.registry.legacy_catalog = true
-  scanner.registry.path = { path = paths, extension = { '' } }
-  scanner.stubs.shortport.http = function() return true end
-  return scanner, function() return calls end
-end
-
-local function ten_paths()
-  local paths = {}
-  for i = 1, 10 do paths[i] = 'p' .. i end
-  return paths
-end
-
 local ABORT_PORT = { number = 8080, protocol = 'tcp', service = 'http' }
-
-t.case('legacy stops after five consecutive failures', function()
-  local scanner, calls = abort_legacy(function() return {} end,
-    ten_paths())
-  scanner.portaction({ ip = '10.4.0.1' }, ABORT_PORT)
-  t.eq(calls(), 5)
-end)
-
-t.case('legacy stops after failures that follow successes', function()
-  local scanner, calls = abort_legacy(function(n)
-    if n <= 3 then return { status = 200, rawheader = {}, rawbody = '' } end
-    return {}
-  end, ten_paths())
-  scanner.portaction({ ip = '10.4.0.2' }, ABORT_PORT)
-  t.eq(calls(), 8)
-end)
-
-t.case('legacy keeps going with intermittent failures', function()
-  local scanner, calls = abort_legacy(function(n)
-    if n % 2 == 1 then return {} end
-    return { status = 200, rawheader = {}, rawbody = '' }
-  end, ten_paths())
-  scanner.portaction({ ip = '10.4.0.3' }, ABORT_PORT)
-  t.eq(calls(), 10)
-end)
 
 --- Scanner whose catalogue sweep records pipeline_go calls.
 -- batches(n) returns the reply table for the n-th pipeline_go call.

@@ -25,20 +25,22 @@ match** through a confidence level and the reasons behind it.
 
 - [How it works](#how-it-works)
 - [Requirements](#requirements)
+- [Installation](#installation)
+  - [Local](#local)
+  - [Docker](#docker)
 - [Execution](#execution)
 - [Output](#output)
-- [Detection heuristics](#detection-heuristics)
+- [Detection pipeline](#detection-pipeline)
   - [Where the version comes from](#where-the-version-comes-from)
-  - [HTTP fingerprinting](#http-fingerprinting)
   - [Service probes](#service-probes)
+  - [HTTP fingerprinting](#http-fingerprinting)
   - [Operating system context](#operating-system-context)
   - [Version matching](#version-matching)
   - [Confidence levels](#confidence-levels)
+- [Project architecture](#project-architecture)
 - [Measured impact](#measured-impact)
 - [Limitations](#limitations)
 - [Troubleshooting](#troubleshooting)
-- [Docker container](#docker-container)
-- [Project architecture](#project-architecture)
 - [Query database](#query-database)
 - [Tests](#tests)
 - [Acknowledgements](#acknowledgements)
@@ -80,9 +82,9 @@ Run commands from the repository root. The scanner needs:
 - Nmap (the Docker images ship Nmap 7.97) and Lua 5.4 bindings for SQLite:
   `lua-sql-sqlite3` (Ubuntu) or `lua5.4-sql-sqlite3` (Alpine).
 - The CVE database at `data/cve.db` (default path).
-- Internet access on first use, only to download the HTTP fingerprint
-  catalogue (see [HTTP fingerprinting](#http-fingerprinting)). Scans work
-  offline afterwards.
+- The Vulners HTTP fingerprint catalogue in `data/` (optional, see
+  [HTTP fingerprinting](#http-fingerprinting)). The script never downloads
+  anything, so scans need no Internet access.
 
 The database and the downloaded catalogue are excluded from version control.
 Product and vendor aliases (`data/product-aliases.json`,
@@ -157,6 +159,93 @@ cd CVEScannerV2DB && sh build.sh
 
 </details>
 
+## Getting the HTTP catalogue
+
+The HTTP fingerprint catalogue (`index.json`, `fingerprints.json`, `paths.json`
+and `probes.json`) comes from
+[nmap-vulners](https://github.com/vulnersCom/nmap-vulners). Download it into
+`data/` with:
+
+```bash
+scripts/download-catalog.sh [-b BASE_URL] [-d DEST_DIR]
+```
+
+`-b` (or the `CATALOG_BASE` environment variable) selects a mirror and `-d`
+a different destination. Files are written only when all four download and
+parse correctly. Without the catalogue the script still uses Nmap CPEs and
+service probes (see [HTTP fingerprinting](#http-fingerprinting)). The Docker
+image already includes it.
+
+# Installation
+
+## Local
+
+> **Note**: copy `nmap/src/cvescannerv2.nse` **and** the `nmap/src/cvescannerv2/`
+> directory together into the same Nmap script directory. The script loads its
+> modules relative to its own path, with priority over older copies in
+> `nselib/`. A **symbolic link** to each keeps them in sync with the repository.
+> Data paths (`data/cve.db`, ...) are relative to the current working directory:
+> run the script from the repository root or pass absolute paths.
+>
+> - Linux and macOS: `/usr/local/share/nmap/scripts/`,
+>   `/usr/share/nmap/scripts/`, `/opt/local/share/nmap/scripts/`,
+>   `/usr/local/Cellar/nmap/<version>/share/nmap/scripts/`
+> - Windows: `C:\Program Files\Nmap\Scripts`, `%APPDATA%\nmap`
+
+## Docker
+
+The multi-stage Docker build publishes two `scratch` images. The `db` target
+contains the latest database built from the `CVEScannerV2DB` dump repository;
+the `nodb` target omits it. Both contain only Nmap, its runtime dependencies,
+the NSE script and the data files the scanner needs.
+
+- Database embedded: `scmanjarrez/cvescanner:db` or
+  `scmanjarrez/cvescanner:latest`
+- No database: `scmanjarrez/cvescanner:nodb`
+
+On a release, the workflow also publishes the Git tag for the database image
+and the same tag with `-nodb` appended for the lightweight image (for example
+`v4.0` and `v4.0-nodb`).
+
+```bash
+docker run -v /tmp/cvslogs:/tmp/cvslogs scmanjarrez/cvescanner:db \
+  --script-args log=/tmp/cvslogs/scan.log,json=/tmp/cvslogs/scan.json <TARGET>
+
+# The mounted data/ replaces the one in the image, so it must contain the
+# HTTP catalogue (scripts/download-catalog.sh) unless you only need CPEs.
+docker run -v "$PWD/data:/CVEScannerV2/data" \
+  -v /tmp/cvslogs:/tmp/cvslogs scmanjarrez/cvescanner:nodb \
+  --script-args log=/tmp/cvslogs/scan.log,json=/tmp/cvslogs/scan.json \
+  <TARGET>
+```
+
+Build either target locally with Docker Buildx:
+
+```bash
+docker buildx build --load --target nodb \
+  -t scmanjarrez/cvescanner:nodb .
+docker buildx build --load --target db \
+  --build-arg DATABASE_REFRESH="$(date +%s)" \
+  -t scmanjarrez/cvescanner:db .
+```
+
+The HTTP catalogue is downloaded at build time by the `catalog-fetcher` stage
+from the `CATALOG_BASE` build argument (default: the nmap-vulners catalog
+branch). Pass `--build-arg CATALOG_BASE=<mirror>/` to use a mirror.
+
+Nmap dependencies, the upstream database and scanner source assets are built
+in independent stages. APK downloads use a cache mount per architecture, and
+`COPY --link` keeps the large runtime and database layers reusable when only
+the NSE script, aliases or license change. The build context includes only the
+scanner runtime assets; local databases, virtual environments, results and API
+keys are excluded.
+
+Keep `DATABASE_REFRESH` unchanged to reuse the database build; change it to
+fetch a new upstream snapshot (the release workflow does this automatically).
+BuildKit is required for the cache mounts and linked copies.
+
+> **Note**: your logs are in the `/tmp/cvslogs` directory.
+
 # Execution
 
 ```bash
@@ -176,20 +265,23 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 |---|---|---|
 | `db` | `data/cve.db` | CVE database location. |
 | `maxcve` | `10` | Maximum number of CVEs printed per service on screen. |
-| `minconf` | `low` | Minimum confidence shown in the table and the log (`low`, `medium`, `high`). The JSON report always keeps every CVE. |
+| `maxredirect` | `1` | Maximum number of HTTP redirections followed. |
+| `sweep` | `0` | Request every catalogue path on HTTP ports (slow). Values: `0`, `1`. |
 | `log` | `cvescannerv2.log` | Log file (includes every exploit and Metasploit module found). |
 | `json` | `cvescannerv2.json` | JSON report. |
+| `catalog` | `auto` | Vulners catalogue read from `data/` (`index.json`, `fingerprints.json`, `paths.json`, `probes.json`). The script never downloads it (see [Getting the HTTP catalogue](#getting-the-http-catalogue)). `none` disables HTTP fingerprinting and its HTTP probes. |
+| `local_catalog` | `data/local-catalog.json` | Local catalogue merged on top of the Vulners one. `none` disables it. |
+| `aliases`, `vendor_aliases` | `data/product-aliases.json`, `data/vendor-aliases.json` | Product and vendor alias files. |
+| `product_cpe` | `data/product-cpe.json` | Product to CPE overrides for Nmap products. `none` disables it. |
 | `service` | `all` | Restrict the scan to one product (for example `http_server`). |
 | `version` | `all` | Restrict the scan to one version. |
 | `probes` | `all` | Service probes to run: `all`, `none` or a comma-separated list (`smb`, `irc`, `smb_os`). |
-| `smb` | `1` | `0` disables the SMB probes (legacy switch, same as removing `smb` and `smb_os` from `probes`). |
-| `http` | `1` | `0` disables HTTP analysis. |
-| `maxredirect` | `1` | Maximum number of HTTP redirections followed. |
-| `sweep` | `0` | Enable the catalogue path sweep over HTTP ports (slow, asks every catalogue path). Default: `0` (disabled). Possible values: `0`, `1`. Transitional: it will be removed. |
-| `catalog` | `auto` | `none` disables the upstream HTTP fingerprint catalogue. |
-| `catalog_url` | `https://raw.githubusercontent.com/vulnersCom/nmap-vulners/catalog/` | Base URL of the catalogue (use it for a local mirror). |
-| `path`, `regex` | `data/http-paths-vulnerscom.json`, `data/http-regex-vulnerscom.json` | Legacy HTTP files, used only if the catalogue is unavailable. |
-| `aliases`, `vendor_aliases` | `data/product-aliases.json`, `data/vendor-aliases.json` | Product and vendor alias files. |
+| `minconf` | `low` | Minimum confidence shown in the table and the log (`low`, `medium`, `high`). The JSON report always keeps every CVE. |
+
+> **Changes in v4**: the arguments `smb`, `http`, `catalog_url`, `path` and
+> `regex` were removed. They are ignored silently, so an old command line still
+> runs, but it no longer has any effect. The script no longer downloads the
+> catalogue; use `scripts/download-catalog.sh` instead.
 
 <details>
 <summary><b>Examples</b></summary>
@@ -204,30 +296,20 @@ nmap -sV --script cvescannerv2 --script-args service=http_server,version=2.4.57 
 # Show only medium and high confidence results in the table and the log
 nmap -sV --script cvescannerv2 --script-args minconf=medium <TARGET>
 
-# Pure Nmap evidence: no service probes, no HTTP analysis
-nmap -sV --script cvescannerv2 --script-args probes=none,http=0 <TARGET>
+# Pure Nmap evidence: no service probes
+nmap -sV --script cvescannerv2 --script-args probes=none <TARGET>
 
 # Only some probes
-nmap -sV --script cvescannerv2 --script-args probes=irc,smb <TARGET>
+nmap -sV --script cvescannerv2 --script-args probes=irc <TARGET>
 
-# Disable the remote/legacy HTTP fingerprint catalogues, or use a mirror
+# Disable the HTTP catalogue (no HTTP fingerprints, no HTTP probes)
 nmap -sV --script cvescannerv2 --script-args catalog=none <TARGET>
-nmap -sV --script cvescannerv2 --script-args catalog_url=http://127.0.0.1:8000/ <TARGET>
+
+# Also request every catalogue path on HTTP ports (slow)
+nmap -sV --script cvescannerv2 --script-args sweep=1 <TARGET>
 ```
 
 </details>
-
-> **Note**: copy `nmap/src/cvescannerv2.nse` **and** the `nmap/src/cvescannerv2/`
-> directory together into the same Nmap script directory. The script loads its
-> modules relative to its own path, with priority over older copies in
-> `nselib/`. A **symbolic link** to each keeps them in sync with the repository.
-> Data paths (`data/cve.db`, ...) are relative to the current working directory:
-> run the script from the repository root or pass absolute paths.
->
-> - Linux and macOS: `/usr/local/share/nmap/scripts/`,
->   `/usr/share/nmap/scripts/`, `/opt/local/share/nmap/scripts/`,
->   `/usr/local/Cellar/nmap/<version>/share/nmap/scripts/`
-> - Windows: `C:\Program Files\Nmap\Scripts`, `%APPDATA%\nmap`
 
 # Output
 
@@ -352,10 +434,13 @@ CVEs per confidence level), and per CVE, `confidence` and `reasons`.
 
 </details>
 
-# Detection heuristics
+<a id="detection-heuristics"></a>
+# Detection pipeline
 
 This section explains every decision the script makes between Nmap's output and
 the final list, so you can judge how much to trust a result.
+
+*Nmap CPE → product-cpe/aliases → service probes → banner fingerprints → HTTP catalogue (targeted probes; sweep opt-in) → version matching → OS/platform context → confidence.*
 
 ## Where the version comes from
 
@@ -373,31 +458,6 @@ origin of that version in `version_source`:
 When a probe returns a precise version for the port's product it **replaces**
 the Nmap version; it is not added as a second candidate.
 
-## HTTP fingerprinting
-
-Used only on ports that Nmap's `shortport` library classifies as HTTP, SSL or
-UPnP, **and** whose detected service can actually speak HTTP.
-
-- On first use the script downloads `index.json`, `fingerprints.json`,
-  `paths.json` and `probes.json` from the upstream
-  [nmap-vulners](https://github.com/vulnersCom/nmap-vulners) catalogue and
-  caches them in `data/`. Later runs reuse them (delete the four files and
-  `data/.vulners-catalog-source` to download them again). If the catalogue
-  cannot be fetched, the legacy JSON files are used when present; Nmap CPE
-  detection works without either source.
-- It checks the responses of the catalogue paths: headers, body, title, meta
-  tags, script sources and cookies, plus Nmap's own service fingerprints.
-  Requests are pipelined in batches paced according to Nmap's timing template.
-- A **targeted probe** (for example a changelog page) runs only after its
-  product detector matched and no precise version was found.
-- **Non-HTTP services are excluded.** Services such as `ms-wbt-server` (RDP),
-  `ssh`, `mysql` or `microsoft-ds` never enter the HTTP engine, even when they
-  use TLS. Before this rule an RDP port could keep the scan busy
-  indefinitely.
-- **Abort on silence.** If a port stops answering HTTP, the engine gives up
-  after five consecutive failed requests (legacy mode) or when a whole request
-  batch returns no response (catalogue mode), instead of trying every path.
-
 ## Service probes
 
 When Nmap cannot give a precise version (empty, a `x.y` series or a range such
@@ -406,7 +466,8 @@ be cheap and safe:
 
 - **Targeted, never blind.** A probe runs only if Nmap already identified the
   matching service **and** product on that port. A port number alone never
-  triggers a probe, and there are no sweeps.
+  triggers a probe. Service probes never sweep; the HTTP path sweep is opt-in
+  with `sweep=1`.
 - **Only when needed.** A probe never runs if Nmap already reported a precise
   version.
 - **Read-only.** No credentials, no writes, no exploit payloads.
@@ -457,6 +518,31 @@ Candidates that were evaluated against lab targets and **discarded** because
 `nmap -sV` already gives the same information, or because no target exposed
 them: `ftp-syst`, `ajp-headers`, NTLM probes (`rdp-ntlm-info`,
 `http-ntlm-info`), `snmp-sysdescr` and `mysql-info`.
+
+## HTTP fingerprinting
+
+Used only on ports that Nmap's `shortport` library classifies as HTTP, SSL or
+UPnP, **and** whose detected service can actually speak HTTP.
+
+- The script reads the [nmap-vulners](https://github.com/vulnersCom/nmap-vulners)
+  catalogue (`index.json`, `fingerprints.json`, `paths.json` and `probes.json`)
+  from `data/`. It never downloads it; fetch it with
+  [`scripts/download-catalog.sh`](#getting-the-http-catalogue). If the files are
+  missing, the script logs that the catalogue was not found and continues with
+  Nmap CPEs and service probes only.
+- It checks the responses of the catalogue paths: headers, body, title, meta
+  tags, script sources and cookies, plus Nmap's own service fingerprints.
+  Requests are pipelined in batches paced according to Nmap's timing template.
+- A **targeted probe** (for example a changelog page) runs only after its
+  product detector matched and no precise version was found.
+- **Non-HTTP services are excluded.** Services such as `ms-wbt-server` (RDP),
+  `ssh`, `mysql` or `microsoft-ds` never enter the HTTP engine, even when they
+  use TLS. Before this rule an RDP port could keep the scan busy
+  indefinitely.
+- **Sweep is opt-in.** The catalogue path sweep runs only with `sweep=1`
+  because it is slow. Targeted probes run by default.
+- **Abort on silence.** If a port stops answering HTTP, the sweep gives up when
+  a whole request batch returns no response, instead of trying every path.
 
 ## Operating system context
 
@@ -542,6 +628,61 @@ Each CVE receives the **lowest** level among the reasons that produced it.
 Use `minconf=medium` or `minconf=high` to focus the table and the log on the
 most reliable results.
 
+# Project architecture
+
+The repository has two runtime components:
+
+- `nmap/src/cvescannerv2.nse` is the entrypoint. It scans discovered services
+  and reads CVE data from SQLite. Its logic lives in the Lua modules under
+  `nmap/src/cvescannerv2/`.
+- `db-manager/` is a Python package that updates and queries that database.
+
+The NSE modules form layers. Each layer number is listed below.
+
+| Module | Layer | Responsibility |
+|--------|-------|----------------|
+| `util` | L0 | Pure string and file helpers. |
+| `state` | L0 | Shared state, the only place where data is shared between threads. |
+| `config` | L0 | Reads and normalizes every script argument. |
+| `cpe` | L0 | Pure CPE 2.2 and 2.3 string parser. |
+| `version` | L1 | Version parsing and comparison. |
+| `matches` | L2 | Records detected versions and prunes series entries. |
+| `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
+| `refdata` | L2 | Loads and validates the reference data files. |
+| `db` | L2 | SQLite access. |
+| `log` | L2 | Log file helpers. |
+| `report` | L2 | JSON report helpers. |
+| `catalog.store` | L3 | Vulners catalogue loading from `data/` and the local catalogue overlay. |
+| `fingerprint` | L3 | Fingerprint matching against catalogue rules and response text. |
+| `oscontext` | L3 | Operating system context from Nmap and catalogue data. |
+| `probes.smb` | L3 | SMB version and OS probes. |
+| `probes.irc` | L3 | UnrealIRCd version probe. |
+| `probes.ntp` | L3 | ntpd version probe (readvar). |
+| `probes.upnp` | L3 | miniupnpd version probe (SSDP). |
+| `httpscan` | L4 | HTTP fingerprint engine: targeted probes and opt-in catalogue sweep. |
+| `probes.cups` | L4 | CUPS version probe from the GET / page title. |
+| `probes.init` | L5 | Probe list, selection and dispatch with a per-key cache. |
+| `scope` | L5 | Scope matching of NVD rows against the observed version. |
+| `platform` | L5 | OS platform compatibility of CVE configurations. |
+| `confidence` | L5 | Confidence levels and ordering of CVE rows. |
+| `collect` | L6 | Match collection for one port. |
+| `render` | L6 | Text output lines for one service. |
+| `vulns` | L7 | Vulnerability lookup for one service and JSON report entries. |
+| `analysis` | L8 | Analysis of the matches of one port. |
+| `lifecycle` | L9 | Rules that decide whether the script runs and the Nmap script actions. |
+
+A module only imports modules from strictly lower layers. The rule is checked by
+`nmap/tests/lua/test_architecture.lua`.
+
+To add a service probe, create a new file under `nmap/src/cvescannerv2/probes/`
+that returns a probe table, then register it in `probes/init`: add a `require`
+line and an entry in the `SERVICE_PROBES` list.
+
+The database package separates command-line and Textual interfaces,
+application workflows, domain data and CPE parsing, and infrastructure
+adapters for NVD, Metasploit, Exploit-DB, HTTP and SQLite. See the
+[`db-manager` guide](db-manager/README.md) for its architecture and workflows.
+
 # Measured impact
 
 Measured on the Metasploitable lab targets with `probes=none` (Nmap evidence
@@ -590,6 +731,13 @@ upstream service before running the update again. The NVD synchronisation
 timestamp is saved after the update completes, so a failed run can retry the
 same window.
 
+## Missing catalogue
+If the scan logs `Vulners catalogue not found in data/` (run with `-d` or
+verbose output to see it), the HTTP catalogue files are missing. Run
+`scripts/download-catalog.sh` from the repository root, or pass `-d` with the
+directory the scanner reads. Until then, the scan uses Nmap CPEs and service
+probes only; HTTP fingerprints are not evaluated.
+
 ## Missing luasql
 > cvescannerv2.nse: module 'luasql.sqlite3' not found:<br>
 > NSE failed to find nselib/luasql/sqlite3.lua in search paths.<br>
@@ -617,109 +765,6 @@ ln -s /usr/lib/lua /usr/local/lib/lua
   kept. Run with `-d` to see the probe messages.
 - Probes only run when Nmap identified the service and product. If Nmap shows
   `irc?` or an empty product, no probe is attempted.
-
-# Docker container
-
-The multi-stage Docker build publishes two `scratch` images. The `db` target
-contains the latest database built from the `CVEScannerV2DB` dump repository;
-the `nodb` target omits it. Both contain only Nmap, its runtime dependencies,
-the NSE script and the data files the scanner needs.
-
-- Database embedded: `scmanjarrez/cvescanner:db` or
-  `scmanjarrez/cvescanner:latest`
-- No database: `scmanjarrez/cvescanner:nodb`
-
-On a release, the workflow also publishes the Git tag for the database image
-and the same tag with `-nodb` appended for the lightweight image (for example
-`v4.0` and `v4.0-nodb`).
-
-```bash
-docker run -v /tmp/cvslogs:/tmp/cvslogs scmanjarrez/cvescanner:db \
-  --script-args log=/tmp/cvslogs/scan.log,json=/tmp/cvslogs/scan.json <TARGET>
-
-docker run -v "$PWD/data:/CVEScannerV2/data" \
-  -v /tmp/cvslogs:/tmp/cvslogs scmanjarrez/cvescanner:nodb \
-  --script-args log=/tmp/cvslogs/scan.log,json=/tmp/cvslogs/scan.json \
-  <TARGET>
-```
-
-Build either target locally with Docker Buildx:
-
-```bash
-docker buildx build --load --target nodb \
-  -t scmanjarrez/cvescanner:nodb .
-docker buildx build --load --target db \
-  --build-arg DATABASE_REFRESH="$(date +%s)" \
-  -t scmanjarrez/cvescanner:db .
-```
-
-Nmap dependencies, the upstream database and scanner source assets are built
-in independent stages. APK downloads use a cache mount per architecture, and
-`COPY --link` keeps the large runtime and database layers reusable when only
-the NSE script, aliases or license change. The build context includes only the
-scanner runtime assets; local databases, virtual environments, results and API
-keys are excluded.
-
-Keep `DATABASE_REFRESH` unchanged to reuse the database build; change it to
-fetch a new upstream snapshot (the release workflow does this automatically).
-BuildKit is required for the cache mounts and linked copies.
-
-> **Note**: your logs are in the `/tmp/cvslogs` directory.
-
-# Project architecture
-
-The repository has two runtime components:
-
-- `nmap/src/cvescannerv2.nse` is the entrypoint. It scans discovered services
-  and reads CVE data from SQLite. Its logic lives in the Lua modules under
-  `nmap/src/cvescannerv2/`.
-- `db-manager/` is a Python package that updates and queries that database.
-
-The NSE modules form layers. Each layer number is listed below.
-
-| Module | Layer | Responsibility |
-|--------|-------|----------------|
-| `util` | L0 | Pure string and file helpers. |
-| `state` | L0 | Shared state, the only place where data is shared between threads. |
-| `config` | L0 | Reads and normalizes every script argument. |
-| `cpe` | L0 | Pure CPE 2.2 and 2.3 string parser. |
-| `version` | L1 | Version parsing and comparison. |
-| `matches` | L2 | Records detected versions and prunes series entries. |
-| `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
-| `refdata` | L2 | Loads and validates the reference data files. |
-| `db` | L2 | SQLite access. |
-| `log` | L2 | Log file helpers. |
-| `report` | L2 | JSON report helpers. |
-| `catalog.store` | L3 | Upstream and local catalogue loading with the on-disk cache. |
-| `fingerprint` | L3 | Fingerprint matching against catalogue rules and response text. |
-| `oscontext` | L3 | Operating system context from Nmap and catalogue data. |
-| `probes.smb` | L3 | SMB version and OS probes. |
-| `probes.irc` | L3 | UnrealIRCd version probe. |
-| `probes.ntp` | L3 | ntpd version probe (readvar). |
-| `probes.upnp` | L3 | miniupnpd version probe (SSDP). |
-| `httpscan` | L4 | HTTP fingerprint engine: catalogue sweep and targeted probes. |
-| `probes.cups` | L4 | CUPS version probe from the GET / page title. |
-| `probes.init` | L5 | Probe list, selection and dispatch with a per-key cache. |
-| `scope` | L5 | Scope matching of NVD rows against the observed version. |
-| `platform` | L5 | OS platform compatibility of CVE configurations. |
-| `confidence` | L5 | Confidence levels and ordering of CVE rows. |
-| `collect` | L6 | Match collection for one port. |
-| `render` | L6 | Text output lines for one service. |
-| `vulns` | L7 | Vulnerability lookup for one service and JSON report entries. |
-| `analysis` | L8 | Analysis of the matches of one port. |
-| `lifecycle` | L9 | Rules that decide whether the script runs and the Nmap script actions. |
-
-A module only imports modules from strictly lower layers. The rule is checked by
-`nmap/tests/lua/test_architecture.lua`.
-
-To add a service probe, create a new file under `nmap/src/cvescannerv2/probes/`
-that returns a probe table, then register it in `probes/init`: add a `require`
-line and an entry in the `SERVICE_PROBES` list.
-
-The database package separates command-line and Textual interfaces,
-application workflows, domain data and CPE parsing, and infrastructure
-adapters for NVD, Metasploit, Exploit-DB, HTTP and SQLite. See the
-[`db-manager` guide](db-manager/README.md) for its architecture and workflows.
 
 # Query database
 

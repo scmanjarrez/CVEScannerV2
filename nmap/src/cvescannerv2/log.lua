@@ -1,5 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Log file helpers for the cvescannerv2 NSE script.
+-- Log file helpers for the cvescannerv2 NSE script.  (Layer L2)
+--
+-- Appends to the log file opened in state.logger (io.open, append mode)
+-- and prints run details through stdnse. Reads state.time and formats
+-- versions with cvescannerv2.version. Does no network I/O and does not
+-- read config.
 
 local M = {}
 
@@ -12,14 +17,14 @@ local correct_version = require('cvescannerv2.version').correct_version
 local fmt = util.fmt
 
 
--- Open the log file in append mode and keep it in the shared state.
+--- Open the log file in append mode and keep it in the shared state.
 local function open(path)
   state.logger = io.open(path, 'a')
 end
 M.open = open
 
 
--- Write a final newline and close the log file kept in the shared state.
+--- Write a final newline and close the log file kept in the shared state.
 local function close()
   state.logger:write("\n")
   state.logger:close()
@@ -27,7 +32,7 @@ end
 M.close = close
 
 
--- Write the run timestamp to the log and print the run details.
+--- Write the run timestamp to the log and print the run details.
 local function timestamp(script_version)
   state.logger:write(fmt("## %s\n", state.time))
   stdnse.verbose(1, fmt("Timestamp: %s", state.time))
@@ -37,18 +42,21 @@ end
 M.timestamp = timestamp
 
 
+--- Write a formatted line to the log file.
 local function log(msg, ...)
   state.logger:write(fmt(msg .. "\n", ...))
 end
 M.log = log
 
 
+--- Write a dashed separator line to the log file.
 local function log_separator()
   log(string.rep("-", 49))
 end
 M.log_separator = log_separator
 
 
+--- Write the host, port and product details of one match to the log.
 local function log_info(host, port, cpe, vendor, product, info)
   local _ip = host.ip
   local _port = port.number

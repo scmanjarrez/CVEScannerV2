@@ -1,11 +1,11 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Match collection for one port of the cvescannerv2 NSE script.
-
+-- Match collection for one port of the cvescannerv2 NSE script.  (Layer L6)
+--
 -- Gathers the matches of a port from the Nmap version, the version probes,
 -- the banner and the HTTP fingerprint engine. The analysis of the matches
--- stays in the entrypoint.
+-- stays in the entrypoint. No direct I/O: the probes and HTTP requests live
+-- in 'probes' and 'httpscan'. Reads 'state.product_cpe'.
 
-local config = require 'cvescannerv2.config'
 local cpe = require 'cvescannerv2.cpe'
 local fingerprint = require 'cvescannerv2.fingerprint'
 local httpscan = require 'cvescannerv2.httpscan'
@@ -72,8 +72,8 @@ M.add_nmap_matches = add_nmap_matches
 
 
 --- Return the matches recorded for one port.
--- The Nmap version comes first, then the banner and, when enabled, the
--- HTTP fingerprint engine.
+-- The Nmap version comes first, then the banner and the HTTP fingerprint
+-- engine.
 function M.port(host, port)
   local matches = M.new_matches()
   local triggered = {}
@@ -81,7 +81,7 @@ function M.port(host, port)
     add_nmap_matches(host, port, matches)
   end
   match_banner(port, matches, triggered)
-  if config.http == '1' and use_http_engine(host, port) then
+  if use_http_engine(host, port) then
     http_match(host, port, matches, triggered)
   end
   return matches

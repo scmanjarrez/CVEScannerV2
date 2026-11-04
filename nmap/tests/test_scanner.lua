@@ -54,7 +54,7 @@ local function run_case(limit, redirect_status, fail_redirect)
   nmap.registry = {}
   fresh_modules()
   local scanner = assert(load(source .. [[
-    return { sweep = sweep_catalog, registry = registry }
+    return { sweep = require 'cvescannerv2.httpscan'.sweep_catalog, registry = require 'cvescannerv2.state' }
   ]]))()
   local registry = scanner.registry
   local alias = 'cpe:/a:example:widget'
@@ -111,48 +111,97 @@ run_case(2, 200, false)
 run_case(2, 302, true)
 print('HTTP redirects: 8 cases passed')
 
--- NSE's lfs has mkdir/dir but no attributes method. Verify both cache paths
--- without replacing it with the incompatible desktop LuaFileSystem API.
+-- The store reads data/ only. io.open is stubbed so the real data/ directory
+-- is never touched and nothing is written.
 fresh_modules()
 assert(load(source .. [[
   return {}
 ]]))()
 local store = require 'cvescannerv2.catalog.store'
-local cache = {
-  read = store.read_catalog_json,
-  ensure_dir = store.ensure_catalog_cache_dir
-}
-modules.lfs.mkdir = function() return true end
-assert(cache.ensure_dir(), 'Create the cache directory when missing')
-modules.lfs.mkdir = function() return false end
-modules.lfs.dir = function() return function() return nil end end
-assert(cache.ensure_dir(), 'Accept an existing cache directory')
-modules.lfs.dir = function() error('Not a directory') end
-assert(not cache.ensure_dir(), 'Reject a regular file at the cache path')
-
+local state = require 'cvescannerv2.state'
+local MAX_BYTES = 8 * 1024 * 1024
 local original_open = io.open
+local original_parse = modules.json.parse
+local files = {}
+local parsed = {}
+local opened = {}
 local closed = false
-local body = '{}'
-io.open = function()
+io.open = function(path, mode)
+  table.insert(opened, {path = path, mode = mode})
+  local body = files[path]
+  if body == nil then return nil end
   return {
     read = function(_, size)
-      assert(size == 8 * 1024 * 1024 + 1, 'Bound cache reads')
+      assert(size == MAX_BYTES + 1, 'Bound cache reads')
       return body
     end,
     close = function() closed = true end
   }
 end
-modules.json.parse = function() return true, {} end
-assert(type(cache.read('index.json')) == 'table', 'Read a cached catalogue')
+modules.json.parse = function(body)
+  if parsed[body] == nil then return false end
+  return true, parsed[body]
+end
+
+files['data/index.json'] = '{}'
+parsed['{}'] = {}
+assert(type(store.read_catalog_json('index.json')) == 'table',
+  'Read a cached catalogue')
 assert(closed, 'Close the cache file')
-body = string.rep('x', 8 * 1024 * 1024 + 1)
-assert(cache.read('index.json') == nil, 'Reject an oversized catalogue')
+files['data/index.json'] = string.rep('x', MAX_BYTES + 1)
+assert(store.read_catalog_json('index.json') == nil,
+  'Reject an oversized catalogue')
+files['data/bad.json'] = 'not json'
+assert(store.read_catalog_json('bad.json') == nil,
+  'Reject invalid JSON')
+assert(store.read_catalog_json('missing.json') == nil,
+  'Return nil for a missing catalogue')
+print('Catalogue cache: 4 cases passed')
+
+-- Case 3: an empty data/ loads nothing and creates nothing.
+files = {}
+opened = {}
+modules.lfs.mkdir = function() error('Do not create directories') end
+assert(store.load_catalog() == false, 'Report no catalogue in empty data/')
+assert(state.catalog_loaded == false, 'Keep the catalogue unloaded')
+for _, call in ipairs(opened) do
+  assert(call.mode == 'rb', 'Open catalogue files read-only')
+end
+
+-- Case 4: the four minimal valid files load into the state.
+local index_body = 'index'
+local rules_body = 'fingerprints'
+local paths_body = 'paths'
+local probes_body = 'probes'
+parsed[index_body] = {schema = 1, catalogs = {
+  fingerprints = {file = 'fingerprints.json'},
+  paths = {file = 'paths.json'},
+  probes = {file = 'probes.json'}
+}}
+parsed[rules_body] = {rules = {widget = {
+  alias = 'cpe:/a:example:widget',
+  channel = 'body',
+  regex = 'Widget ([%d%.]+)',
+  anchor = 'Widget'
+}}}
+parsed[paths_body] = {paths = {'/'}}
+parsed[probes_body] = {schema = 1, probes = {}}
+files = {
+  ['data/index.json'] = index_body,
+  ['data/fingerprints.json'] = rules_body,
+  ['data/paths.json'] = paths_body,
+  ['data/probes.json'] = probes_body
+}
+closed = false
+assert(store.load_catalog() == true, 'Load the minimal catalogue')
+assert(state.catalog_loaded == true, 'Mark the catalogue as loaded')
+
 io.open = original_open
-print('Catalogue cache: 5 cases passed')
+modules.json.parse = original_parse or function() return true, {} end
 
 fresh_modules()
 local scanner = assert(load(source .. [[
-  return { port = portaction, registry = registry }
+  return { port = portaction, registry = require 'cvescannerv2.state' }
 ]]))()
 modules.shortport.http = function() return false end
 modules.shortport.ssl = function() return false end

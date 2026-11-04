@@ -28,37 +28,12 @@ M.results = {
   failures = {}, xfailures = {}, xpasses = {}
 }
 
--- Names exported from the NSE chunk. Missing names resolve to nil, so this
--- list does not break when a helper is renamed or removed.
-local EXPORTS = {
-  'empty', 'fmtn', 'correct_version', 'valid_json', 'capture_count',
-  'valid_pattern', 'valid_alias', 'valid_channel', 'valid_path',
-  'validate_fingerprints', 'validate_paths', 'validate_probes',
-  'build_catalog', 'add_cpe_version', 'split_cpe', 'add_cpe_aliases',
-  'find_version', 'regex_match', 'add_subject', 'html_attribute',
-  'response_subjects', 'response_is_usable', 'safe_version',
-  'pattern_match', 'anchor_matches', 'anchored_capture',
-  'match_fingerprint_rule', 'pattern_found', 'probe_detects',
-  'match_subjects', 'match_banner', 'cpe_has_version', 'probe_version',
-  'run_targeted_probes', 'sweep_catalog', 'version_parser', 'cpe_parser',
-  'query', 'cvss_comparator', 'compare_version', 'default_version',
-  'scoped_multi_versions', 'scoped_versions', 'vulnerabilities',
-  'series_prefix', 'series_has_children', 'merge_series',
-  'analysis', 'registry', 'smb_version', 'add_nmap_matches',
-  'os_context', 'distro_backport', 'evaluate_platform',
-  'add_platform_reasons', 'confidence_of', 'SERVICE_PROBES',
-  'run_version_probe', 'probe_enabled'
-}
-
 local function read_source()
   local file = assert(io.open(nse_path, 'r'),
     'Run the tests from the repository root or set CVESCANNER_NSE')
   local source = file:read('*all')
   file:close()
   local parts = {}
-  for _, name in ipairs(EXPORTS) do
-    table.insert(parts, name .. ' = ' .. name)
-  end
   table.insert(parts, 'portaction = portaction')
   table.insert(parts, 'preaction = preaction')
   table.insert(parts, 'postaction = postaction')
@@ -146,6 +121,11 @@ function M.load_scanner(opts)
   local state = package.loaded['cvescannerv2.state']
   if state ~= nil and scanner.registry == nil then
     scanner.registry = state
+  end
+  -- Test-only alias: tests call scanner.registry.load_local_catalog(path).
+  if scanner.registry ~= nil and scanner.load_local_catalog ~= nil
+      and scanner.registry.load_local_catalog == nil then
+    scanner.registry.load_local_catalog = scanner.load_local_catalog
   end
 
   scanner.stubs = stubs

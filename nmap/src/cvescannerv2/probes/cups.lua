@@ -1,8 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- CUPS version probe for the cvescannerv2 NSE script.
-
+-- CUPS version probe for the cvescannerv2 NSE script.  (Layer L4)
+--
 -- Reads the title of the GET / page served by CUPS (IPP) to get the exact
 -- CUPS version. A 403 page (access denied) also carries the title.
+-- E/S: red (http.get a GET / del host). Lee config.options_for_target();
+-- no lee ni escribe state.
 
 local http = require 'http'
 local stdnse = require 'stdnse'
@@ -33,7 +35,6 @@ local function cups_probe(host, port)
   if version == nil then return nil end
   return { cpe = 'cpe:/a:apple:cups', version = version }
 end
-M.cups_probe = cups_probe
 
 --- The 'version' probe of the CUPS service, as used by the scanner.
 M.CUPS_PROBE = {

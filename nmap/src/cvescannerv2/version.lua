@@ -1,5 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Version parsing and comparison for the cvescannerv2 NSE script.
+-- Version parsing and comparison for the cvescannerv2 script.  (Layer L1)
+--
+-- Parses Nmap and CPE versions into info records and compares them.
+-- Pure computation: no network, file, database, state or config access.
 
 local M = {}
 
@@ -9,6 +12,7 @@ local split_cpe = require('cvescannerv2.cpe').split_cpe
 local empty = util.empty
 
 
+--- Return the version and update, or the range text for a range.
 local function correct_version(info)
   if not info.range then
     return info.ver, info.vup
@@ -18,12 +22,14 @@ local function correct_version(info)
 end
 
 
+--- Return whether the version is a series such as 2.4 or 2.x.
 local function is_series_version(version)
   return version:match('^%d+%.%d+$') ~= nil
     or version:match('%.[xX]$') ~= nil
     or version:match('%.%*$') ~= nil
 end
 
+--- Return whether the version is a single exact release.
 local function is_precise_version(version)
   return not is_series_version(version)
     and version:find('%s+%-%s+') == nil
@@ -140,6 +146,7 @@ local function numeric_info(version, cpe_update)
 end
 
 
+--- Return the product and the parsed info record for a version.
 local function version_parser(product, version, cpe_update)
   version = clean_version(version)
   if version == '-' then
@@ -172,6 +179,7 @@ local function prefer_version(cpe_version, nmap_version)
 end
 
 
+--- Return vendor, product, info and source for a CPE and a version.
 local function cpe_parser(cpe, version)
   local _, _, _, vendor, product, cpe_version, cpe_update = split_cpe(cpe)
   if not product then return nil, nil, nil end
@@ -196,6 +204,7 @@ local function split_version(str)
 end
 
 
+--- Return -1, 0 or 1 comparing two versions, or nil when not comparable.
 local function compare_version(version1, version2)
   if version1 == nil or version2 == nil then return nil end
   if version1 == version2 and (version1 == '-' or version1 == '*') then
@@ -257,6 +266,7 @@ local function compare_version(version1, version2)
 end
 
 
+--- Return the version, or the default when it is nil or empty.
 local function default_version(version, default)
   if version == nil or version == '' then
     return default
@@ -279,7 +289,7 @@ local function series_prefix(info)
 end
 
 
--- True when a range spans different major.minor series (3.X - 4.X).
+--- True when a range spans different major.minor series (3.X - 4.X).
 local function spans_series(from, to)
   local major_from, minor_from = (from or ''):match('^(%d+)%.?(%d*)')
   local major_to, minor_to = (to or ''):match('^(%d+)%.?(%d*)')
@@ -300,12 +310,8 @@ end
 M.correct_version = correct_version
 M.is_series_version = is_series_version
 M.is_precise_version = is_precise_version
-M.PRERELEASE_WORDS = PRERELEASE_WORDS
-M.strip_build_suffix = strip_build_suffix
 M.version_parser = version_parser
-M.prefer_version = prefer_version
 M.cpe_parser = cpe_parser
-M.split_version = split_version
 M.compare_version = compare_version
 M.default_version = default_version
 M.series_prefix = series_prefix

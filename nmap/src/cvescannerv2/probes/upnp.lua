@@ -1,8 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- UPnP version probe for the cvescannerv2 NSE script.
-
+-- UPnP version probe for the cvescannerv2 NSE script.  (Layer L3)
+--
 -- Sends an SSDP M-SEARCH to the UPnP port and reads the SERVER header to
--- get the miniupnpd version.
+-- get the miniupnpd version. Network I/O only (comm.exchange over UDP); no
+-- file, SQL, state or config access.
 
 local stdnse = require 'stdnse'
 local util = require 'cvescannerv2.util'
@@ -21,7 +22,6 @@ local function upnp_server_header(response)
   end
   return nil
 end
-M.upnp_server_header = upnp_server_header
 
 --- Return the miniupnpd CPE and version from the SSDP SERVER header.
 -- Return nil for other UPnP servers and for failed requests.
@@ -46,7 +46,6 @@ local function upnp_probe(host, port)
   if version == nil then return nil end
   return { cpe = 'cpe:/a:miniupnp_project:miniupnpd', version = version }
 end
-M.upnp_probe = upnp_probe
 
 --- The 'version' probe of the UPnP service, as used by the scanner.
 M.UPNP_PROBE = {

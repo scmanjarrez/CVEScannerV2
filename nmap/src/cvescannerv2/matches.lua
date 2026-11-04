@@ -1,7 +1,9 @@
--- Match recording and series pruning for detected CPE versions.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Match recording and series pruning for detected CPE versions. (Layer L2)
 --
 -- Stores detected versions in the shared matches table and removes
 -- series entries once a precise version is known for the same CPE.
+-- No network or file I/O. Reads state.aliases; does not touch config.
 
 local stdnse = require 'stdnse'
 local state = require 'cvescannerv2.state'
@@ -77,10 +79,13 @@ local function prune_series_versions(matches, cpe, version)
 end
 
 
+--- Records a version for a CPE; returns true if it was new.
 M.add_cpe_version = add_cpe_version
+--- Records the version under every alias of the CPE product.
 M.add_cpe_aliases = add_cpe_aliases
-M.cpe_has_version = cpe_has_version
+--- Returns true if the CPE has at least one precise version recorded.
 M.cpe_has_precise_version = cpe_has_precise_version
+--- Removes series versions of the CPE superseded by the given version.
 M.prune_series_versions = prune_series_versions
 
 return M

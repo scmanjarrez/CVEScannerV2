@@ -1,8 +1,11 @@
--- Vulnerability lookup for one service.
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Vulnerability lookup for one service. (Layer L7)
 --
 -- Finds the CVEs that affect a service, adds the platform reasons, sorts
--- them by confidence and stores each one in the JSON report. Returns the
--- output rows that the entrypoint prints for the service.
+-- them by confidence, stores them in the JSON report and returns the
+-- output rows for the entrypoint. I/O: SQL reads through db, log output
+-- and report writes; no network or files. Reads state.has_conditions,
+-- config.minconf and config.maxcve.
 
 local util = require 'cvescannerv2.util'
 local config = require 'cvescannerv2.config'
@@ -298,7 +301,6 @@ local function vulnerabilities(host, port, cpe, vendor, product, info, ctx)
 end
 
 
-M.dump_exploit = dump_exploit
 M.add_platform_reasons = add_platform_reasons
 M.vulnerabilities = vulnerabilities
 

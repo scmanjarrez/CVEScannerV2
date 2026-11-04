@@ -1,8 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- SMB version and OS probes for the cvescannerv2 NSE script.
-
+-- SMB version and OS probes for the cvescannerv2 NSE script.  (Layer L3)
+--
 -- Reads the SMB service with the Nmap smb library, once per host. The Samba
 -- version and the OS family found here feed the version and OS detection.
+-- I/O: network only (smb.get_os), no files or SQL. Reads and writes
+-- state.smb_info, cached per host; no config.
 
 local stdnse = require 'stdnse'
 local state = require 'cvescannerv2.state'
@@ -87,12 +89,7 @@ local SMB_OS_PROBE = {
   run = smb_os_probe,
 }
 
-M.SMB_PORTS = SMB_PORTS
-M.SMB_SERVICES = SMB_SERVICES
-M.smb_get_os = smb_get_os
-M.smb_probe = smb_probe
 M.SMB_PROBE = SMB_PROBE
-M.smb_os_probe = smb_os_probe
 M.SMB_OS_PROBE = SMB_OS_PROBE
 
 return M

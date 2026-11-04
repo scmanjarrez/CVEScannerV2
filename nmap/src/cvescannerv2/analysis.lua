@@ -1,8 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Analysis of the matches of one port for the cvescannerv2 NSE script.
-
+-- Analysis of the matches of one port for cvescannerv2.  (Layer L8)
+--
 -- Walks the matches of a port, looks up the vulnerabilities of each
 -- service through the cache and feeds the report, the render and the log.
+-- No direct network or file I/O. Reads config filters and reads and writes
+-- state.cache.
 
 local config = require 'cvescannerv2.config'
 local log_mod = require 'cvescannerv2.log'
@@ -177,7 +179,7 @@ local function analyze_match(host, port, ctx, origin, cpe, version_str,
 end
 
 
--- ctx: OS and distro context from os_context and distro_backport.
+--- Return the vulns of a port's matches; ctx has OS and distro data.
 local function analysis(host, port, matches, ctx)
   local vulns_out = {}
   local logged = {}
@@ -192,9 +194,9 @@ local function analysis(host, port, matches, ctx)
   return vulns_out
 end
 
+--- Return the vulns of a port's matches (see analysis).
 M.analysis = analysis
+--- Alias of analysis.
 M.run = analysis
-M.context_key = context_key
-M.service_cache_key = service_cache_key
 
 return M
