@@ -19,7 +19,7 @@ jobs:
       - name: Update CVEScannerV2 year
         run: |
           export year=$(date +"%Y")
-          perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md cvescannerv2.nse extra/database.py
+          perl -i -pe 's/(?<=\([cC]\)\s)(?<from>\d+)(-\d+)?/$+{from}-$ENV{"year"}/' README.md nmap/src/cvescannerv2.nse $(find nmap/src -name '*.lua') extra/database.py
           git add -u
           git commit -m "Copyright year update"
           git push

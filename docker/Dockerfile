@@ -80,7 +80,8 @@ COPY --link data/platform-families.json /CVEScannerV2/data/platform-families.jso
 COPY --link data/local-catalog.json /CVEScannerV2/data/local-catalog.json
 COPY --link data/product-cpe.json /CVEScannerV2/data/product-cpe.json
 COPY --link --from=catalog-fetcher /catalog/ /CVEScannerV2/data/
-COPY --link cvescannerv2.nse /usr/share/nmap/scripts/cvescannerv2.nse
+COPY --link nmap/src/cvescannerv2.nse /usr/share/nmap/scripts/cvescannerv2.nse
+COPY --link nmap/src/cvescannerv2/ /usr/share/nmap/scripts/cvescannerv2/
 
 FROM scratch AS runtime
 

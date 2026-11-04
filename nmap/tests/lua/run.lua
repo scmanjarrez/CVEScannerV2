@@ -1,21 +1,22 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 -- Run the Lua unit and integration suites from the repository root:
---   lua5.4 tests/lua/run.lua
+--   lua5.4 nmap/tests/lua/run.lua
 -- Environment:
 --   CVESCANNER_STRICT=1   fail when known bugs are still present (or fixed)
 --   CVESCANNER_FILTER=txt run only tests whose "suite :: name" contains txt
---   CVESCANNER_NSE=path   scanner script to test (default cvescannerv2.nse)
+--   CVESCANNER_NSE=path   scanner script to test (default nmap/src/cvescannerv2.nse)
 
-package.path = 'tests/lua/?.lua;' .. package.path
+package.path = 'nmap/tests/lua/?.lua;' .. package.path
 
 local t = require 'harness'
 
 local SUITES = {
-  'tests/lua/test_versions.lua',
-  'tests/lua/test_scoping.lua',
-  'tests/lua/test_catalog.lua',
-  'tests/lua/test_database.lua',
-  'tests/lua/test_docker.lua',
+  'nmap/tests/lua/test_versions.lua',
+  'nmap/tests/lua/test_scoping.lua',
+  'nmap/tests/lua/test_catalog.lua',
+  'nmap/tests/lua/test_database.lua',
+  'nmap/tests/lua/test_docker.lua',
+  'nmap/tests/lua/test_architecture.lua',
 }
 
 for _, suite in ipairs(SUITES) do

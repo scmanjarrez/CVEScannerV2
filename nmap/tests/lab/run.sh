@@ -1,13 +1,13 @@
 #!/bin/sh
 # Ejecuta cvescannerv2 contra el lab, con probes=none y probes=all.
-# Uso: tests/lab/run.sh <servicio|all>
+# Uso: nmap/tests/lab/run.sh <servicio|all>
 # Servicios: ntp weblogic cups php wordpress drupal mongo redis upnp
 # Salida: results/lab/<servicio>-{none,all}.json
 
 set -eu
 
-ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-COMPOSE="$ROOT/tests/lab/compose.yaml"
+ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+COMPOSE="$ROOT/nmap/tests/lab/compose.yaml"
 OUT_DIR="$ROOT/results/lab"
 WAIT_SECS="${LAB_WAIT_SECS:-30}"
 ALL_SERVICES="ntp weblogic cups php wordpress drupal mongo redis upnp"
@@ -46,7 +46,7 @@ scan_one() {
         echo ">> $svc probes=$mode -> $out"
         # shellcheck disable=SC2086
         nmap -n -sV $proto_opt -p "$port" \
-            --script cvescannerv2 \
+            --script "$ROOT/nmap/src/cvescannerv2.nse" \
             --script-args "probes=$mode,json=$out" \
             127.0.0.1
     done

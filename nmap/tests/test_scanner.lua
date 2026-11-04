@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Run from the repository root: lua5.4 tests/test_scanner.lua
+-- Run from the repository root: lua5.4 nmap/tests/test_scanner.lua
 -- Test the scanner with deterministic HTTP responses and no network access.
 
 local http = {}
@@ -27,14 +27,32 @@ for name, module in pairs(modules) do
   package.loaded[name] = module
 end
 SCRIPT_NAME = 'cvescannerv2-test'
+local ORIGINAL_SEARCHERS = {}
+for i, searcher in ipairs(package.searchers) do
+  ORIGINAL_SEARCHERS[i] = searcher
+end
 
-local file = assert(io.open('cvescannerv2.nse', 'r'))
+local file = assert(io.open('nmap/src/cvescannerv2.nse', 'r'))
 local source = file:read('*all')
 file:close()
+
+local function fresh_modules()
+  SCRIPT_PATH = 'nmap/src/cvescannerv2.nse'
+  for name in pairs(package.loaded) do
+    if name:match('^cvescannerv2%.') then package.loaded[name] = nil end
+  end
+  for i = #package.searchers, 1, -1 do
+    package.searchers[i] = nil
+  end
+  for i, searcher in ipairs(ORIGINAL_SEARCHERS) do
+    package.searchers[i] = searcher
+  end
+end
 
 local function run_case(limit, redirect_status, fail_redirect)
   redirect_limit = tostring(limit)
   nmap.registry = {}
+  fresh_modules()
   local scanner = assert(load(source .. [[
     return { sweep = sweep_catalog, registry = registry }
   ]]))()
@@ -95,9 +113,15 @@ print('HTTP redirects: 8 cases passed')
 
 -- NSE's lfs has mkdir/dir but no attributes method. Verify both cache paths
 -- without replacing it with the incompatible desktop LuaFileSystem API.
-local cache = assert(load(source .. [[
-  return { read = read_catalog_json, ensure_dir = ensure_catalog_cache_dir }
+fresh_modules()
+assert(load(source .. [[
+  return {}
 ]]))()
+local store = require 'cvescannerv2.catalog.store'
+local cache = {
+  read = store.read_catalog_json,
+  ensure_dir = store.ensure_catalog_cache_dir
+}
 modules.lfs.mkdir = function() return true end
 assert(cache.ensure_dir(), 'Create the cache directory when missing')
 modules.lfs.mkdir = function() return false end
@@ -126,6 +150,7 @@ assert(cache.read('index.json') == nil, 'Reject an oversized catalogue')
 io.open = original_open
 print('Catalogue cache: 5 cases passed')
 
+fresh_modules()
 local scanner = assert(load(source .. [[
   return { port = portaction, registry = registry }
 ]]))()

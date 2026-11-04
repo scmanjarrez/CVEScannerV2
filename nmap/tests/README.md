@@ -7,7 +7,7 @@ sustituyen por stubs, y la base de datos es una fixture SQLite temporal.
 ## Ejecución en contenedor (recomendada)
 
 ```bash
-docker build -f tests/Dockerfile -t cvescannerv2-tests .
+docker build -f nmap/tests/Dockerfile -t cvescannerv2-tests .
 ```
 
 ```bash
@@ -20,9 +20,9 @@ Para probar el código local sin reconstruir la imagen:
 docker run --rm -v "$PWD:/src:ro" cvescannerv2-tests
 ```
 
-`tests/Dockerfile.dockerignore` define el contexto de esta imagen. El
+`nmap/tests/Dockerfile.dockerignore` define el contexto de esta imagen. El
 `.dockerignore` raíz no se modifica y la imagen del escáner no incluye
-`tests/`.
+`nmap/tests/`.
 
 ## Ejecución local
 
@@ -30,7 +30,7 @@ Requiere `lua5.4`. La suite SQLite requiere además `luasql.sqlite3` y se
 salta si no está instalado.
 
 ```bash
-sh tests/run.sh
+sh nmap/tests/run.sh
 ```
 
 ## Variables
@@ -39,7 +39,7 @@ sh tests/run.sh
 | --- | --- |
 | `CVESCANNER_STRICT=1` | Los XFAIL y XPASS hacen fallar la ejecución. Úsala tras corregir los bugs conocidos. |
 | `CVESCANNER_FILTER=texto` | Ejecuta solo los tests cuyo `suite :: nombre` contiene `texto`. |
-| `CVESCANNER_NSE=ruta` | Script que se prueba (por defecto `cvescannerv2.nse`). |
+| `CVESCANNER_NSE=ruta` | Script que se prueba (por defecto `nmap/src/cvescannerv2.nse`). |
 | `LUA=binario` | Intérprete que usa `run.sh` (por defecto `lua5.4`). |
 
 ```bash
@@ -54,7 +54,7 @@ Dos comprobaciones del empaquetado de la imagen del escáner:
   Comprueba que cada fichero `data/` que lee el NSE está copiado o generado
   por `docker/Dockerfile`, que los `COPY data/...` existen y no los excluye
   `.dockerignore`, y que `CATALOG_BASE` coincide con el del NSE. Tarda
-  menos de un segundo y se ejecuta dentro de `sh tests/run.sh`.
+  menos de un segundo y se ejecuta dentro de `sh nmap/tests/run.sh`.
 - Integración (`docker/check.sh [--fresh]`): requiere Docker y red. Construye
   las imágenes `nodb` y `db`, comprueba su contenido, valida `cve.db` con
   `python3` y escanea un `php:5.6-apache` en una red temporal. No entra en
@@ -65,9 +65,9 @@ Dos comprobaciones del empaquetado de la imagen del escáner:
   ficheros temporales al terminar.
 
 ```bash
-sh tests/run.sh                     # estática, sin Docker
-sh tests/docker/check.sh            # integración
-sh tests/docker/check.sh --fresh    # integración sin caché
+sh nmap/tests/run.sh                     # estática, sin Docker
+sh nmap/tests/docker/check.sh            # integración
+sh nmap/tests/docker/check.sh --fresh    # integración sin caché
 ```
 
 ## Estructura

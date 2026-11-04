@@ -3,7 +3,8 @@
 !Dockerfile
 !.dockerignore
 !LICENSE
-!cvescannerv2.nse
+!nmap/
+nmap/tests/
 !data/
 data/*
 !data/product-aliases.json

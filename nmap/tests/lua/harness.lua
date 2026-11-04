@@ -4,12 +4,24 @@
 -- The scanner keeps its helpers as chunk locals. load_scanner() appends a
 -- return statement to the script source, so the helpers are exported from
 -- the same chunk without modifying cvescannerv2.nse.
+--
+-- Helpers moved into modules under nmap/src/cvescannerv2/ are loaded with
+-- require() and then flattened into the scanner table: every field of a
+-- cvescannerv2.* module that the entrypoint does not define is exposed on
+-- the scanner, so tests reach moved functions the same way as before. The
+-- registry is exposed from cvescannerv2.state when the entrypoint has none.
 
 local M = {}
 
+-- Copy of the stock searchers, taken before any scanner module is loaded.
+-- load_scanner() restores them on every call so that each fresh scanner
+-- resolves its modules from disk again.
+local ORIGINAL_SEARCHERS = table.move(package.searchers, 1,
+  #package.searchers, 1, {})
+
 local strict = os.getenv('CVESCANNER_STRICT') == '1'
 local filter = os.getenv('CVESCANNER_FILTER')
-local nse_path = os.getenv('CVESCANNER_NSE') or 'cvescannerv2.nse'
+local nse_path = os.getenv('CVESCANNER_NSE') or 'nmap/src/cvescannerv2.nse'
 
 M.results = {
   passed = 0, failed = 0, xfail = 0, xpass = 0, skipped = 0,
@@ -91,8 +103,51 @@ function M.load_scanner(opts)
     package.loaded[name] = module
   end
   SCRIPT_NAME = 'cvescannerv2'
-  local chunk = assert(load(SOURCE, '=cvescannerv2.nse'))
+
+  -- Reset the module loader so every call starts from the same state.
+  local searchers = package.searchers
+  for i = #searchers, 1, -1 do searchers[i] = nil end
+  table.move(ORIGINAL_SEARCHERS, 1, #ORIGINAL_SEARCHERS, 1, searchers)
+  for name in pairs(package.loaded) do
+    if type(name) == 'string' and name:find('^cvescannerv2%.') then
+      package.loaded[name] = nil
+    end
+  end
+  SCRIPT_PATH = nse_path
+
+  local chunk = assert(load(SOURCE, '=nmap/src/cvescannerv2.nse'))
   local scanner = chunk()
+
+  -- Flatten the modules: expose their fields on the scanner table unless
+  -- the entrypoint already defines them. Sorted for a deterministic result.
+  local modules = {}
+  for name, value in pairs(package.loaded) do
+    if type(name) == 'string' and name:find('^cvescannerv2%.')
+        and type(value) == 'table' then
+      table.insert(modules, name)
+    end
+  end
+  table.sort(modules)
+  -- Put vulns first: its wrapper add_platform_reasons hides the one in
+  -- platform, which the older tests expect. The first module to define a
+  -- key wins, so vulns must come before platform.
+  for i, name in ipairs(modules) do
+    if name == 'cvescannerv2.vulns' then
+      table.remove(modules, i)
+      table.insert(modules, 1, name)
+      break
+    end
+  end
+  for _, name in ipairs(modules) do
+    for key, value in pairs(package.loaded[name]) do
+      if scanner[key] == nil then scanner[key] = value end
+    end
+  end
+  local state = package.loaded['cvescannerv2.state']
+  if state ~= nil and scanner.registry == nil then
+    scanner.registry = state
+  end
+
   scanner.stubs = stubs
   return scanner
 end

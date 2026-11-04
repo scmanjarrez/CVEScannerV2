@@ -1,18 +1,18 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Integration checks of the scanner images. Needs Docker and network access.
-#   sh tests/docker/check.sh [--fresh]
+#   sh nmap/tests/docker/check.sh [--fresh]
 # --fresh rebuilds the CVE database and the Vulners catalogue (no cache).
 # Prints PASS/FAIL per check and exits non-zero when any check fails.
 set -u
 
-cd "$(dirname "$0")/../.." || exit 1
+cd "$(dirname "$0")/../../.." || exit 1
 
 fresh=0
 case "${1:-}" in
   '') ;;
   --fresh) fresh=1 ;;
-  *) echo 'usage: sh tests/docker/check.sh [--fresh]' >&2; exit 2 ;;
+  *) echo 'usage: sh nmap/tests/docker/check.sh [--fresh]' >&2; exit 2 ;;
 esac
 
 PASS=0

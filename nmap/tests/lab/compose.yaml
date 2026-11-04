@@ -1,5 +1,5 @@
 # Lab reproducible para validar sondas de servicio de cvescannerv2.
-# Uso: ver tests/lab/run.sh. Manual, sin CI.
+# Uso: ver nmap/tests/lab/run.sh. Manual, sin CI.
 #
 # Puertos publicados solo en 127.0.0.1 (scanner local).
 #

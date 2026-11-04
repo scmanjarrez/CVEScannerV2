@@ -4,7 +4,7 @@
 
 local t = require 'harness'
 
-local NSE = 'cvescannerv2.nse'
+local NSE = 'nmap/src/cvescannerv2.nse'
 local DOCKERFILE = 'docker/Dockerfile'
 local DOCKERIGNORE = '.dockerignore'
 
@@ -96,7 +96,20 @@ local function index_of(lines, value)
   return nil
 end
 
-local nse = read_file(NSE)
+local function read_scanner_sources()
+  local parts = { read_file(NSE) }
+  local pipe = io.popen(
+    "find nmap/src/cvescannerv2 -name '*.lua' | sort 2>/dev/null")
+  if pipe then
+    for path in pipe:lines() do
+      table.insert(parts, read_file(path))
+    end
+    pipe:close()
+  end
+  return table.concat(parts, '\n')
+end
+
+local nse = read_scanner_sources()
 local dockerfile = read_file(DOCKERFILE)
 local dockerignore = {}
 for _, line in ipairs(lines_of(read_file(DOCKERIGNORE))) do

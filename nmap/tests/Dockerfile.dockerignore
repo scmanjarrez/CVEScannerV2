@@ -1,8 +1,7 @@
-# Build context for tests/Dockerfile only (the root .dockerignore excludes
-# tests/ from the scanner image).
+# Build context for nmap/tests/Dockerfile only (the root .dockerignore excludes
+# nmap/tests/ from the scanner image).
 **
-!cvescannerv2.nse
-!tests/
+!nmap/
 !docker/Dockerfile
 !.dockerignore
 !data/product-aliases.json

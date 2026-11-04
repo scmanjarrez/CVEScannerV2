@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build test image
-        run: docker build -f tests/Dockerfile -t cvescannerv2-tests .
+        run: docker build -f nmap/tests/Dockerfile -t cvescannerv2-tests .
 
       - name: Run NSE test suite
         run: docker run --rm cvescannerv2-tests

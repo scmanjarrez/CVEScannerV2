@@ -185,6 +185,7 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 | `smb` | `1` | `0` disables the SMB probes (legacy switch, same as removing `smb` and `smb_os` from `probes`). |
 | `http` | `1` | `0` disables HTTP analysis. |
 | `maxredirect` | `1` | Maximum number of HTTP redirections followed. |
+| `sweep` | `0` | Enable the catalogue path sweep over HTTP ports (slow, asks every catalogue path). Default: `0` (disabled). Possible values: `0`, `1`. Transitional: it will be removed. |
 | `catalog` | `auto` | `none` disables the upstream HTTP fingerprint catalogue. |
 | `catalog_url` | `https://raw.githubusercontent.com/vulnersCom/nmap-vulners/catalog/` | Base URL of the catalogue (use it for a local mirror). |
 | `path`, `regex` | `data/http-paths-vulnerscom.json`, `data/http-regex-vulnerscom.json` | Legacy HTTP files, used only if the catalogue is unavailable. |
@@ -216,7 +217,7 @@ nmap -sV --script cvescannerv2 --script-args catalog_url=http://127.0.0.1:8000/ 
 
 </details>
 
-> **Note**: `cvescannerv2.nse` can be placed in Nmap's default script
+> **Note**: `nmap/src/cvescannerv2.nse` can be placed in Nmap's default script
 > directory to run it globally; a **symbolic link** keeps it in sync with the
 > repository.
 >
@@ -709,13 +710,13 @@ PYTHONPATH=db-manager/src uv run --project db-manager \
 
 # Scanner (requires lua5.4; the SQLite suite also needs luasql.sqlite3 and is
 # skipped when it is missing)
-sh tests/run.sh
+sh nmap/tests/run.sh
 ```
 
-`tests/run.sh` runs the HTTP and catalogue-cache tests plus the Lua suites for
+`nmap/tests/run.sh` runs the HTTP and catalogue-cache tests plus the Lua suites for
 version matching, scoping and platform checks, the catalogue, service probes
 and the SQLite integration. Probe tests use stubbed sockets and Nmap libraries,
-so they never touch the network. See [`tests/README.md`](tests/README.md) for
+so they never touch the network. See [`nmap/tests/README.md`](nmap/tests/README.md) for
 the containerised runner.
 
 # Acknowledgements

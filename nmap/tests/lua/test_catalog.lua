@@ -1142,17 +1142,21 @@ end)
 
 --- Scanner whose catalogue sweep records pipeline_go calls.
 -- batches(n) returns the reply table for the n-th pipeline_go call.
-local function abort_catalog(batches)
+-- args are the script arguments; the sweep is opted in by default.
+local function abort_catalog(batches, args)
   local calls = 0
-  local scanner = t.load_scanner({ http = {
-    pipeline_add = function(_, _, requests)
-      return requests or {}
-    end,
-    pipeline_go = function()
-      calls = calls + 1
-      return batches(calls)
-    end,
-  } })
+  local scanner = t.load_scanner({
+    args = args or { sweep = '1' },
+    http = {
+      pipeline_add = function(_, _, requests)
+        return requests or {}
+      end,
+      pipeline_go = function()
+        calls = calls + 1
+        return batches(calls)
+      end,
+    },
+  })
   local paths = {}
   for i = 1, 300 do paths[i] = '/r' .. i end
   scanner.registry.json_out = {}
@@ -1176,6 +1180,19 @@ t.case('catalog continues when a batch has one answer', function()
   end)
   scanner.portaction({ ip = '10.4.0.5' }, ABORT_PORT)
   t.eq(calls(), 2)
+end)
+
+t.case('catalogue sweep is off by default', function()
+  local scanner, calls = abort_catalog(function() return {} end, {})
+  scanner.portaction({ ip = '10.4.0.6' }, ABORT_PORT)
+  t.eq(calls(), 0)
+end)
+
+t.case('catalogue sweep runs with sweep=1', function()
+  local scanner, calls = abort_catalog(function() return {} end,
+    { sweep = '1' })
+  scanner.portaction({ ip = '10.4.0.7' }, ABORT_PORT)
+  t.eq(calls(), 1)
 end)
 
 t.suite('ntp probe')
@@ -1778,7 +1795,7 @@ end
 t.suite('version script dependencies')
 
 t.case('dependencies lists the version scripts', function()
-  local file = assert(io.open('cvescannerv2.nse', 'r'))
+  local file = assert(io.open('nmap/src/cvescannerv2.nse', 'r'))
   local body = file:read('*all')
   file:close()
   local block = body:match('\ndependencies = (%b{})')

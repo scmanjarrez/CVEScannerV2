@@ -1,12 +1,12 @@
 #!/bin/sh
 # Ejecuta el lab UDP (ntp, upnp) con probes=none y probes=all.
-# Requiere root (nmap -sU): sudo sh tests/lab/run-udp.sh
+# Requiere root (nmap -sU): sudo sh nmap/tests/lab/run-udp.sh
 # Salida: results/lab/<servicio>-{none,all}.json, results/lab/udp-summary.txt
 # Variables: LAB_WAIT_SECS (espera de arranque, defecto 90: apt-get install)
 
 set -eu
 
-ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 OUT_DIR="$ROOT/results/lab"
 SUMMARY="$OUT_DIR/udp-summary.txt"
 SERVICES="ntp upnp"
@@ -21,7 +21,7 @@ mkdir -p "$OUT_DIR"
 : > "$SUMMARY"
 
 for svc in $SERVICES; do
-    LAB_WAIT_SECS="${LAB_WAIT_SECS:-90}" sh tests/lab/run.sh "$svc" \
+    LAB_WAIT_SECS="${LAB_WAIT_SECS:-90}" sh nmap/tests/lab/run.sh "$svc" \
         > "$OUT_DIR/$svc.log" 2>&1 || echo "[!] $svc fallo, ver $svc.log" \
         | tee -a "$SUMMARY"
 done
