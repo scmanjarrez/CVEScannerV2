@@ -328,26 +328,28 @@ The table is printed under the service, one line per CVE, sorted by
 confidence and then by the main CVSS score (v4, then v3, then v2).
 
 ```
-PORT     STATE SERVICE VERSION
-445/tcp  open  microsoft-ds Samba smbd 3.X - 4.X
+PORT     STATE SERVICE     VERSION
+21/tcp   open  ftp         vsftpd 2.3.4
 | cvescannerv2:
-|   samba 3.0.20 (cpe:/a:samba:samba:3.0.20)  source: smb
-|   CVEs: 4  high: 2  medium: 1  low: 1
-|   warning: distro_backport - fixes may be backported by the distro
-|     CVE              CONF  EXPLOITS  CVSS
-|     CVE-2007-2446    HIGH  MSF       v2:10.0
-|     CVE-2012-1182    HIGH  EDB MSF   v3:9.8 v2:10.0
-|     CVE-2010-2075    MED   EDB       v4:7.5 v2:7.5
-|   +1 more (maxcve=3). Full list: cvescannerv2.json
+| vsftpd 2.3.4 (cpe:/a:vsftpd:vsftpd:2.3.4)  source: nmap_cpe
+| CVEs: 3  high: 3  medium: 0  low: 0
+|   CVE              CONF  EXPLOITS  CVSS
+|   CVE-2011-2523    HIGH  MSF       v3:9.8 v2:10.0
+|   CVE-2021-3618    HIGH  -         v3:7.4 v2:5.8
+|_  CVE-2015-1419    HIGH  -         v2:5.0
 ```
 
-The scores in this example are illustrative. The rules are:
+The example is taken from a real scan. The rules are:
 
-- The first line is `product version`, with the vendor only when it differs
-  from the product and `update <value>` only when the update is known.
+- The line after `cvescannerv2:` is `product version (cpe)  source: <value>`,
+  with the vendor only when it differs from the product and `update <value>`
+  only when the update is known.
+- The `CVEs:` line gives the counts. `warning:` lines, if any, follow it.
 - `EXPLOITS` is `EDB` (Exploit-DB), `MSF` (Metasploit), `EDB MSF` or `-`.
-- The last line appears only when CVEs are hidden, by `maxcve` (`+N more`),
-  by `minconf` (`N below minconf=<level>`), or by both. It points to the JSON
+- The last line of the block starts with `|_` (Nmap convention). It appears
+  only when CVEs are hidden, by `maxcve` (`+N more`), by `minconf`
+  (`N below minconf=<level>`), or by both, for example
+  `|_+55 more (maxcve=10). Full list: cvescannerv2.json`. It points to the JSON
   report, which always keeps every CVE.
 - `-oX` (structured output) carries the same visible CVEs, cut to `maxcve`,
   with the CVSS scores that are present.
@@ -370,28 +372,41 @@ The log records every CVE with its reasons and every exploit reference. A run
 writes a header, one block per service and a footer:
 
 ```
-=== cvescannerv2 4.0  2026-11-05T10:00:00+00:00 ===
-args: minconf=low maxcve=10 db=cve.db
+=== cvescannerv2 4.0  2026-11-05T06:11:04+00:00 ===
+args: minconf=low maxcve=10 db=data/cve.db
 
-[192.168.1.10 3306/tcp mysql] mysql 5.0.51 update a
-  cpe: cpe:/a:mysql:mysql:5.0.51a-3ubuntu5  source: nmap_cpe  os: linux (nmap)
-  CVEs: 2  high: 1  medium: 1  low: 0
-  CVE-2009-2446   HIGH  v2:8.5               exact_version
-  CVE-2009-4484   MED   v3:9.8 v2:7.5        range_overlap
-      MSF  exploit/linux/mysql/mysql_yassl_getname
-[192.168.1.11 3306/tcp mysql] mysql 5.0.51 update a
-  cached: same result as 192.168.1.10 3306/tcp
+[192.168.251.131 512/tcp exec] netkit *
+  cpe: cpe:/a:netkit:netkit  source: nmap_cpe  os: linux (cpe)
+  CVEs: 0  high: 0  medium: 0  low: 0
+[192.168.251.131 21/tcp ftp] vsftpd 2.3.4
+  cpe: cpe:/a:vsftpd:vsftpd:2.3.4  source: nmap_cpe  os: -
+  CVEs: 3  high: 3  medium: 0  low: 0
+  CVE-2011-2523   HIGH  v3:9.8 v2:10.0       exact_version
+      MSF  exploit/unix/ftp/vsftpd_234_backdoor
+  CVE-2021-3618   HIGH  v3:7.4 v2:5.8        range_contains
+[192.168.251.131 139/tcp netbios-ssn] samba 3.0.20
+  cached: same result as 192.168.251.131 445/tcp
 
-=== end  hosts: 2  services: 2  CVEs: 4 ===
+=== end  hosts: 1  services: 15  CVEs: 640 ===
 ```
 
+The example is trimmed from a real scan.
+
 - Each service line starts with `[ip port/proto service]`, so `grep` works.
+  The log lists every service of the run, including those with `CVEs: 0`.
+- The `cpe:` line gives the CPE, the `source` of the version and the OS
+  context (`os: -` when unknown).
+- Each CVE line shows the CVE, `CONF`, CVSS and the reasons. Its exploits follow,
+  indented: `MSF <module>` or `EDB <id> <url> <title>`.
 - `reasons` explain how each CVE matched; the confidence is the lowest level
   among them.
 - A service reused from the cache says `cached: same result as ...` and does
   not repeat its CVEs.
-- Warnings of the run, such as an invalid `minconf` or a database without the
-  conditions table, appear as `warning: ...` lines.
+- A service may carry `warning: ...` lines (for example `distro_backport`).
+  Warnings of the run, such as an invalid `minconf` or a database without the
+  conditions table, also appear as `warning: ...` lines.
+- Each run appends its own header, blocks and footer to the file, so a log with
+  several runs holds several blocks.
 
 ## JSON report
 
@@ -399,6 +414,10 @@ The JSON report is **JSON Lines**: each run appends one line with one JSON
 document, so a file with several runs is a sequence of documents, one per
 line. The format is `schema_version: 2`. Keys are shown here pretty-printed
 for reading; the file has no line breaks inside a record.
+
+Each run appends one record to the file. A record holds only services with at
+least one CVE. Within a port, a service repeated with the same vendor, product,
+version and update is written once: the first detection wins.
 
 ```json
 {
@@ -507,13 +526,13 @@ be cheap and safe:
 - **Read-only.** No credentials, no writes, no exploit payloads.
 - **Fail soft.** Any error or timeout falls back to the Nmap result and never
   aborts the port. Results (including failures) are cached.
-- **Bounded cost.** At most one extra connection per service (two for `irc`
+- **Bounded cost.** At most one extra connection per service (two retries for `irc`
   when throttled) and one SMB round per host.
 
 | Probe | Triggers on | What it asks | Notes |
 |---|---|---|---|
 | `smb` | Samba on 139/445 (`netbios-ssn`, `microsoft-ds`) | Nmap's `smb.get_os` (`lanmanager` field) | Gives the exact Samba version instead of `3.X - 4.X`. One query per host, shared by all its SMB ports. |
-| `irc` | UnrealIRCd on an `irc`/`ircs` service | `NICK`/`USER`/`VERSION`, reads reply 351 | Exact UnrealIRCd version. The nick appears in the IRC server log. UnrealIRCd throttles reconnections right after `-sV`: on `Throttled` the probe waits 20 s and retries once. |
+| `irc` | UnrealIRCd on an `irc`/`ircs` service | `NICK`/`USER`/`VERSION`, reads reply 351 | Exact UnrealIRCd version. The nick appears in the IRC server log. UnrealIRCd throttles reconnections right after `-sV`: on `Throttled` the probe waits 30 s and retries up to two times, 30 s apart. If the server still throttles, the Nmap version is kept. |
 | `smb_os` | A host with an SMB service, only when a CVE needs a platform and the OS is unknown | Nmap's `smb.get_os` (`os` field) | Reports `windows` for real Windows hosts. See [Operating system context](#operating-system-context). |
 | `ntp` | An `ntp` service (UDP, needs `-sU`) | NTP mode 6 `readvar` (`version="ntpd 4.2.6p5..."`) | Exact ntpd version and patch (`4.2.6p5`) instead of `NTP v4`. `ntpsec`/`chrony` are ignored. Many ntpd block mode 6 (`noquery`): then it falls back to Nmap. |
 | `cups` | A CUPS service (`ipp`, product `cups`) with a series version | `GET /` and reads the page title (`Home - CUPS 2.1.3`, also on a 403 page) | Exact CUPS version instead of `2.1`. One request, no catalogue involved. |
@@ -794,9 +813,9 @@ ln -s /usr/lib/lua /usr/local/lib/lua
 > The commands above may require super user permissions.
 
 ## A probe does not find the version
-- UnrealIRCd rejects fast reconnections ("Throttled"). The probe waits 20 s
-  and retries once; if the server is still throttling, the Nmap result is
-  kept. Run with `-d` to see the probe messages.
+- UnrealIRCd rejects fast reconnections ("Throttled"). The probe waits 30 s
+  and retries up to two times, 30 s apart; if the server is still throttling,
+  the Nmap result is kept. Run with `-d` to see the probe messages.
 - Probes only run when Nmap identified the service and product. If Nmap shows
   `irc?` or an empty product, no probe is attempted.
 

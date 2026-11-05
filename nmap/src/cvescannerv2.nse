@@ -40,13 +40,17 @@ CVEs information gathered from nvd.nist.gov.
 -- PORT      STATE SERVICE       VERSION
 -- 3306/tcp  open  mysql         MySQL 5.5.55
 -- | cvescannerv2:
--- |   oracle mysql 5.5.55 (cpe:/a:oracle:mysql:5.5.55)  source: nmap_cpe
--- |   CVEs: 4  high: 1  medium: 1  low: 2
--- |     CVE              CONF  EXPLOITS  CVSS
--- |     CVE-2021-3278    HIGH  EDB       v3:9.8 v2:7.5
--- |     CVE-2014-3631    MED   EDB MSF   v2:7.2
--- |     CVE-2019-13401   LOW   -         v3:8.8 v2:6.8
--- |_    CVE-2016-3976    LOW   EDB MSF   v3:7.5 v2:5.0
+-- | oracle mysql 5.5.55 (cpe:/a:oracle:mysql:5.5.55)  source: nmap_cpe
+-- | CVEs: 4  high: 1  medium: 1  low: 2
+-- |   CVE              CONF  EXPLOITS  CVSS
+-- |   CVE-2021-3278    HIGH  EDB       v3:9.8 v2:7.5
+-- |   CVE-2014-3631    MED   EDB MSF   v2:7.2
+-- |   CVE-2019-13401   LOW   -         v3:8.8 v2:6.8
+-- |_  CVE-2016-3976    LOW   EDB MSF   v3:7.5 v2:5.0
+--
+-- When there are more CVEs than maxcve or below minconf, the last line
+-- tells how many are hidden and where the full list is:
+-- |_+55 more (maxcve=10). Full list: /path/cvescannerv2.json
 --
 -- @args cvescannerv2.db Database file. Default: data/cve.db
 -- @args cvescannerv2.maxcve Maximum number of CVEs printed on screen.
@@ -56,9 +60,13 @@ CVEs information gathered from nvd.nist.gov.
 -- @args cvescannerv2.sweep Request every catalogue path on HTTP ports
 --       (slow). Default: 0. Values: 0, 1
 -- @args cvescannerv2.log Output .log file location.
---       Default: cvescannerv2.log
+--       Default: cvescannerv2.log. Header with version and args, one block
+--       per service (cpe, counts, warnings), one line per visible CVE with
+--       CVSS and reasons, indented exploits, and a footer with the totals.
 -- @args cvescannerv2.json Output .json file location.
---       Default: cvescannerv2.json
+--       Default: cvescannerv2.json. JSON Lines: one record per run
+--       (schema_version 2) with only the services that have CVEs, one
+--       entry per service and port.
 -- @args cvescannerv2.catalog Vulners catalogue read from data/ (index.json,
 --       fingerprints.json, paths.json, probes.json). Default: auto. Set to
 --       none to disable HTTP fingerprinting. The catalogue can be downloaded
