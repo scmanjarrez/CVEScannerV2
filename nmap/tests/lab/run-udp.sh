@@ -41,12 +41,14 @@ for svc in services:
             print(f"{svc:6} {mode:4} sin resultado")
             continue
         rows = []
-        for host in data.values():
-            for port, info in host["ports"].items():
-                for s in info["services"]:
-                    cves = s.get("vulnerabilities", {}).get("cves", {})
-                    rows.append((port, s.get("product"), s.get("version"),
-                                 s.get("version_source"), len(cves)))
+        for host in data.get("hosts", []):
+            for port in host.get("ports", []):
+                label = f"{port['port']}/{port['protocol']}"
+                for product in port.get("products", []):
+                    rows.append((label, product.get("product"),
+                                 product.get("version"),
+                                 product.get("version_source"),
+                                 len(product.get("cves", []))))
         if not rows:
             print(f"{svc:6} {mode:4} sin servicios analizados")
         for port, prod, ver, src, n in rows:

@@ -13,6 +13,7 @@ local t = require 'harness'
 local SUITES = {
   'nmap/tests/lua/test_versions.lua',
   'nmap/tests/lua/test_scoping.lua',
+  'nmap/tests/lua/test_output.lua',
   'nmap/tests/lua/test_catalog.lua',
   'nmap/tests/lua/test_database.lua',
   'nmap/tests/lua/test_docker.lua',

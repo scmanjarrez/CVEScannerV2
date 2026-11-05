@@ -313,126 +313,160 @@ nmap -sV --script cvescannerv2 --script-args sweep=1 <TARGET>
 
 # Output
 
-For every service with matches, the table shows the product, the version used
-for the lookup, **where that version came from** (`version_source`) and the
-CVEs with a `Conf` column holding the confidence level.
+Every service with matches produces three outputs: the Nmap script output,
+the log file (`cvescannerv2.log`) and the JSON report (`cvescannerv2.json`).
+All three are built from the same per-service result, so they always agree.
 
-<details>
-<summary><b>Nmap output (Metasploitable 2)</b></summary>
+Each CVE shows one **CVSS** column with the scores that exist, newest first:
+`v4:9.3 v3:9.8 v2:7.5`. A CVE without scores shows `-`. Each service also
+shows **where the version came from** (`source`) and the CVEs with a `CONF`
+column holding the confidence level (`HIGH`, `MED`, `LOW`).
+
+## Nmap output
+
+The table is printed under the service, one line per CVE, sorted by
+confidence and then by the main CVSS score (v4, then v3, then v2).
 
 ```
-PORT     STATE SERVICE     VERSION
-445/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+PORT     STATE SERVICE VERSION
+445/tcp  open  microsoft-ds Samba smbd 3.X - 4.X
 | cvescannerv2:
-|   vendor: samba
-|   product: samba
-|   version: 3.0.20
-|   vupdate: *
-|   version_source: smb
-|   cves: 64
-|   	CVE ID              	Conf  	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2007-2446       	HIGH  	10.0 	-    	No        	Yes
-|   	CVE-2012-1182       	HIGH  	10.0 	-    	No        	Yes
-|   	CVE-2022-45141      	HIGH  	nil  	9.8  	No        	No
-|   	...
-6667/tcp open  irc         UnrealIRCd
-| cvescannerv2:
-|   vendor: unrealircd
-|   product: unrealircd
-|   version: 3.2.8.1
-|   vupdate: *
-|   version_source: irc
-|   cves: 3
-|   	CVE ID              	Conf  	CVSSv2	CVSSv3	ExploitDB 	Metasploit
-|   	CVE-2016-7144       	HIGH  	6.8  	8.1  	No        	No
-|   	CVE-2010-2075       	HIGH  	7.5  	-    	Yes       	Yes
-|   	CVE-2017-13649      	HIGH  	2.1  	5.5  	No        	No
+|   samba 3.0.20 (cpe:/a:samba:samba:3.0.20)  source: smb
+|   CVEs: 4  high: 2  medium: 1  low: 1
+|   warning: distro_backport - fixes may be backported by the distro
+|     CVE              CONF  EXPLOITS  CVSS
+|     CVE-2007-2446    HIGH  MSF       v2:10.0
+|     CVE-2012-1182    HIGH  EDB MSF   v3:9.8 v2:10.0
+|     CVE-2010-2075    MED   EDB       v4:7.5 v2:7.5
+|   +1 more (maxcve=3). Full list: cvescannerv2.json
 ```
 
-Nmap alone reports `Samba smbd 3.X - 4.X` and `UnrealIRCd` without a version;
-the probes provide the exact versions (see [Service probes](#service-probes)).
+The scores in this example are illustrative. The rules are:
 
-</details>
+- The first line is `product version`, with the vendor only when it differs
+  from the product and `update <value>` only when the update is known.
+- `EXPLOITS` is `EDB` (Exploit-DB), `MSF` (Metasploit), `EDB MSF` or `-`.
+- The last line appears only when CVEs are hidden, by `maxcve` (`+N more`),
+  by `minconf` (`N below minconf=<level>`), or by both. It points to the JSON
+  report, which always keeps every CVE.
+- `-oX` (structured output) carries the same visible CVEs, cut to `maxcve`,
+  with the CVSS scores that are present.
 
-Fields of the service header:
+Values of `source` (`version_source`):
 
-| Field | Meaning |
+| Value | Meaning |
 |---|---|
-| `version_source` | Evidence that produced the version: `nmap_cpe`, `nmap_version`, `http`, `smb`, `irc` (see [Where the version comes from](#where-the-version-comes-from)). |
-| `warnings` | `distro_backport` when the version string suggests a distribution package that may carry backported fixes (see [Operating system context](#operating-system-context)). |
+| `nmap_cpe` | Version taken from the CPE that Nmap reports. |
+| `nmap_version` | Version taken from the Nmap version string. |
+| `http` | Version found by an HTTP probe. |
+| `smb` | Version found by the SMB probe. |
+| `irc` | Version found by the IRC probe. |
 
-The **log** (`*.log`) contains every exploit and Metasploit module found.
+See [Where the version comes from](#where-the-version-comes-from).
 
-<details>
-<summary><b>cvescannerv2.log</b></summary>
+## Log file
+
+The log records every CVE with its reasons and every exploit reference. A run
+writes a header, one block per service and a footer:
 
 ```
-## 2023-08-26T14:38:30+00:00
+=== cvescannerv2 4.0  2026-11-05T10:00:00+00:00 ===
+args: minconf=low maxcve=10 db=cve.db
 
-[*] host: 192.168.69.129
-[*] port: 3306
-[+] protocol: tcp
-[+] service: mysql
-[+] cpe: cpe:/a:mysql:mysql:5.0.51a-3ubuntu5
-[+] product: mysql
-[+] version: 5.0.51
-[+] vupdate: a
-[+] cves: 212
-[-] 	id: CVE-2009-2446     	cvss_v2: 8.5  	cvss_v3: -
-[-] 	id: CVE-2009-4484     	cvss_v2: 7.5  	cvss_v3: -
-[!] 		Metasploit:
-[#] 			name: exploit/linux/mysql/mysql_yassl_getname
-...
+[192.168.1.10 3306/tcp mysql] mysql 5.0.51 update a
+  cpe: cpe:/a:mysql:mysql:5.0.51a-3ubuntu5  source: nmap_cpe  os: linux (nmap)
+  CVEs: 2  high: 1  medium: 1  low: 0
+  CVE-2009-2446   HIGH  v2:8.5               exact_version
+  CVE-2009-4484   MED   v3:9.8 v2:7.5        range_overlap
+      MSF  exploit/linux/mysql/mysql_yassl_getname
+[192.168.1.11 3306/tcp mysql] mysql 5.0.51 update a
+  cached: same result as 192.168.1.10 3306/tcp
+
+=== end  hosts: 2  services: 2  CVEs: 4 ===
 ```
 
-</details>
+- Each service line starts with `[ip port/proto service]`, so `grep` works.
+- `reasons` explain how each CVE matched; the confidence is the lowest level
+  among them.
+- A service reused from the cache says `cached: same result as ...` and does
+  not repeat its CVEs.
+- Warnings of the run, such as an invalid `minconf` or a database without the
+  conditions table, appear as `warning: ...` lines.
 
-The **JSON report** (`*.json`) has the same information and adds, per
-service, `version_source`, `os_context`, `warnings` and `summary` (number of
-CVEs per confidence level), and per CVE, `confidence` and `reasons`.
+## JSON report
 
-<details>
-<summary><b>cvescannerv2.json</b></summary>
+The JSON report is **JSON Lines**: each run appends one line with one JSON
+document, so a file with several runs is a sequence of documents, one per
+line. The format is `schema_version: 2`. Keys are shown here pretty-printed
+for reading; the file has no line breaks inside a record.
 
 ```json
 {
-  "192.168.251.131": {
-    "timestamp": "2026-10-30T14:32:36+00:00",
-    "ports": {
-      "6667/tcp": {
-        "services": [
-          {
-            "name": "irc",
-            "cpe": "cpe:/a:unrealircd:unrealircd",
-            "vendor": "unrealircd",
-            "product": "unrealircd",
-            "version": "3.2.8.1",
-            "vupdate": "*",
-            "version_source": "irc",
-            "os_context": {},
-            "warnings": {},
-            "summary": { "high": 3, "medium": 0, "low": 0 },
-            "vulnerabilities": {
-              "total": 3,
-              "info": "scan",
-              "cves": {
-                "CVE-2016-7144": {
-                  "cvssv2": "6.8",
-                  "cvssv3": "8.1",
+  "schema_version": 2,
+  "scanner": { "name": "cvescannerv2", "version": "4.0" },
+  "timestamp": "2026-11-05T10:00:00+00:00",
+  "args": { "minconf": "low", "maxcve": 10 },
+  "hosts": [
+    { "ip": "192.168.1.10",
+      "ports": [
+        { "port": 3306, "protocol": "tcp", "service": "mysql",
+          "products": [
+            { "cpe": "cpe:/a:mysql:mysql:5.0.51a-3ubuntu5",
+              "vendor": "mysql", "product": "mysql",
+              "version": "5.0.51", "update": "a",
+              "version_source": "nmap_cpe",
+              "os_context": { "family": "linux", "distro": null, "source": "nmap" },
+              "warnings": [],
+              "cached": false,
+              "counts": { "total": 2, "high": 1, "medium": 1, "low": 0 },
+              "cves": [
+                { "id": "CVE-2009-2446",
+                  "cvss": { "v4": null, "v3": null, "v2": 8.5 },
                   "confidence": "high",
-                  "reasons": ["range_contains"]
-                }
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
+                  "reasons": ["exact_version"],
+                  "exploitdb": [],
+                  "metasploit": [] },
+                { "id": "CVE-2009-4484",
+                  "cvss": { "v4": null, "v3": 9.8, "v2": 7.5 },
+                  "confidence": "medium",
+                  "reasons": ["range_overlap"],
+                  "exploitdb": [],
+                  "metasploit": ["exploit/linux/mysql/mysql_yassl_getname"] }
+              ] } ] } ] },
+    { "ip": "192.168.1.11", "ports": [ ] }
+  ]
 }
 ```
 
-</details>
+| Field | Meaning |
+|---|---|
+| `schema_version` | Layout version of the document. This README describes `2`. |
+| `scanner` | Name and version of the script that wrote the record. |
+| `timestamp` | Start of the run. |
+| `args` | Effective `minconf` and `maxcve` of the run. |
+| `hosts[]` | One entry per scanned host, with `ip` and `ports`. A host with no products keeps `"ports": []`. |
+| `ports[]` | `port`, `protocol`, `service` (or `null`) and `products`. |
+| `products[]` | One service result: `cpe`, `vendor`, `product`, `version`, `update` (or `null`), `version_source`, `os_context`, `warnings`, `cached`, `counts` and `cves`. |
+| `counts` | Number of CVEs in total and per confidence level. |
+| `cves[]` | Every CVE of the service, in confidence order (not cut by `maxcve` or `minconf`). |
+| `cves[].cvss` | `v4`, `v3` and `v2`, each a number or `null`. The three keys are always present. |
+| `cves[].confidence` | `high`, `medium` or `low`. |
+| `cves[].reasons` | Why the CVE matched (for example `exact_version`, `range_overlap`, `platform_mismatch:windows`). |
+| `cves[].exploitdb` | Exploit-DB entries with `id`, `name` and `url`. |
+| `cves[].metasploit` | Metasploit module names. |
+| `cached` | `true` when the result was reused from an earlier service. The `cves` list is still complete. |
+
+## Changes in the v4 output
+
+- **Breaking change, no legacy mode.** The Nmap table has one `CVSS` column
+  instead of `CVSSv2` and `CVSSv3`. The JSON report is `schema_version: 2`:
+  the old `services`/`vulnerabilities`/`summary` layout is gone, and `hosts`
+  is now an array. Scripts that parsed the previous format must be updated.
+- **CVSSv4.** Scores from NVD CVSS v4 are stored and shown as `v4:`.
+- **Older databases.** A database built before CVSSv4 has no `cvss_v4` values
+  until it is updated and re-imported. The scanner still works without them
+  and writes a `warning` line to the log when the column is missing; the
+  `v4` field of the JSON is `null`.
 
 <a id="detection-heuristics"></a>
 # Detection pipeline

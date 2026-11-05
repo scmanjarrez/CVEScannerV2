@@ -2,16 +2,23 @@
 -- Confidence levels of CVE matches.  (Layer L5)
 --
 -- Pure scoring over the reasons attached to each CVE. A reason maps to a
--- level, a CVE takes the lowest level of its reasons, and rows are ordered
--- by level and then by CVSS scores. No I/O and no access to shared state.
+-- level, a CVE takes the lowest level of its reasons, and entries are ordered
+-- by level and then by the main CVSS score. No I/O and no access to shared state.
 
 local M = {}
 
---- Compare two rows by CVSS score, highest first.
+--- Return the main score of a cvss table: the first of v4, v3 and v2.
+-- Returns nil when the table has no score.
+local function primary_score(cvss)
+  return cvss.v4 or cvss.v3 or cvss.v2
+end
+
+--- Compare two CVE entries by main CVSS score, highest first.
+-- Entries are tables with the fields id and cvss. Ties order by id.
 local function cvss_comparator(a, b)
-  local score_a = tonumber(a[3]) or tonumber(a[2]) or -1
-  local score_b = tonumber(b[3]) or tonumber(b[2]) or -1
-  if score_a == score_b then return a[1] < b[1] end
+  local score_a = primary_score(a.cvss) or -1
+  local score_b = primary_score(b.cvss) or -1
+  if score_a == score_b then return a.id < b.id end
   return score_a > score_b
 end
 
@@ -32,9 +39,12 @@ local LEVEL_RANK = { low = 1, medium = 2, high = 3 }
 
 local LEVEL_LABEL = { high = 'HIGH', medium = 'MED', low = 'LOW' }
 
---- Order rows by confidence first, then by CVSSv3 and CVSSv2.
+--- Order CVE entries by confidence first, then by main CVSS score.
+-- Entries are tables with the fields id, cvss and confidence.
 local function confidence_comparator(a, b)
-  if a[6] ~= b[6] then return LEVEL_RANK[a[6]] > LEVEL_RANK[b[6]] end
+  if a.confidence ~= b.confidence then
+    return LEVEL_RANK[a.confidence] > LEVEL_RANK[b.confidence]
+  end
   return cvss_comparator(a, b)
 end
 
@@ -75,6 +85,7 @@ local function add_reason(vulns, reason)
   end
 end
 
+M.primary_score = primary_score
 M.cvss_comparator = cvss_comparator
 M.LEVEL_RANK = LEVEL_RANK
 M.LEVEL_LABEL = LEVEL_LABEL

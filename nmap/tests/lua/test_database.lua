@@ -134,6 +134,7 @@ local function scanner_for(args, aliases, vendor_aliases)
     write = function(_, line) table.insert(registry.log_lines, line) end
   }
   registry.json_report = {}
+  registry.json_hosts = {}
   registry.service_cache = {}
   registry.product_aliases = aliases or {}
   registry.vendor_aliases = vendor_aliases or {}
@@ -145,18 +146,63 @@ local function port(number, cpe, version, service)
     version = { cpe = { cpe }, version = version } }
 end
 
--- Run one port and return its output lines and reported CVE ids.
+-- First product of a TCP port of ip in the JSON report hosts, or nil.
+local function find_product(report, ip, port_number)
+  for _, host in ipairs(report or {}) do
+    if host.ip == ip then
+      for _, entry in ipairs(host.ports) do
+        if entry.port == port_number and entry.protocol == 'tcp' then
+          return entry.products[1]
+        end
+      end
+    end
+  end
+  return nil
+end
+
+-- CVE entry with the given id in a JSON product, or nil.
+local function cve_of(product, id)
+  for _, cve in ipairs(product and product.cves or {}) do
+    if cve.id == id then return cve end
+  end
+  return nil
+end
+
+-- True when some output line contains text.
+local function has_line(output, text)
+  for _, line in ipairs(output or {}) do
+    if line:find(text, 1, true) then return true end
+  end
+  return false
+end
+
+-- Split the Nmap text returned by portaction into lines. The text opens
+-- with a newline, so the first line is empty and is dropped.
+local function split_lines(text)
+  local lines = {}
+  if type(text) ~= 'string' then return nil end
+  for line in (text .. '\n'):gmatch('([^\n]*)\n') do
+    lines[#lines + 1] = line
+  end
+  table.remove(lines, 1)
+  return lines
+end
+
+-- Run one port and return its output lines, the reported CVE ids (every
+-- CVE of the product, not only the printed ones) and the scanner.
 local function scan(cpe, version, opts)
   opts = opts or {}
   local scanner = opts.scanner
       or scanner_for(opts.args, opts.aliases, opts.vendor_aliases)
   local number = opts.port or 80
-  local output = scanner.portaction(HOST, port(number, cpe, version))
+  -- portaction returns the structured rows first and the Nmap text second.
+  local _, text = scanner.portaction(HOST, port(number, cpe, version))
+  local output = split_lines(text)
   local cves = {}
-  local host = scanner.modules.state.json_report[HOST.ip]
-  local entry = host and host.ports[number .. '/tcp']
-  for _, service in ipairs(entry and entry.services or {}) do
-    for id in pairs(service.vulnerabilities.cves or {}) do cves[id] = true end
+  local product = find_product(scanner.modules.state.json_report, HOST.ip,
+    number)
+  for _, cve in ipairs(product and product.cves or {}) do
+    cves[cve.id] = true
   end
   return output, cves, scanner
 end
@@ -171,48 +217,49 @@ t.case('same product name from another vendor is not reported', function()
   t.eq(cves['CVE-2017-1000118'], nil)
 end)
 
-t.case('output lists vendor, product and CVEs sorted by CVSS', function()
+t.case('output lists product, counts and CVEs sorted by confidence', function()
   local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8')
-  t.eq({ output[1], output[2], output[3], output[4], output[5], output[6] }, {
-    'vendor: apache', 'product: http_server', 'version: 2.2.8',
-    'vupdate: *', 'version_source: nmap_cpe', 'cves: 2' })
-  t.truthy(output[7]:find('CVE ID', 1, true), 'header line')
-  t.truthy(output[7]:find('Conf', 1, true), 'confidence column')
-  t.truthy(output[8]:find('CVE-2010-0425', 1, true),
+  t.truthy(output[1]:find('apache http_server 2.2.8', 1, true), 'product')
+  t.truthy(output[1]:find('source: nmap_cpe', 1, true), 'version source')
+  t.eq(output[2], 'CVEs: 2  high: 1  medium: 0  low: 1')
+  t.truthy(output[3]:find('CVE', 1, true) and output[3]:find('CONF', 1, true),
+      'table header')
+  t.truthy(output[4]:find('CVE-2010-0425', 1, true),
       'highest confidence first')
-  t.truthy(output[8]:find('HIGH', 1, true), 'exact version is high')
-  t.truthy(output[8]:find('Yes', 1, true), 'ExploitDB flag')
-  t.truthy(output[9]:find('CVE-2999-0001', 1, true))
+  t.truthy(output[4]:find('HIGH', 1, true), 'exact version is high')
+  t.truthy(output[4]:find('EDB', 1, true), 'Exploit-DB flag')
+  t.truthy(output[4]:find('v2:10.0', 1, true), 'CVSS column')
+  t.truthy(output[5]:find('CVE-2999-0001', 1, true))
+  t.truthy(output[5]:find('LOW', 1, true), 'all-versions CVE is low')
 end)
 
 t.case('minconf=medium hides low CVEs from the table, not the JSON', function()
   local output, _, scanner = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { args = { minconf = 'medium' } })
-  t.eq(output[6], 'cves: 1 (total 2)')
-  t.eq(table.concat(output, '\n'):find('CVE-2999-0001', 1, true), nil)
-  local cves = scanner.modules.state.json_report[HOST.ip].ports['80/tcp']
-      .services[1].vulnerabilities.cves
-  t.eq(cves['CVE-2999-0001'].confidence, 'low')
-  t.eq(cves['CVE-2010-0425'].confidence, 'high')
+  t.truthy(has_line(output, '1 below minconf=medium'), 'hidden count line')
+  t.eq(has_line(output, 'CVE-2999-0001'), false)
+  local product = find_product(scanner.modules.state.json_report, HOST.ip, 80)
+  t.eq(cve_of(product, 'CVE-2999-0001').confidence, 'low')
+  t.eq(cve_of(product, 'CVE-2010-0425').confidence, 'high')
 end)
 
 t.case('invalid minconf falls back to low', function()
   local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { args = { minconf = 'bogus' } })
-  t.eq(output[6], 'cves: 2')
+  t.eq(output[2], 'CVEs: 2  high: 1  medium: 0  low: 1')
+  t.eq(has_line(output, 'below minconf'), false)
 end)
 
 t.case('JSON output carries Exploit-DB and Metasploit details', function()
   local _, _, scanner = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8')
-  local service = scanner.modules.state.json_report[HOST.ip].ports['80/tcp']
-      .services[1]
-  t.eq(service.vendor, 'apache')
-  t.eq(service.vulnerabilities.total, 2)
-  t.eq(service.vulnerabilities.cves['CVE-2010-0425'].exploitdb[1].url,
+  local product = find_product(scanner.modules.state.json_report, HOST.ip, 80)
+  t.eq(product.vendor, 'apache')
+  t.eq(product.counts.total, 2)
+  t.eq(cve_of(product, 'CVE-2010-0425').exploitdb[1].url,
     'https://www.exploit-db.com/exploits/11650')
   local _, _, ssl = scan('cpe:/a:openssl:openssl:1.0.1e', '1.0.1e')
-  t.eq(ssl.modules.state.json_report[HOST.ip].ports['80/tcp'].services[1]
-    .vulnerabilities.cves['CVE-2014-0160'].metasploit[1].name,
+  local ssl_product = find_product(ssl.modules.state.json_report, HOST.ip, 80)
+  t.eq(cve_of(ssl_product, 'CVE-2014-0160').metasploit[1],
     'auxiliary/scanner/ssl/openssl_heartbleed')
 end)
 
@@ -259,17 +306,22 @@ t.case('second port with the same product uses the cache', function()
   scan('cpe:/a:apache:http_server:2.2.8', '2.2.8', { scanner = scanner })
   local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { scanner = scanner, port = 8080 })
-  local service = scanner.modules.state.json_report[HOST.ip].ports['8080/tcp']
-      .services[1]
-  t.eq(service.vulnerabilities.info, 'cache')
-  t.eq(service.vulnerabilities.total, 2)
-  t.eq(output[6], 'cves: 2')
+  local first = find_product(scanner.modules.state.json_report, HOST.ip, 80)
+  local second = find_product(scanner.modules.state.json_report, HOST.ip, 8080)
+  t.eq(first.cached, false)
+  t.eq(second.cached, true)
+  t.eq(second.counts.total, 2)
+  t.eq(#second.cves, 2, 'cached service keeps the full CVE list')
+  t.eq(output[2], 'CVEs: 2  high: 1  medium: 0  low: 1')
 end)
 
 t.case('maxcve limits printed rows but not JSON', function()
   local output, cves = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { args = { maxcve = '1' } })
-  t.eq(#output, 9)
+  t.eq(#output, 5)
+  t.truthy(has_line(output, 'CVE-2010-0425'), 'first row printed')
+  t.eq(has_line(output, 'CVE-2999-0001'), false)
+  t.truthy(has_line(output, '+1 more (maxcve=1)'), 'hidden count line')
   t.keys_eq(cves, { 'CVE-2010-0425', 'CVE-2999-0001' })
 end)
 
@@ -323,12 +375,26 @@ end)
 -- collector happened to finalise every unclosed cursor first (verified: an
 -- explicit collectgarbage() makes this pass). The outcome is not
 -- deterministic in real scans.
+t.case('portaction returns the Nmap text as a string', function()
+  local scanner = scanner_for()
+  local structured, text = scanner.portaction(HOST,
+    port(80, 'cpe:/a:apache:http_server:2.2.8', '2.2.8'))
+  t.eq(type(structured), 'table', 'structured rows')
+  t.eq(type(text), 'string', 'second return value')
+  t.eq(text:sub(1, 1), '\n', 'text opens on its own line')
+  t.truthy(text:sub(-1) ~= '\n', 'text has no trailing newline')
+  t.truthy(text:find('CVE-2010-0425', 1, true), 'expected CVE in text')
+  t.eq(text:find('table:', 1, true), nil, 'no Lua table dump')
+end)
+
 t.case('postaction writes the JSON report after a scan', function()
   local json_path = os.tmpname()
   os.remove(json_path)
   local scanner = scanner_for({ json = json_path })
   scanner.stubs.json.generate = function() return '{"ok":true}' end
   scanner.modules.state.log_file.close = function() end
+  scanner.modules.state.totals = { hosts = 0, services = 0, cves = 0 }
+  scanner.modules.state.script_version = 'x'
   scan('cpe:/a:apache:http_server:2.2.8', '2.2.8', { scanner = scanner })
   local ran, err = pcall(scanner.postaction)
   local file = io.open(json_path, 'r')

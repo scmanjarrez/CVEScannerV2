@@ -149,24 +149,26 @@ end)
 
 t.suite('cvss_comparator')
 
-t.case('sort by CVSSv3, then CVSSv2, then CVE id', function()
+t.case('sort by main score (v4, v3, v2), then id', function()
   local rows = {
-    { 'CVE-A', '5.0', nil },
-    { 'CVE-B', '10.0', nil },
-    { 'CVE-F', nil, '9.8' },
-    { 'CVE-E', '7.5', nil },
-    { 'CVE-C', nil, '7.5' },
-    { 'CVE-D', nil, nil },
+    { id = 'CVE-A', cvss = { v3 = 5.0 } },
+    { id = 'CVE-B', cvss = { v3 = 10.0 } },
+    { id = 'CVE-F', cvss = { v2 = 9.8 } },
+    { id = 'CVE-E', cvss = { v3 = 7.5 } },
+    { id = 'CVE-C', cvss = { v2 = 7.5 } },
+    { id = 'CVE-D', cvss = {} },
+    { id = 'CVE-G', cvss = { v4 = 9.3, v3 = 2.0 } },
   }
   table.sort(rows, s.modules.confidence.cvss_comparator)
   local order = {}
-  for _, row in ipairs(rows) do table.insert(order, row[1]) end
-  t.eq(order, { 'CVE-B', 'CVE-F', 'CVE-C', 'CVE-E', 'CVE-A', 'CVE-D' })
+  for _, row in ipairs(rows) do table.insert(order, row.id) end
+  t.eq(order, { 'CVE-B', 'CVE-F', 'CVE-G', 'CVE-C', 'CVE-E', 'CVE-A',
+    'CVE-D' })
 end)
 
 t.case('numeric, not lexicographic, comparison', function()
-  t.truthy(s.modules.confidence.cvss_comparator({ 'X', '10.0', nil }, { 'Y',
-      '9.0', nil }))
+  t.truthy(s.modules.confidence.cvss_comparator(
+    { id = 'X', cvss = { v3 = 10.0 } }, { id = 'Y', cvss = { v3 = 9.0 } }))
 end)
 
 t.suite('SQL formatting')
@@ -199,6 +201,7 @@ local PATHS = {}
 -- db.children adds a 5.5.x product row, as a real database would have.
 local function spec_of(db)
   local spec = { cves = {}, products = {}, affected = {} }
+  spec.legacy_cves = db.legacy_cves
   local ids = {}
   local function product(version, update)
     local key = version .. '|' .. update
@@ -212,7 +215,8 @@ local function spec_of(db)
   -- Product 1 is the base row that conditions rows reference.
   local base = product('*', '*')
   for _, row in ipairs(db.affected or {}) do
-    table.insert(spec.cves, { row[1], row[2], row[3], 2000 })
+    -- row[8] is the optional CVSSv4 score of the CVE.
+    table.insert(spec.cves, { row[1], row[2], row[3], 2000, row[8] })
     table.insert(spec.affected, { row[1], product(row[4], row[5]) })
   end
   if db.children then product('5.5.3', '*') end
@@ -234,17 +238,36 @@ local function connect(db)
   return fixture.open(path, sqlite)
 end
 
--- Install a real database and run vulnerabilities for one observed info.
+-- Install a real database and return the result for one observed info.
 local function scan(db, info, scan_ctx)
   local reg = s.modules.state
   reg.db_env, reg.db_conn = connect(db)
   reg.log_file = { write = function() end }
-  reg.json_report = { ['10.0.0.1'] = { ports = {} } }
   local host = { ip = '10.0.0.1' }
   local port = { number = 80, protocol = 'tcp', service = 'http' }
-  local out, meta = s.modules.service_cves.find_service_cves(host, port,
+  return s.modules.service_cves.find_service_cves(host, port,
     'cpe:/a:apache:tomcat:5.5', 'apache', 'tomcat', info, scan_ctx)
-  return out[1], table.concat(out, '\n'), meta
+end
+
+-- CVE ids of a result, in result order.
+local function ids_of(result)
+  local ids = {}
+  for _, cve in ipairs(result.cves) do table.insert(ids, cve.id) end
+  return ids
+end
+
+-- Entry of one CVE in a result, or nil when it is not there.
+local function entry_of(result, id)
+  for _, cve in ipairs(result.cves) do
+    if cve.id == id then return cve end
+  end
+  return nil
+end
+
+-- Confidence counters of a result as a table.
+local function summary_of(result)
+  return { high = result.counts.high, medium = result.counts.medium,
+    low = result.counts.low }
 end
 
 local function info_of(ver)
@@ -262,20 +285,19 @@ local rows = {
 local EXACT = { rows[1] }
 
 db_case('series 5.5 expands to children when the database has them', function()
-  local n, text = scan({ children = true, affected = rows }, info_of('5.5'))
-  t.eq(n, 3)
-  t.truthy(text:find('CVE-LATER', 1, true))
+  local result = scan({ children = true, affected = rows }, info_of('5.5'))
+  t.eq(result.counts.total, 3)
+  t.truthy(entry_of(result, 'CVE-LATER'))
 end)
 
 db_case('series 5.5 without children keeps the exact match only', function()
-  local n, text = scan({ children = false, affected = EXACT }, info_of('5.5'))
-  t.eq(n, 1)
-  t.truthy(text:find('CVE-EXACT', 1, true))
+  local result = scan({ children = false, affected = EXACT }, info_of('5.5'))
+  t.eq(ids_of(result), { 'CVE-EXACT' })
 end)
 
 db_case('specific version 5.5.3 is not expanded', function()
-  local n = scan({ children = true, affected = rows }, info_of('5.5.3'))
-  t.eq(n, 1)
+  local result = scan({ children = true, affected = rows }, info_of('5.5.3'))
+  t.eq(result.counts.total, 1)
 end)
 
 db_case('Nmap range is not changed by series expansion', function()
@@ -283,7 +305,7 @@ db_case('Nmap range is not changed by series expansion', function()
     to = '5.5.9999999999', matches_any = false, is_range = true }
   local without = scan({ children = false, affected = rows }, info)
   local with = scan({ children = true, affected = rows }, info)
-  t.eq(with, without)
+  t.eq(ids_of(with), ids_of(without))
 end)
 
 t.case('series_prefix accepts only x.y without update', function()
@@ -326,7 +348,6 @@ local function platform_scanner(db, args)
   local logged = {}
   sc.modules.state.platform_families = FAMILIES
   sc.modules.state.db_env, sc.modules.state.db_conn = connect(db)
-  sc.modules.state.json_report = { ['10.0.0.1'] = { ports = {} } }
   sc.modules.state.log_file = {
     write = function(_, msg) table.insert(logged, msg) end,
   }
@@ -426,8 +447,8 @@ db_case('database without conditions table gives no reasons, one warning',
       cpe, 'apache', 'tomcat', info_of('5.5'), scan_ctx)
     local second = sc.modules.service_cves.find_service_cves(host, port,
       cpe, 'apache', 'tomcat', info_of('5.5'), scan_ctx)
-    t.eq(first[1], 1)
-    t.eq(second[1], 1)
+    t.eq(first.counts.total, 1)
+    t.eq(second.counts.total, 1)
     local warnings = 0
     for _, line in ipairs(logged) do
       if line:find('conditions table', 1, true) then
@@ -479,18 +500,18 @@ end)
 db_case('observed_range: a wide scan marks every CVE low', function()
   local range = { version = nil, update = nil, from = '5.0.0',
     to = '5.9.9999999999', matches_any = false, is_range = true }
-  local n, _, meta = scan({ children = false, affected = rows }, range)
-  t.truthy(n > 0, 'the range must match at least one CVE')
-  t.eq(meta.summary.low, n)
-  t.eq(meta.summary.high, 0)
+  local result = scan({ children = false, affected = rows }, range)
+  t.truthy(result.counts.total > 0, 'the range must match at least one CVE')
+  t.eq(result.counts.low, result.counts.total)
+  t.eq(result.counts.high, 0)
 end)
 
 db_case('observed_range: narrow range is not marked', function()
   local range = { version = nil, update = nil, from = '5.5.0',
     to = '5.5.9999999999', matches_any = false, is_range = true }
-  local n, _, meta = scan({ children = false, affected = rows }, range)
-  t.truthy(n > 0, 'the range must match at least one CVE')
-  t.eq(meta.summary.low, 0)
+  local result = scan({ children = false, affected = rows }, range)
+  t.truthy(result.counts.total > 0, 'the range must match at least one CVE')
+  t.eq(result.counts.low, 0)
 end)
 
 db_case('platform reasons are appended to the existing reasons', function()
@@ -534,20 +555,18 @@ end)
 t.suite('confidence summary')
 
 db_case('exact scan counts one high CVE', function()
-  local _, _, meta = scan({ children = false, affected = EXACT },
-    info_of('5.5'))
-  t.eq(meta.summary, { high = 1, medium = 0, low = 0 })
+  local result = scan({ children = false, affected = EXACT }, info_of('5.5'))
+  t.eq(summary_of(result), { high = 1, medium = 0, low = 0 })
 end)
 
 db_case('series expansion counts the children as medium', function()
-  local _, _, meta = scan({ children = true, affected = rows }, info_of('5.5'))
-  t.eq(meta.summary, { high = 1, medium = 2, low = 0 })
+  local result = scan({ children = true, affected = rows }, info_of('5.5'))
+  t.eq(summary_of(result), { high = 1, medium = 2, low = 0 })
 end)
 
 db_case('distro_backport warning only when the context asks for it', function()
-  local _, _, plain = scan({ children = false, affected = rows },
-    info_of('5.5'))
-  local _, _, backport = scan({ children = false, affected = rows },
+  local plain = scan({ children = false, affected = rows }, info_of('5.5'))
+  local backport = scan({ children = false, affected = rows },
     info_of('5.5'), { backport = true, os = {} })
   t.eq(plain.warnings, {})
   t.eq(backport.warnings, { 'distro_backport' })
@@ -555,71 +574,87 @@ end)
 
 t.suite('confidence output')
 
--- Run vulnerabilities with script arguments; return output, meta, scanner.
+-- Run find_service_cves with script arguments; return the result and the
+-- scanner, whose text_output module renders it.
 local function scan_args(args, db, info, scan_ctx)
   local sc = platform_scanner(db, args)
   local host = { ip = '10.0.0.1' }
   local port = { number = 80, protocol = 'tcp', service = 'http' }
-  local out, meta = sc.modules.service_cves.find_service_cves(host, port,
+  local result = sc.modules.service_cves.find_service_cves(host, port,
     'cpe:/a:apache:tomcat:5.5', 'apache', 'tomcat', info, scan_ctx)
-  return out, meta, sc
+  return result, sc
 end
 
--- First service recorded in the JSON report of the fake scanner.
-local function json_service(sc)
-  return sc.modules.state.json_report['10.0.0.1'].ports['80/tcp'].services[1]
+-- Nmap table lines of a result, rendered with the given configuration.
+local function render(sc, result, cfg)
+  return table.concat(sc.modules.text_output.nmap_lines(result, cfg), '\n')
 end
 
 local range_info = { version = nil, update = nil, from = '5.0.0',
   to = '5.9.9999999999', matches_any = false, is_range = true }
 
-db_case('minconf=medium hides low rows; count and JSON keep them', function()
-  local out, meta, sc = scan_args({ minconf = 'medium' },
+local ALL_LOW = { maxcve = 10, minconf = 'low', json = 'out.json' }
+
+db_case('minconf=medium hides low rows; result keeps them', function()
+  local result = scan_args({ minconf = 'medium' },
     { children = false, affected = rows }, range_info)
-  t.truthy(out[1] > 0, 'the range must match at least one CVE')
-  t.eq(#out, 1)
-  t.eq(meta.shown, 0)
-  t.eq(meta.summary.low, out[1])
-  local count = 0
-  for _ in pairs(json_service(sc).vulnerabilities.cves) do
-    count = count + 1
-  end
-  t.eq(count, out[1])
+  t.truthy(result.counts.total > 0, 'the range must match at least one CVE')
+  t.eq(#result.cves, result.counts.total)
+  t.eq(result.counts.shown, 0)
+  t.truthy(result.counts.shown < result.counts.total)
+  t.eq(result.counts.low, result.counts.total)
 end)
 
 db_case('invalid minconf value behaves as low', function()
-  local out, meta = scan_args({ minconf = 'bogus' },
+  local result = scan_args({ minconf = 'bogus' },
     { children = false, affected = rows }, range_info)
-  t.eq(meta.shown, out[1])
+  t.eq(result.counts.shown, result.counts.total)
 end)
 
 db_case('rows sort by confidence before CVSS, with the label', function()
-  local out, _, sc = scan_args({}, { children = true, affected = rows },
+  local result, sc = scan_args({}, { children = true, affected = rows },
     info_of('5.5'))
-  t.truthy(out[2]:find('CVE-EXACT', 1, true), 'high row first')
-  t.truthy(out[2]:find('HIGH', 1, true))
-  t.truthy(out[3]:find('MED', 1, true), 'medium rows after')
-  local cves = json_service(sc).vulnerabilities.cves
-  t.eq(cves['CVE-CHILD'].confidence, 'medium')
-  t.eq(cves['CVE-CHILD'].reasons, { 'series_expanded' })
+  t.eq(result.cves[1].id, 'CVE-EXACT', 'high row first')
+  t.eq(result.cves[1].confidence, 'high')
+  t.eq(result.cves[2].confidence, 'medium')
+  t.eq(result.cves[3].confidence, 'medium', 'medium rows after')
+  local text = render(sc, result, ALL_LOW)
+  t.truthy(text:find('HIGH', 1, true))
+  t.truthy(text:find('MED', 1, true))
+  local child = entry_of(result, 'CVE-CHILD')
+  t.eq(child.confidence, 'medium')
+  t.eq(child.reasons, { 'series_expanded' })
 end)
 
-db_case('maxcve limits rows after the confidence sort', function()
-  local out = scan_args({ maxcve = '1' }, { children = true, affected = rows },
+db_case('maxcve limits the printed rows, not the result', function()
+  local result, sc = scan_args({}, { children = true, affected = rows },
     info_of('5.5'))
-  t.eq(#out, 2)
-  t.truthy(out[2]:find('CVE-EXACT', 1, true))
+  t.eq(#result.cves, 3)
+  local text = render(sc, result, { maxcve = 1, minconf = 'low',
+    json = 'out.json' })
+  t.truthy(text:find('CVE-EXACT', 1, true), 'high row printed')
+  t.eq(text:find('CVE-CHILD', 1, true), nil)
 end)
 
-db_case('JSON service carries version source and confidence summary',
-    function()
-  local out, meta, sc = scan_args({}, { children = true, affected = rows },
+db_case('result carries version source and confidence counts', function()
+  local result = scan_args({}, { children = true, affected = rows },
     info_of('5.5'), { version_source = 'nmap_cpe', os = {} })
-  t.eq(meta.version_source, 'nmap_cpe')
-  local service = json_service(sc)
-  t.eq(service.version_source, 'nmap_cpe')
-  t.eq(service.summary, { high = 1, medium = 2, low = 0 })
-  t.eq(service.warnings, {})
+  t.eq(result.version_source, 'nmap_cpe')
+  t.eq(summary_of(result), { high = 1, medium = 2, low = 0 })
+  t.eq(result.warnings, {})
+end)
+
+db_case('CVSSv4 9.3 alone ranks above CVSSv2 7.5 at equal confidence',
+    function()
+  local v4_rows = {
+    { 'CVE-V2', '7.5', nil, '5.5', '*', 0, 0 },
+    { 'CVE-V4', nil, nil, '5.5', '*', 0, 0, '9.3' },
+  }
+  local result = scan({ children = false, affected = v4_rows },
+    info_of('5.5'))
+  t.eq(ids_of(result), { 'CVE-V4', 'CVE-V2' })
+  t.eq(result.cves[1].cvss, { v4 = 9.3, v3 = nil, v2 = nil })
+  t.eq(result.cves[2].cvss.v2, 7.5)
 end)
 
 t.case('parse_cpe_version returns where the version came from', function()
@@ -631,9 +666,34 @@ t.case('parse_cpe_version returns where the version came from', function()
   t.eq(from_cpe, 'nmap_cpe')
 end)
 
+t.suite('legacy databases')
+
+db_case('database without cvss_v4 gives v4 nil and warns once', function()
+  local sc, logged = platform_scanner({ legacy_cves = true, affected = {
+    { 'CVE-LEG', '7.5', nil, '5.5', '*', 0, 0, '9.3' },
+  } })
+  local host = { ip = '10.0.0.1' }
+  local port = { number = 80, protocol = 'tcp', service = 'http' }
+  local cpe = 'cpe:/a:apache:tomcat:5.5'
+  local scan_ctx = { os = { family = 'linux' } }
+  local first = sc.modules.service_cves.find_service_cves(host, port, cpe,
+    'apache', 'tomcat', info_of('5.5'), scan_ctx)
+  local second = sc.modules.service_cves.find_service_cves(host, port, cpe,
+    'apache', 'tomcat', info_of('5.5'), scan_ctx)
+  t.eq(first.cves[1].cvss.v4, nil)
+  t.eq(first.cves[1].cvss.v2, 7.5)
+  t.eq(second.cves[1].cvss.v4, nil)
+  local warnings = 0
+  for _, line in ipairs(logged) do
+    if line:find('cvss_v4', 1, true) then warnings = warnings + 1 end
+  end
+  t.eq(warnings, 1)
+end)
+
 t.suite('version source')
 
--- Run analysis for one version found under the given matches origin.
+-- Run analysis for one version found under the given matches origin and
+-- return the version source of the cached service result.
 local function analysis_source(origin, cpe, version)
   local sc = platform_scanner({ children = false, affected = rows }, {})
   sc.modules.state.service_cache = {}
@@ -642,7 +702,10 @@ local function analysis_source(origin, cpe, version)
   local host = { ip = '10.0.0.1' }
   local port = { number = 80, protocol = 'tcp', service = 'http' }
   sc.modules.port_analysis.analyze_port(host, port, matches, { os = {} })
-  return json_service(sc).version_source
+  for _, cached in pairs(sc.modules.state.service_cache) do
+    return cached.result.version_source
+  end
+  return nil
 end
 
 db_case('version found only by an HTTP probe is reported as http', function()

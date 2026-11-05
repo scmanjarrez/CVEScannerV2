@@ -2,25 +2,22 @@
 -- Vulnerability lookup for one service. (Layer L7)
 --
 -- Finds the CVEs that affect a service, adds the platform reasons, sorts
--- them by confidence, stores them in the JSON report and returns the
--- output rows for the entrypoint. I/O: SQL reads through db, log output
--- and report writes; no network or files. Reads state.has_conditions,
--- config.minconf and config.maxcve.
+-- them by confidence and the exploit references, and returns the result
+-- table that text_output and json_report render. I/O: SQL reads through
+-- db and warnings through log; no report or output writes, no network or
+-- files. Reads state.has_conditions, state.has_cvss_v4, config.minconf.
 
 local util = require 'cvescannerv2.util'
 local config = require 'cvescannerv2.config'
 local state = require 'cvescannerv2.state'
-local report = require 'cvescannerv2.json_report'
 local db = require 'cvescannerv2.db'
 local log = require 'cvescannerv2.log'
 local version = require 'cvescannerv2.version'
 local scope = require 'cvescannerv2.version_scope'
 local platform = require 'cvescannerv2.platform_match'
 local confidence = require 'cvescannerv2.confidence'
-local render = require 'cvescannerv2.text_output'
 
 local is_blank, fmt = util.is_blank, util.fmt
-local log_separator = log.log_separator
 local vendor_scope = db.vendor_scope
 local series_has_children = db.series_has_children
 local has_conditions = db.has_conditions
@@ -36,59 +33,58 @@ local confidence_comparator = confidence.confidence_comparator
 local assign_confidence = confidence.assign_confidence
 local add_reason = confidence.add_reason
 local LEVEL_RANK = confidence.LEVEL_RANK
-local cve_row = render.cve_row
 local host_probe_os = require 'cvescannerv2.probes.init'.host_probe_os
 
 local M = {}
 
--- Store one CVE in the JSON report and, when show is true, in the log.
-local function report_exploits(host, port, vuln, rec, show)
-  local _ip = host.ip
-  local _port = fmt('%s/%s', port.number, port.protocol)
-  local emit = show and log.write or function() end
-  local reasons = #rec.reasons > 0 and table.concat(rec.reasons, ', ') or '-'
-  -- Dump the CVE score
-  local cvssv2, cvssv3 = db.cvss_scores(vuln)
-  emit("[-] \tid: %-18s\tcvss_v2: %-5s\tcvss_v3: %-5s", vuln, cvssv2,
-    cvssv3 or "-")
-  emit("[-] \tconfidence: %s\treasons: %s", rec.confidence, reasons)
-  report.set_cve(_ip, _port, vuln, {
-    ['cvssv2'] = cvssv2,
-    ['cvssv3'] = cvssv3 or "-",
-    ['confidence'] = rec.confidence,
-    ['reasons'] = rec.reasons,
-  })
-  local cves = report.last_service(_ip, _port)['vulnerabilities']['cves']
 
-  -- Dump exploits from Exploit-DB
-  local exploits = db.exploitdb_refs(vuln)
-  if #exploits > 0 then
-    emit("[!] \t\tExploitDB:")
-    cves[vuln]['exploitdb'] = {}
-    local exp_list = cves[vuln]['exploitdb']
-    for _, exploit in ipairs(exploits) do
-      emit("[#] \t\t\tname: %s", exploit.name)
-      emit("[#] \t\t\tid: %s", exploit.id)
-      emit("[#] \t\t\turl: https://www.exploit-db.com/exploits/%s", exploit.id)
-      exp_list[#exp_list + 1] = {
-        ['name'] = exploit.name,
-        ['id'] = exploit.id,
-        ['url'] = fmt('https://www.exploit-db.com/exploits/%s', exploit.id)
-      }
-    end
+-- Warn once when the database has no cvss_v4 column.
+local function warn_missing_cvss_v4()
+  local first_check = state.has_cvss_v4 == nil
+  local present = db.has_cvss_v4()
+  if first_check and not present then
+    log.write('warning: database without cvss_v4 column; CVSSv4 scores '
+      .. 'unavailable. Update the database.')
   end
+end
 
-  -- Dump exploits from Metasploit
-  local modules = db.metasploit_refs(vuln)
-  if #modules > 0 then
-    emit("[!] \t\tMetasploit:")
-    cves[vuln]['metasploit'] = {}
-    local meta_list = cves[vuln]['metasploit']
-    for _, name in ipairs(modules) do
-      emit("[#] \t\t\tname: %s", name)
-      meta_list[#meta_list + 1] = { ['name'] = name }
-    end
+
+-- Return the exploit references of a CVE as {id, name, url} entries.
+local function exploit_entries(id)
+  local entries = {}
+  for _, exploit in ipairs(db.exploitdb_refs(id)) do
+    entries[#entries + 1] = {
+      id = exploit.id,
+      name = exploit.name,
+      url = fmt('https://www.exploit-db.com/exploits/%s', exploit.id),
+    }
   end
+  return entries
+end
+
+
+-- Build the result entry of one CVE from its database record.
+local function cve_entry(id, rec)
+  local entry = {
+    id = id,
+    cvss = {
+      v4 = tonumber(rec.CVSSV4),
+      v3 = tonumber(rec.CVSSV3),
+      v2 = tonumber(rec.CVSSV2),
+    },
+    confidence = rec.confidence,
+    reasons = rec.reasons,
+    visible = LEVEL_RANK[rec.confidence] >= LEVEL_RANK[config.minconf],
+    exploitdb = {},
+    metasploit = {},
+  }
+  if tonumber(rec.ExploitDB) == 1 then
+    entry.exploitdb = exploit_entries(id)
+  end
+  if tonumber(rec.Metasploit) == 1 then
+    entry.metasploit = db.metasploit_refs(id)
+  end
+  return entry
 end
 
 
@@ -99,7 +95,8 @@ local function add_platform_reasons(vulns, vendors, product, os_ctx)
   local first_check = state.has_conditions == nil
   local present = has_conditions()
   if first_check and not present then
-    log.write('[!] Database without conditions table; platform checks skipped.')
+    log.write('warning: database without conditions table; '
+      .. 'platform checks skipped.')
   end
   if present then
     rows_by_cve = db.platform_condition_rows(vendors, product)
@@ -208,7 +205,6 @@ local function build_meta(vulns, scan_ctx, os_ctx)
     warnings = {},
     version_source = scan_ctx and scan_ctx.version_source,
     os_context = os_ctx,
-    shown = 0,
   }
   if scan_ctx and scan_ctx.backport then
     table.insert(meta.warnings, 'distro_backport')
@@ -217,90 +213,64 @@ local function build_meta(vulns, scan_ctx, os_ctx)
 end
 
 
--- Return the CVEs as sorted tuples by confidence, CVSSv3 and CVSSv2.
+-- Return the CVE entries sorted by confidence, then by CVSS.
 local function sort_cves(vulns)
-  local sorted = {}
-  for key, value in pairs(vulns) do
-    table.insert(sorted, { key,
-      value.CVSSV2, value.CVSSV3,
-      value.ExploitDB,
-      value.Metasploit,
-      value.confidence })
+  local entries = {}
+  for id, rec in pairs(vulns) do
+    entries[#entries + 1] = cve_entry(id, rec)
   end
-  table.sort(sorted, confidence_comparator)
-  log.write("[+] cves: %d", #sorted)
-  return sorted
+  table.sort(entries, confidence_comparator)
+  return entries
 end
 
 
--- Store the service and its version data in the JSON report.
-local function add_service_entry(host, port, cpe, vendor, product, info,
-    meta)
-  local port_proto = fmt('%s/%s', port.number, port.protocol)
-  report.ensure_port(host.ip, port_proto)
+-- Return the version and update text of the service. A '*' or empty update
+-- is nil.
+local function version_text(info)
   local ver_text, update = display_version(info)
-  report.add_service(host.ip, port_proto,
-    {
-      name = port.service,
-      cpe = cpe,
-      vendor = vendor,
-      product = product,
-      version = ver_text,
-      vupdate = update,
-      version_source = meta.version_source,
-      os_context = meta.os_context,
-      warnings = meta.warnings,
-      summary = meta.summary,
-      vulnerabilities = {
-        ['total'] = 0,
-        ['info'] = 'scan',
-        ['cves'] = {}
-      }
-    }
-  )
-end
-
-
--- Dump each CVE in the report and append the shown rows to output.
--- Return the number of CVEs shown.
-local function emit_cve_rows(host, port, sorted, vulns, output)
-  local cnt = 0
-  for _, value in ipairs(sorted) do
-    local show = LEVEL_RANK[value[6]] >= LEVEL_RANK[config.minconf]
-    report_exploits(host, port, value[1], vulns[value[1]], show)
-    if show then
-      if cnt < config.maxcve then
-        table.insert(output,
-          cve_row(value[1], value[6], value[2], value[3],
-            value[4], value[5])
-        )
-      end
-      cnt = cnt + 1
-    end
+  if update == nil or update == '*' or update == '' then
+    update = nil
   end
-  return cnt
+  return ver_text, update
 end
 
 
--- Return the CVE count, the output lines, and the meta table with the
--- confidence summary and the service warnings.
-local function find_service_cves(host, port, cpe, vendor, product, info,
+-- Return the result of one service: its product data, the CVE entries
+-- sorted by confidence and the counters. Always returns a table, also
+-- when no CVE affects the service.
+local function find_service_cves(host, _port, cpe, vendor, product, info,
     scan_ctx)
+  warn_missing_cvss_v4()
   local vendors = vendor_scope(vendor, product)
   local bounds = version_bounds(info)
   local vulns = find_cves(vendors, product, info, bounds)
   local os_ctx = resolve_os_context(host, vulns, vendors, product, scan_ctx)
   local meta = build_meta(vulns, scan_ctx, os_ctx)
 
-  local sorted = sort_cves(vulns)
-  local output = {}
-  table.insert(output, #sorted)
-  if #sorted > 0 then
-    add_service_entry(host, port, cpe, vendor, product, info, meta)
+  local cves = sort_cves(vulns)
+  local shown = 0
+  for _, entry in ipairs(cves) do
+    if entry.visible then shown = shown + 1 end
   end
-  meta.shown = emit_cve_rows(host, port, sorted, vulns, output)
-  log_separator()
-  return output, meta
+  local ver_text, update = version_text(info)
+  return {
+    cpe = cpe,
+    vendor = vendor,
+    product = product,
+    version = ver_text,
+    update = update,
+    version_source = meta.version_source,
+    os_context = meta.os_context,
+    warnings = meta.warnings,
+    counts = {
+      total = #cves,
+      high = meta.summary.high,
+      medium = meta.summary.medium,
+      low = meta.summary.low,
+      shown = shown,
+    },
+    cves = cves,
+  }
 end
 
 

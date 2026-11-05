@@ -40,17 +40,13 @@ CVEs information gathered from nvd.nist.gov.
 -- PORT      STATE SERVICE       VERSION
 -- 3306/tcp  open  mysql         MySQL 5.5.55
 -- | cvescannerv2:
--- |   vendor: oracle
--- |   product: mysql
--- |   version: 5.5.55
--- |   vupdate: *
--- |   version_source: nmap
--- |   cves: 4
--- |       CVE ID           Conf  CVSSv2  CVSSv3  ExploitDB  Metasploit
--- |       CVE-2021-3278    HIGH  7.5     9.8     Yes        No
--- |       CVE-2014-3631    MED   7.2     -       Yes        Yes
--- |       CVE-2019-13401   LOW   6.8     8.8     No         No
--- |_      CVE-2016-3976    LOW   5.0     7.5     Yes        Yes
+-- |   oracle mysql 5.5.55 (cpe:/a:oracle:mysql:5.5.55)  source: nmap_cpe
+-- |   CVEs: 4  high: 1  medium: 1  low: 2
+-- |     CVE              CONF  EXPLOITS  CVSS
+-- |     CVE-2021-3278    HIGH  EDB       v3:9.8 v2:7.5
+-- |     CVE-2014-3631    MED   EDB MSF   v2:7.2
+-- |     CVE-2019-13401   LOW   -         v3:8.8 v2:6.8
+-- |_    CVE-2016-3976    LOW   EDB MSF   v3:7.5 v2:5.0
 --
 -- @args cvescannerv2.db Database file. Default: data/cve.db
 -- @args cvescannerv2.maxcve Maximum number of CVEs printed on screen.

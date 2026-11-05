@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
--- Log file helpers for the cvescannerv2 NSE script.  (Layer L2)
+-- Log file I/O for the cvescannerv2 NSE script.  (Layer L2)
 --
 -- Appends to the log file opened in state.log_file (io.open, append mode)
--- and prints run details through stdnse. Reads state.run_timestamp and formats
--- versions with cvescannerv2.version. Does no network I/O and does not
--- read config.
+-- and prints run details through stdnse. The lines are built by
+-- text_output; this module only writes them. Does no network I/O and does
+-- not read config.
 
 local M = {}
 
@@ -13,7 +13,6 @@ local stdnse = require 'stdnse'
 
 local state = require 'cvescannerv2.state'
 local util = require 'cvescannerv2.util'
-local display_version = require('cvescannerv2.version').display_version
 local fmt = util.fmt
 
 
@@ -32,9 +31,8 @@ end
 M.close = close
 
 
---- Write the run timestamp to the log and print the run details.
+--- Print the run details through stdnse.
 local function log_run_header(script_version)
-  state.log_file:write(fmt("## %s\n", state.run_timestamp))
   stdnse.verbose(1, fmt("Timestamp: %s", state.run_timestamp))
   stdnse.verbose(1, fmt("CVE data source: %s", "nvd.nist.gov"))
   stdnse.verbose(1, fmt("Script version: %s", script_version))
@@ -49,32 +47,13 @@ end
 M.write = write
 
 
---- Write a dashed separator line to the log file.
-local function log_separator()
-  write(string.rep("-", 49))
+--- Write each line of a list to the log file, one per row.
+local function write_lines(lines)
+  for _, line in ipairs(lines) do
+    state.log_file:write(line .. "\n")
+  end
 end
-M.log_separator = log_separator
-
-
---- Write the host, port and product details of one match to the log.
-local function log_service(host, port, cpe, vendor, product, info)
-  local _ip = host.ip
-  local _port = port.number
-  local _proto = port.protocol
-  local _serv = port.service
-  local _prod = product
-  local _ver, _vupd = display_version(info)
-  write("[*] host: %s", _ip)
-  write("[*] port: %s", _port)
-  write("[+] protocol: %s", _proto)
-  write("[+] service: %s", _serv)
-  write("[+] cpe: %s", cpe)
-  write("[+] vendor: %s", vendor)
-  write("[+] product: %s", _prod)
-  write("[+] version: %s", _ver)
-  write("[+] vupdate: %s", _vupd)
-end
-M.log_service = log_service
+M.write_lines = write_lines
 
 
 return M

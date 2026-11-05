@@ -9,7 +9,10 @@ local M = {}
 -- Table name, number of columns, and DDL. The conditions table exists only
 -- when the spec has a 'conditions' list, which models a database that has it.
 local SCHEMA = {
-  { name = 'cves', width = 4, ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
+  { name = 'cves', width = 5, ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
+    cvss_v2 TEXT, cvss_v3 TEXT, published INTEGER, cvss_v4 TEXT)]],
+    -- Databases built before CVSSv4 have no cvss_v4 column.
+    legacy_width = 4, legacy_ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
     cvss_v2 TEXT, cvss_v3 TEXT, published INTEGER)]] },
   { name = 'products', width = 5, ddl = [[CREATE TABLE products (
     product_id INTEGER PRIMARY KEY, vendor TEXT, product TEXT, version TEXT,
@@ -61,6 +64,7 @@ end
 
 --- Create a temporary database with the rows of spec and return its path.
 -- Each spec key is a table name holding a list of rows in column order.
+-- spec.legacy_cves = true builds the cves table without cvss_v4.
 -- The caller removes the file.
 function M.create(spec, sqlite)
   local path = os.tmpname()
@@ -68,9 +72,13 @@ function M.create(spec, sqlite)
   local conn = assert(env:connect(path))
   for _, def in ipairs(SCHEMA) do
     if def.name ~= 'conditions' or spec.conditions ~= nil then
-      assert(conn:execute(def.ddl))
+      local ddl, width = def.ddl, def.width
+      if def.legacy_ddl and spec.legacy_cves then
+        ddl, width = def.legacy_ddl, def.legacy_width
+      end
+      assert(conn:execute(ddl))
       for _, row in ipairs(spec[def.name] or {}) do
-        insert(conn, def.name, row, def.width)
+        insert(conn, def.name, row, width)
       end
     end
   end

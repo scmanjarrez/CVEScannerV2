@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 -- Analysis of the matches of one port for cvescannerv2.  (Layer L8)
 --
--- Walks the matches of a port, looks up the vulnerabilities of each
--- service through the cache and feeds the report, the render and the log.
--- No direct network or file I/O. Reads config filters and reads and writes
--- state.service_cache.
+-- Walks the matches of a port, gets the result of each service from the
+-- cache or from service_cves, and feeds the JSON report, the log and the
+-- Nmap output. No direct network or file I/O. Reads config filters and
+-- reads and writes state.service_cache and state.totals.
 
 local config = require 'cvescannerv2.config'
 local log = require 'cvescannerv2.log'
@@ -21,9 +21,6 @@ local M = {}
 local fmt = util.fmt
 local parse_cpe_version = version.parse_cpe_version
 local display_version = version.display_version
-local log_service = log.log_service
-local log_separator = log.log_separator
-local service_lines = render.service_lines
 local find_service_cves = vulns.find_service_cves
 
 
@@ -63,101 +60,84 @@ local function is_selected_service(product, version_str)
 end
 
 
--- Scans a service missing from the cache and stores the result.
--- Returns the vulnerability lines of the service.
+-- Scans a service missing from the cache and stores the result when it has
+-- CVEs. Returns the result and the origin of the scan.
 local function scan_uncached_service(host, port, cpe, vendor, product,
     ver_text, update, info, scan_ctx, cache_key)
-  local cve_lines, meta = find_service_cves(host, port, cpe, vendor,
-    product, info, scan_ctx)
-  if meta.os_context.family ~= scan_ctx.os.family then
+  local result = find_service_cves(host, port, cpe, vendor, product, info,
+    scan_ctx)
+  if result.os_context.family ~= scan_ctx.os.family then
     -- An OS probe changed the context: key by the new one.
     cache_key = service_cache_key(host, vendor, product, ver_text, update,
-      { os = meta.os_context,
+      { os = result.os_context,
         backport = scan_ctx.backport,
         version_source = scan_ctx.version_source })
   end
-  local cve_count = table.remove(cve_lines, 1)
-  if cve_count > 0 then
-    local serv_fmt = fmt('%s/%s', port.number, port.protocol)
-    report.set_total(host.ip, serv_fmt, cve_count)
-    cve_lines = service_lines(vendor, product, ver_text, update, cve_count,
-      meta, cve_lines)
+  local origin = fmt('%s %s/%s', host.ip, port.number, port.protocol)
+  if result.counts.total > 0 then
     stdnse.verbose(2, "Caching " .. product .. "|" ..
       ver_text .. "|" .. update .. " vulnerabilities.")
-    state.service_cache[cache_key] = {
-      cve_count = cve_count,
-      lines = cve_lines,
-      meta = meta,
-    }
+    state.service_cache[cache_key] = { result = result, origin = origin }
   end
-  return cve_lines
+  return result, nil
 end
 
 
--- Reuses a cached service: reports it and returns its vulnerability lines.
-local function report_cached_service(host, port, cpe, vendor, product,
-    ver_text, update, cache)
-  log.write("[+] cves: cached")
-  if cache.cve_count > 0 then
-    local port_proto = fmt('%s/%s', port.number, port.protocol)
-    report.ensure_port(host.ip, port_proto)
-    report.add_service(host.ip, port_proto,
-      {
-        name = port.service,
-        cpe = cpe,
-        vendor = vendor,
-        product = product,
-        version = ver_text,
-        vupdate = update,
-        version_source = cache.meta.version_source,
-        os_context = cache.meta.os_context,
-        warnings = cache.meta.warnings,
-        summary = cache.meta.summary,
-        vulnerabilities = {
-          ['total'] = cache.cve_count,
-          ['info'] = 'cache'
-        }
-      }
-    )
-  end
-  log_separator()
-  stdnse.verbose(2, "Using cached " .. product .. "|" ..
-    ver_text .. "|" .. update .. " vulnerabilities.")
-  return cache.lines
-end
-
-
--- Returns the vulnerability lines of a service, from cache when possible.
-local function service_cve_lines(host, port, cpe, vendor, product, ver_text,
+-- Return the result of a service, from the cache when possible. The second
+-- value is the origin of the cached result, or nil when it was just scanned.
+local function service_result(host, port, cpe, vendor, product, ver_text,
     update, info, scan_ctx)
   local cache_key = service_cache_key(host, vendor, product, ver_text,
     update, scan_ctx)
-  if not state.service_cache[cache_key] then
+  local cache = state.service_cache[cache_key]
+  if cache == nil then
     return scan_uncached_service(host, port, cpe, vendor, product,
       ver_text, update, info, scan_ctx, cache_key)
   end
-  return report_cached_service(host, port, cpe, vendor, product, ver_text,
-    update, state.service_cache[cache_key])
+  stdnse.verbose(2, "Using cached " .. product .. "|" ..
+    ver_text .. "|" .. update .. " vulnerabilities.")
+  return cache.result, cache.origin
 end
 
 
--- Appends the vulnerability lines of a service once per vendor and version.
-local function add_lines(vulns_out, logged, vendor, product, ver_text,
-    update, cve_lines)
-  local log_key = fmt("%s|%s|%s|%s", vendor, product, ver_text, update)
-  if cve_lines ~= nil and #cve_lines > 0 and logged[log_key] == nil then
-    logged[log_key] = 1
-    for _, value in pairs(cve_lines) do
-      table.insert(vulns_out, value)
-    end
-    table.insert(vulns_out, "")
+-- Add the result of a service to the report, the log and the totals.
+local function record_service(host, port, result, origin)
+  local total = result.counts.total
+  if total > 0 then
+    report.add_service(host.ip, port, result, origin ~= nil)
+  end
+  log.write_lines(render.log_lines(result, {
+    ip = host.ip,
+    port_proto = fmt('%s/%s', port.number, port.protocol),
+    service = port.service,
+    cached_from = origin,
+  }))
+  if state.totals then
+    state.totals.services = state.totals.services + 1
+    state.totals.cves = state.totals.cves + total
+  end
+end
+
+
+-- Add the Nmap lines and the structured rows of a result to out, once per
+-- vendor, product, version and update. Results without CVEs add nothing.
+local function add_output(out, cfg, result)
+  if result.counts.total == 0 then return end
+  local key = fmt('%s|%s|%s|%s', result.vendor, result.product,
+    result.version, tostring(result.update))
+  if out.logged[key] ~= nil then return end
+  out.logged[key] = true
+  out.structured[#out.structured + 1] = render.structured_output(result, cfg)
+  if #out.lines > 0 then out.lines[#out.lines + 1] = "" end
+  for _, line in ipairs(render.nmap_lines(result, cfg)) do
+    out.lines[#out.lines + 1] = line
   end
 end
 
 
 -- Handles one CPE and version pair of the matches of a port.
 local function analyze_match(host, port, scan_ctx, origin, cpe, version_str,
-    vulns_out, logged)
+    out, cfg)
   stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe, version_str))
   local vendor, product, info, source = parse_cpe_version(cpe, version_str)
   local version_source = source
@@ -172,32 +152,37 @@ local function analyze_match(host, port, scan_ctx, origin, cpe, version_str,
   if info == nil then
     return
   end
-  log_service(host, port, cpe, vendor, product, info)
   local ver_text, update = display_version(info)
   local svc_ctx = {
     os = scan_ctx.os,
     backport = scan_ctx.backport,
     version_source = version_source,
   }
-  local cve_lines = service_cve_lines(host, port, cpe, vendor, product,
-    ver_text, update, info, svc_ctx)
-  add_lines(vulns_out, logged, vendor, product, ver_text, update, cve_lines)
+  local result, cached_from = service_result(host, port, cpe, vendor,
+    product, ver_text, update, info, svc_ctx)
+  record_service(host, port, result, cached_from)
+  add_output(out, cfg, result)
 end
 
 
---- Return the vulns of a port's matches; scan_ctx has OS and distro data.
+--- Return the structured rows and the Nmap lines of a port's matches.
+-- scan_ctx has the OS and distro data. Returns two lists.
 local function analyze_port(host, port, matches, scan_ctx)
-  local vulns_out = {}
-  local logged = {}
+  local out = { structured = {}, lines = {}, logged = {} }
+  local cfg = {
+    maxcve = config.maxcve,
+    minconf = config.minconf,
+    json = config.json,
+  }
   for origin, data in pairs(matches['data']) do
     for cpe, versions in pairs(data) do
       for version_str, _ in pairs(versions) do
-        analyze_match(host, port, scan_ctx, origin, cpe, version_str,
-          vulns_out, logged)
+        analyze_match(host, port, scan_ctx, origin, cpe, version_str, out,
+          cfg)
       end
     end
   end
-  return vulns_out
+  return out.structured, out.lines
 end
 
 M.analyze_port = analyze_port

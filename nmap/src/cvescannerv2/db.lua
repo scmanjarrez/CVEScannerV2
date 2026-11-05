@@ -3,7 +3,8 @@
 --
 -- Opens and closes the luasql connection and runs the catalogue queries.
 -- Its only I/O is the SQLite file. It reads state.vendor_aliases and
--- writes state.db_env, state.db_conn and state.has_conditions.
+-- writes state.db_env, state.db_conn, state.has_conditions and
+-- state.has_cvss_v4.
 -- The connection lives in the state module and is read on every call, so
 -- tests can replace state.db_conn with a fake connection.
 
@@ -48,13 +49,7 @@ local sql = load_luasql()
 
 --- Return the SQL template for name, nil when name is unknown.
 local function sql_template(name)
-  if name == 'cvss_scores' then
-    return [[
-             SELECT cvss_v2, cvss_v3
-             FROM cves
-             WHERE cve_id = '%s'
-             ]]
-  elseif name == 'exploit_refs' then
+  if name == 'exploit_refs' then
     return [[
              SELECT exploits.exploit_id, exploits.name
              FROM referenced_exploit
@@ -70,7 +65,7 @@ local function sql_template(name)
              ]]
   elseif name == 'range_affected' then
     return [[
-             SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
+             SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3, ${c4},
              multiaffected.versionStartIncluding, multiaffected.versionStartExcluding,
              multiaffected.versionEndIncluding, multiaffected.versionEndExcluding,
              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = multiaffected.cve_id)) as edb,
@@ -82,7 +77,7 @@ local function sql_template(name)
              ]]
   elseif name == 'range_affected_unbounded' then
     return [[
-             SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
+             SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3, ${c4},
              multiaffected.versionStartIncluding, multiaffected.versionStartExcluding,
              multiaffected.versionEndIncluding, multiaffected.versionEndExcluding,
              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = multiaffected.cve_id)) as edb,
@@ -115,7 +110,7 @@ local function sql_template(name)
              ]]
   elseif name == 'exact_affected' then
     return [[
-             SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
+             SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3, ${c4},
              products.version, products.version_update,
              (SELECT EXISTS (SELECT 1 FROM referenced_exploit WHERE cve_id = affected.cve_id)) as edb,
              (SELECT EXISTS (SELECT 1 FROM referenced_metasploit WHERE cve_id = affected.cve_id)) as msf
@@ -189,12 +184,23 @@ local function has_conditions()
 end
 
 
---- Return the CVSS v2 and v3 scores of a CVE, nil when unknown.
-local function cvss_scores(vuln)
-  local cur = state.db_conn:execute(fmt(sql_template('cvss_scores'), vuln))
-  local cvssv2, cvssv3 = cur:fetch()
-  cur:close()
-  return cvssv2, cvssv3
+-- Return true when the cves table has the cvss_v4 column. Checked once.
+-- Databases built before CVSSv4 support lack it. Nothing is logged here.
+local function has_cvss_v4()
+  if state.has_cvss_v4 == nil then
+    local cur = state.db_conn:execute(
+      "SELECT name FROM pragma_table_info('cves') "
+      .. "WHERE name = 'cvss_v4'")
+    state.has_cvss_v4 = cur:fetch() ~= nil
+    cur:close()
+  end
+  return state.has_cvss_v4
+end
+
+
+-- SQL expression that selects the CVSSv4 score, NULL on older databases.
+local function cvss_v4_column()
+  return has_cvss_v4() and 'cves.cvss_v4' or 'NULL'
 end
 
 
@@ -233,15 +239,17 @@ end
 local function range_affected_rows(vendors, product, matches_any)
   local name = matches_any and 'range_affected_unbounded' or 'range_affected'
   local cur = state.db_conn:execute(
-    format_sql_named(sql_template(name), { v = vendors, p = product }))
+    format_sql_named(sql_template(name),
+      { v = vendors, p = product, c4 = cvss_v4_column() }))
   local rows = {}
-  local vuln, cvssv2, cvssv3, st_in, st_ex, en_in, en_ex, exploitdb_flag,
+  local vuln, cvssv2, cvssv3, cvssv4, st_in, st_ex, en_in, en_ex, exploitdb_flag,
     metasploit_flag = cur:fetch()
   while vuln do
     rows[#rows + 1] = {
       id = vuln,
       CVSSV2 = cvssv2,
       CVSSV3 = cvssv3,
+      CVSSV4 = cvssv4,
       StartInc = st_in,
       StartExc = st_ex,
       EndInc = en_in,
@@ -249,8 +257,8 @@ local function range_affected_rows(vendors, product, matches_any)
       ExploitDB = exploitdb_flag,
       Metasploit = metasploit_flag,
     }
-    vuln, cvssv2, cvssv3, st_in, st_ex, en_in, en_ex, exploitdb_flag,
-      metasploit_flag = cur:fetch()
+    vuln, cvssv2, cvssv3, cvssv4, st_in, st_ex, en_in, en_ex,
+      exploitdb_flag, metasploit_flag = cur:fetch()
   end
   cur:close()
   return rows
@@ -262,21 +270,23 @@ end
 -- and the flags ExploitDB and Metasploit.
 local function exact_affected_rows(vendors, product)
   local cur = state.db_conn:execute(
-    format_sql_named(sql_template('exact_affected'), { v = vendors, p = product }))
+    format_sql_named(sql_template('exact_affected'),
+      { v = vendors, p = product, c4 = cvss_v4_column() }))
   local rows = {}
-  local vuln, cvssv2, cvssv3, pr_v, row_update, exploitdb_flag,
+  local vuln, cvssv2, cvssv3, cvssv4, pr_v, row_update, exploitdb_flag,
     metasploit_flag = cur:fetch()
   while vuln do
     rows[#rows + 1] = {
       id = vuln,
       CVSSV2 = cvssv2,
       CVSSV3 = cvssv3,
+      CVSSV4 = cvssv4,
       version = pr_v,
       version_update = row_update,
       ExploitDB = exploitdb_flag,
       Metasploit = metasploit_flag,
     }
-    vuln, cvssv2, cvssv3, pr_v, row_update, exploitdb_flag,
+    vuln, cvssv2, cvssv3, cvssv4, pr_v, row_update, exploitdb_flag,
       metasploit_flag = cur:fetch()
   end
   cur:close()
@@ -327,7 +337,7 @@ M.sql_template = sql_template
 M.vendor_scope = vendor_scope
 M.series_has_children = series_has_children
 M.has_conditions = has_conditions
-M.cvss_scores = cvss_scores
+M.has_cvss_v4 = has_cvss_v4
 M.exploitdb_refs = exploitdb_refs
 M.metasploit_refs = metasploit_refs
 M.range_affected_rows = range_affected_rows

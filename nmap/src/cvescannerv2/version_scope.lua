@@ -18,6 +18,7 @@ local function add_scoped_vulnerability(row, result, reason)
     result[row.id] = {
       ['CVSSV2'] = row.CVSSV2,
       ['CVSSV3'] = row.CVSSV3,
+      ['CVSSV4'] = row.CVSSV4,
       ['ExploitDB'] = row.ExploitDB,
       ['Metasploit'] = row.Metasploit,
       ['reasons'] = reason and { reason } or {}

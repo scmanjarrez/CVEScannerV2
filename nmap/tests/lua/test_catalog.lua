@@ -8,6 +8,20 @@ local function new_match_table()
   return { data = { nmap = {}, http = {} }, size = 0 }
 end
 
+-- First product of a TCP port of ip in the JSON report hosts, or nil.
+local function find_product(report, ip, port_number)
+  for _, host in ipairs(report or {}) do
+    if host.ip == ip then
+      for _, entry in ipairs(host.ports) do
+        if entry.port == port_number and entry.protocol == 'tcp' then
+          return entry.products[1]
+        end
+      end
+    end
+  end
+  return nil
+end
+
 t.suite('pattern validation')
 
 t.case('capture_count ignores escapes, classes and balances', function()
@@ -476,7 +490,8 @@ db_case('analysis reports a non-nmap origin as its own source', function()
   scanner.modules.state.db_env, scanner.modules.state.db_conn = env, conn
   scanner.modules.state.log_file = { write = function() end }
   scanner.modules.state.service_cache = {}
-  scanner.modules.state.json_report = { ['10.0.2.3'] = { ports = {} } }
+  scanner.modules.state.json_report = {}
+  scanner.modules.state.json_hosts = {}
   local matches = new_match_table()
   matches.data.irc = {}
   matches.data.irc['cpe:/a:apache:tomcat:5.5'] = { ['5.5'] = true }
@@ -485,12 +500,11 @@ db_case('analysis reports a non-nmap origin as its own source', function()
   local port = { number = 80, protocol = 'tcp', service = 'http' }
   scanner.modules.port_analysis.analyze_port(host, port, matches,
     { os = {} })
-  local service = scanner.modules.state.json_report[host.ip].ports['80/tcp']
-    .services[1]
+  local product = find_product(scanner.modules.state.json_report, host.ip, 80)
   conn:close()
   env:close()
   os.remove(path)
-  t.eq(service.version_source, 'irc')
+  t.eq(product.version_source, 'irc')
 end)
 
 t.suite('irc probe')
@@ -765,7 +779,7 @@ local function os_rows(rows)
     fetch = function()
       i = i + 1
       if rows[i] == nil then return nil end
-      return table.unpack(rows[i])
+      return table.unpack(rows[i], 1, 8)
     end,
     close = function() end,
   }
@@ -777,17 +791,20 @@ local function os_scanner(args, platform)
   local sc = t.load_scanner({ args = args })
   sc.modules.state.platform_families = OS_FAMILIES
   sc.modules.state.log_file = { write = function() end }
-  sc.modules.state.json_report = { ['10.2.0.1'] = { ports = {} } }
+  sc.modules.state.json_report = {}
+  sc.modules.state.json_hosts = {}
   platform = platform or { { 'CVE-LIN', 0, 'o', 'linux', 'kernel' } }
   sc.modules.state.db_conn = { execute = function(_, sql)
-    if sql:find('sqlite_master', 1, true) then
+    if sql:find('pragma_table_info', 1, true) then
+      return os_rows({ { 'cvss_v4' } })
+    elseif sql:find('sqlite_master', 1, true) then
       return os_rows({ { 'conditions' } })
     elseif sql:find('FROM conditions', 1, true) then
       return os_rows(platform)
     elseif sql:find('SELECT DISTINCT vendor', 1, true) then
       return os_rows({ { 'apache' } })
     elseif sql:find('INNER JOIN affected', 1, true) then
-      return os_rows({ { 'CVE-LIN', '5.0', nil, '5.5.3', '*', 0, 0 } })
+      return os_rows({ { 'CVE-LIN', '5.0', nil, nil, '5.5.3', '*', 0, 0 } })
     end
     return os_rows({})
   end }
@@ -808,7 +825,6 @@ end
 --- Run vulnerabilities for the tomcat CVE of one host.
 local function os_scan(sc, ip, scan_ctx)
   local host = { ip = ip }
-  sc.modules.state.json_report[ip] = { ports = {} }
   return sc.modules.service_cves.find_service_cves(host, HTTP_PORT,
       'cpe:/a:apache:tomcat:5.5.3',
     'apache', 'tomcat', OS_INFO, scan_ctx or { os = {}, backport = false })
@@ -827,10 +843,10 @@ t.case('smb windows probe sets the family, one get_os call', function()
       protocol = 'tcp', service = 'microsoft-ds',
       version = { cpe = { 'cpe:/a:samba:samba' }, version = '3.X' } },
       new_match_table())
-    local _, meta = os_scan(sc, '10.2.0.2')
+    local meta = os_scan(sc, '10.2.0.2')
     t.eq(meta.os_context.family, 'windows')
     t.eq(meta.os_context.source, 'probe:smb_os')
-    local _, again = os_scan(sc, '10.2.0.2')
+    local again = os_scan(sc, '10.2.0.2')
     t.eq(again.os_context.family, 'windows')
     t.eq(calls, 1)
   end)
@@ -840,7 +856,7 @@ t.case('samba os string is not an os family', function()
   with_smb(function() return true, { os = SAMBA_OS } end, function()
     local sc = os_scanner()
     open_ports(sc, { SMB_PORT })
-    local _, meta = os_scan(sc, '10.2.0.3')
+    local meta = os_scan(sc, '10.2.0.3')
     t.eq(meta.os_context.family, nil)
     t.eq(sc.modules.state.host_os_probe_result['10.2.0.3'], false)
   end)
@@ -852,7 +868,7 @@ t.case('samba lanmanager on a windows-looking os is not windows', function()
   end, function()
     local sc = os_scanner()
     open_ports(sc, { SMB_PORT })
-    local _, meta = os_scan(sc, '10.2.0.6')
+    local meta = os_scan(sc, '10.2.0.6')
     t.eq(meta.os_context.family, nil)
   end)
 end)
@@ -867,7 +883,7 @@ t.case('windows lanmanager or missing lanmanager stays windows', function()
       local sc = os_scanner()
       open_ports(sc, { SMB_PORT })
       local ip = '10.2.0.7' .. i
-      local _, meta = os_scan(sc, ip)
+      local meta = os_scan(sc, ip)
       t.eq(meta.os_context.family, 'windows')
     end)
   end
@@ -881,7 +897,7 @@ t.case('no smb port open means get_os is never called', function()
   end, function()
     local sc = os_scanner()
     open_ports(sc, { HTTP_PORT })
-    local _, meta = os_scan(sc, '10.2.0.4')
+    local meta = os_scan(sc, '10.2.0.4')
     t.eq(meta.os_context.family, nil)
     t.eq(calls, 0)
   end)
@@ -897,7 +913,7 @@ t.case('probes=none, probes=smb and probes=irc skip the os probe', function()
     end, function()
       local sc = os_scanner(args)
       open_ports(sc, { SMB_PORT })
-      local _, meta = os_scan(sc, '10.2.0.5')
+      local meta = os_scan(sc, '10.2.0.5')
       t.eq(meta.os_context.family, nil)
       t.eq(calls, 0)
     end)
@@ -928,8 +944,8 @@ t.case('get_os error is cached as a negative result', function()
   end, function()
     local sc = os_scanner()
     open_ports(sc, { SMB_PORT })
-    local _, first = os_scan(sc, '10.2.0.8')
-    local _, second = os_scan(sc, '10.2.0.8')
+    local first = os_scan(sc, '10.2.0.8')
+    local second = os_scan(sc, '10.2.0.8')
     t.eq(first.os_context.family, nil)
     t.eq(second.os_context.family, nil)
     t.eq(calls, 1)
@@ -941,9 +957,9 @@ t.case('probe turns requires_platform into platform_mismatch', function()
   with_smb(function() return true, { os = WIN_OS } end, function()
     local sc = os_scanner()
     open_ports(sc, { SMB_PORT })
-    local _, meta = os_scan(sc, '10.2.0.9')
-    t.eq(meta.summary.low, 1)
-    t.eq(meta.summary.medium, 0)
+    local meta = os_scan(sc, '10.2.0.9')
+    t.eq(meta.counts.low, 1)
+    t.eq(meta.counts.medium, 0)
     t.eq(meta.os_context.source, 'probe:smb_os')
   end)
 end)
@@ -951,8 +967,8 @@ end)
 t.case('without a probe the Linux-only CVE stays requires_platform', function()
   local sc = os_scanner()
   open_ports(sc, { HTTP_PORT })
-  local _, meta = os_scan(sc, '10.2.0.10')
-  t.eq(meta.summary.medium, 1)
+  local meta = os_scan(sc, '10.2.0.10')
+  t.eq(meta.counts.medium, 1)
   t.eq(meta.os_context.family, nil)
 end)
 
@@ -964,7 +980,7 @@ t.case('known os or no conditional CVE never runs the probe', function()
   end, function()
     local known = os_scanner()
     open_ports(known, { SMB_PORT })
-    local _, meta = os_scan(known, '10.2.0.11',
+    local meta = os_scan(known, '10.2.0.11',
       { os = { family = 'linux', source = 'cpe' }, backport = false })
     t.eq(meta.os_context.family, 'linux')
     t.eq(calls, 0)
@@ -974,8 +990,8 @@ t.case('known os or no conditional CVE never runs the probe', function()
       ports_calls = ports_calls + 1
       return function() return nil end
     end
-    local _, plain_meta = os_scan(plain, '10.2.0.12')
-    t.eq(plain_meta.summary.high, 1)
+    local plain_meta = os_scan(plain, '10.2.0.12')
+    t.eq(plain_meta.counts.high, 1)
     t.eq(ports_calls, 0)
     t.eq(calls, 0)
   end)
@@ -984,13 +1000,10 @@ end)
 --- Run analysis for one tomcat 5.5.3 service on ip and port.
 local function os_analysis(sc, ip, port, scan_ctx)
   sc.modules.state.service_cache = sc.modules.state.service_cache or {}
-  sc.modules.state.json_report[ip] = { ports = {} }
   local matches = { data = { nmap = {
     ['cpe:/a:apache:tomcat:5.5.3'] = { ['5.5.3'] = true } } }, size = 1 }
   sc.modules.port_analysis.analyze_port({ ip = ip }, port, matches, scan_ctx)
-  local services = sc.modules.state.json_report[ip].ports[
-    port.number .. '/tcp'].services
-  return services[#services]
+  return find_product(sc.modules.state.json_report, ip, port.number)
 end
 
 --- Count CVE queries issued through registry.db_conn from now on.
@@ -1018,7 +1031,7 @@ t.case('unknown os cache is not shared across hosts', function()
     local second = os_analysis(sc, '10.2.0.14', HTTP_PORT, { os = {},
       backport = false })
     t.eq(calls, 2)
-    t.eq(second.vulnerabilities.info, 'scan')
+    t.eq(second.cached, false)
   end)
 end)
 
@@ -1032,7 +1045,7 @@ t.case('unknown os cache is shared by ports of the same host', function()
   local second = os_analysis(sc, '10.2.0.15', alt_port,
     { os = {}, backport = false })
   t.eq(queries(), after_first)
-  t.eq(second.vulnerabilities.info, 'cache')
+  t.eq(second.cached, true)
 end)
 
 t.case('known os cache is shared across hosts', function()
@@ -1044,7 +1057,7 @@ t.case('known os cache is shared across hosts', function()
   local after_first = queries()
   local second = os_analysis(sc, '10.2.0.17', HTTP_PORT, scan_ctx)
   t.eq(queries(), after_first)
-  t.eq(second.vulnerabilities.info, 'cache')
+  t.eq(second.cached, true)
 end)
 
 t.suite('http engine abort')
