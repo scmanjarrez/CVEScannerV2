@@ -24,7 +24,7 @@ All plans are isolated by namespace under `.workflow/<plan_id>/`:
 - Update `.workflow/ACTIVE` with the new `<plan_id>` unless instructed otherwise.
 
 ### STRICT PROHIBITIONS:
-- **DO NOT** write, edit, or refactor `.py` application or test files.
+- **DO NOT** write, edit, or refactor application or test files.
 - **DO NOT** spawn sub-agents (`Task` tool is forbidden).
 - **DO NOT** create atomic task contracts in `.workflow/<plan_id>/tasks/`.
 - Enforce **KISS**, **YAGNI**, and **SRP** from `AGENTS.md` at the architectural level: never propose over-engineered abstractions.
@@ -40,12 +40,12 @@ All plans are isolated by namespace under `.workflow/<plan_id>/`:
 
 ### Permitted Actions:
 - Read `.workflow/<plan_id>/PLAN.md` and manage `.workflow/<plan_id>/STATE.md`.
-- Inspect target Python file signatures/imports ONLY to gather context for contracts.
-- Write atomic task contracts in `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md` (affecting <= 2 files per contract).
+- Inspect target file signatures/imports ONLY to gather context for contracts.
+- Write atomic task contracts (1-task, 1-agent) in `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md` (affecting <= 2 files per contract).
 - Spawn Haiku sub-agents via the `Task` tool to execute contracts.
 
 ### STRICT PROHIBITIONS:
-- **DO NOT** modify `.py` files directly. Delegate even 1-line fixes to Haiku.
+- **DO NOT** modify files directly. Delegate even 1-line fixes to Haiku.
 - **DO NOT** keep task queues in conversational memory; always read/write `.workflow/<plan_id>/STATE.md` before and after every wave.
 
 ### Sub-Agent Spawning Protocol (Haiku Delegation):
@@ -59,19 +59,28 @@ When invoking the `Task` tool, pass the exact namespaced contract path:
 ---
 
 ## TIER 3: ATOMIC EXECUTOR (If you are Claude Haiku / Sub-agent)
-**Mission**: Surgical Python implementation and strict verification.
+**Mission**: Surgical implementation and strict verification.
 
 ### Execution Loop:
-1. Read `AGENTS.md` and strictly enforce all architecture, typing, Pydantic `Field(description=...)`, and Google Docstring rules.
+1. Read `AGENTS.md` for python files and strictly enforce all architecture, typing, Pydantic `Field(description=...)`, and Google Docstring rules.
 2. Read your assigned `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md`.
 3. Modify ONLY the files listed in the contract.
 4. Run the standalone CLI verification command from `AGENTS.md` Section 5.
-5. Return ONLY this final payload to the Orchestrator:
+5. Return ONLY this final payload to the Orchestrator for python files:
    ```text
    STATUS: SUCCESS | BLOCKED
    PLAN: <plan_id>
    TASK: TASK-XX
    FILES_CHANGED: [list of paths]
    CHECKS: ruff_format=PASS, ruff_check=PASS, basedpyright=PASS
+   NOTES: <1-line summary or blocker reason>
+   ```
+
+   Return ONLY this final payload to the Orchestrator for other files:
+   ```text
+   STATUS: SUCCESS | BLOCKED
+   PLAN: <plan_id>
+   TASK: TASK-XX
+   FILES_CHANGED: [list of paths]
    NOTES: <1-line summary or blocker reason>
    ```
