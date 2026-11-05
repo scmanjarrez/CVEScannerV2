@@ -13,12 +13,14 @@ from typing import Self
 from sqlalchemy import (
     Connection,
     ForeignKey,
+    Index,
     Integer,
     String,
     Table,
     UniqueConstraint,
     delete,
     event,
+    func,
     inspect,
     select,
     text,
@@ -37,6 +39,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import ConnectionPoolEntry
+from sqlalchemy.schema import CreateIndex
 
 from db_manager.domain.models import CpeIdentity, NvdSyncState, VersionBounds
 
@@ -233,6 +236,19 @@ class MultiAffectedModel(Base):
     )
 
 
+MULTIAFFECTED_BOUNDS_INDEX = Index(
+    "uq_multiaffected_bounds",
+    MultiAffectedModel.cve_id,
+    MultiAffectedModel.product_id,
+    func.coalesce(MultiAffectedModel.version_start_including, ""),
+    func.coalesce(MultiAffectedModel.version_start_excluding, ""),
+    func.coalesce(MultiAffectedModel.version_end_including, ""),
+    func.coalesce(MultiAffectedModel.version_end_excluding, ""),
+    unique=True,
+)
+"""Unique index that treats NULL version bounds as equal values."""
+
+
 class ConditionModel(Base):
     """Link CVEs configuration conditions to product and platform.
 
@@ -331,6 +347,45 @@ async def _add_missing_cvss_v4(connection: AsyncConnection) -> None:
     await connection.execute(text("ALTER TABLE cves ADD COLUMN cvss_v4 TEXT"))
 
 
+async def _remove_duplicate_multiaffected(
+    connection: AsyncConnection,
+) -> None:
+    """Delete identical multiaffected rows left by NULL primary keys.
+
+    SQLite treats NULL values as distinct in primary keys, so older
+    databases can hold identical rows. Keep the first row of each group
+    so the unique bounds index can be created. Do nothing when the table
+    does not exist yet.
+
+    Args:
+        connection: Asynchronous connection used to delete duplicate rows.
+    """
+    exists = await connection.execute(
+        text(
+            """
+            SELECT 1 FROM sqlite_master
+            WHERE type = 'table' AND name = 'multiaffected'
+            """
+        )
+    )
+    if exists.first() is None:
+        return
+    _ = await connection.execute(
+        text(
+            """
+            DELETE FROM multiaffected WHERE rowid NOT IN (
+                SELECT min(rowid) FROM multiaffected GROUP BY
+                    cve_id, product_id,
+                    coalesce("versionStartIncluding", ''),
+                    coalesce("versionStartExcluding", ''),
+                    coalesce("versionEndIncluding", ''),
+                    coalesce("versionEndExcluding", '')
+            )
+            """
+        )
+    )
+
+
 def _configure_connection(
     dbapi_connection: DBAPIConnection,
     connection_record: ConnectionPoolEntry,
@@ -421,7 +476,11 @@ class Database:
         Run SQLAlchemy schema creation through the asynchronous engine.
         """
         async with self.engine.begin() as connection:
+            await _remove_duplicate_multiaffected(connection)
             await connection.run_sync(Base.metadata.create_all)
+            await connection.execute(
+                CreateIndex(MULTIAFFECTED_BOUNDS_INDEX, if_not_exists=True)
+            )
             await _add_missing_cvss_v4(connection)
 
     async def commit(self: Self) -> None:
