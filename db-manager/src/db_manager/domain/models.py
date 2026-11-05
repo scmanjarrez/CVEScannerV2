@@ -344,6 +344,7 @@ class CveRecord(ImmutableModel):
         cve_id: CVE identifier.
         cvss_v2: CVSS v2 score, or None when absent.
         cvss_v3: CVSS v3 score, or None when absent.
+        cvss_v4: CVSS v4 score, or None when absent.
         published: Publication year.
     """
 
@@ -353,6 +354,9 @@ class CveRecord(ImmutableModel):
     )
     cvss_v3: str | None = Field(
         description="CVSS v3 score, or None when absent."
+    )
+    cvss_v4: str | None = Field(
+        description="CVSS v4 score, or None when absent."
     )
     published: int = Field(description="Publication year.")
 

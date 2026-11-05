@@ -52,6 +52,20 @@ optionally fetches Exploit-DB titles. Use `--noscrape` to skip title requests.
 The NVD sync timestamp is saved after the update stages complete. HTTP 429 and
 selected server errors are retried up to three times, honoring `Retry-After`.
 
+## CVSS scores and schema
+
+The `cves` table stores three scores: `cvss_v2`, `cvss_v3` and `cvss_v4`.
+CVSSv4 is supported; NVD records without a v4 metric leave it empty.
+
+`setup()` creates the schema for a new database. For a database created
+before CVSSv4, it adds the `cvss_v4` column with `ALTER TABLE` when the column
+is missing, so existing files keep working. The column is empty until the
+database is updated and the records are re-imported.
+
+`query` shows one `CVSS` column with the available scores, newest first
+(`v4:9.3 v3:9.8 v2:7.5`); a CVE without scores shows `-`. The table no longer
+has separate CVSSv2 and CVSSv3 columns.
+
 ## Performance
 
 Importing raw pages (`--nvd-raw`) into an empty database (188 CPE pages and

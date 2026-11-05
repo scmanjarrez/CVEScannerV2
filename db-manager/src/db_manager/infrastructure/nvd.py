@@ -27,6 +27,7 @@ from rich.table import Table
 
 from db_manager.constants import (
     CVSS_V3_METRIC_PATTERN,
+    CVSS_V4_METRIC_KEY,
     EXPLOITDB_REFERENCE_PATTERN,
     HTTP_OK,
     NVD_API_URL,
@@ -274,14 +275,19 @@ def _cvss_metric_score(metrics: list[NvdMetric]) -> str | None:
     return None
 
 
-def _cvss_scores(cve: NvdCve) -> tuple[str | None, str | None]:
-    """Return the first CVSS v2 and v3 scores as database text values.
+def cvss_scores(
+    cve: NvdCve,
+) -> tuple[str | None, str | None, str | None]:
+    """Return the first CVSS v2, v3 and v4 scores as database text values.
+
+    NVD lists the Primary metric before the Secondary one, so the first
+    entry with cvssData is used for each version.
 
     Args:
         cve: Validated CVE fields returned by NVD.
 
     Returns:
-        CVSS v2 and v3 scores, or None when a score is absent.
+        CVSS v2, v3 and v4 scores, or None when a score is absent.
     """
     cvss_v2 = _cvss_metric_score(cve.metrics.get("cvssMetricV2", []))
     cvss_v3: str | None = None
@@ -291,7 +297,8 @@ def _cvss_scores(cve: NvdCve) -> tuple[str | None, str | None]:
         cvss_v3 = _cvss_metric_score(metric_list)
         if cvss_v3 is not None:
             break
-    return cvss_v2, cvss_v3
+    cvss_v4 = _cvss_metric_score(cve.metrics.get(CVSS_V4_METRIC_KEY, []))
+    return cvss_v2, cvss_v3, cvss_v4
 
 
 def _append_conditions(
@@ -417,12 +424,13 @@ def _append_cve_record(
     if cve.vuln_status.lower() in ("deferred", "rejected"):
         return
 
-    cvss_v2, cvss_v3 = _cvss_scores(cve)
+    cvss_v2, cvss_v3, cvss_v4 = cvss_scores(cve)
     commands.append(
         CveRecord(
             cve_id=cve_id,
             cvss_v2=cvss_v2,
             cvss_v3=cvss_v3,
+            cvss_v4=cvss_v4,
             published=int(cve.published[:4]),
         )
     )

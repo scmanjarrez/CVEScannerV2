@@ -11,6 +11,7 @@ from types import TracebackType
 from typing import Self
 
 from sqlalchemy import (
+    Connection,
     ForeignKey,
     Integer,
     String,
@@ -18,7 +19,9 @@ from sqlalchemy import (
     UniqueConstraint,
     delete,
     event,
+    inspect,
     select,
+    text,
     tuple_,
     update,
 )
@@ -26,6 +29,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import URL
 from sqlalchemy.engine.interfaces import DBAPIConnection
 from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
@@ -141,6 +145,7 @@ class CveModel(Base):
         cve_id: CVE identifier.
         cvss_v2: CVSS v2 score as stored by the existing schema.
         cvss_v3: CVSS v3 score as stored by the existing schema.
+        cvss_v4: CVSS v4 score as stored by the schema.
         published: Publication year.
     """
 
@@ -149,6 +154,7 @@ class CveModel(Base):
     cve_id: Mapped[str] = mapped_column(String, primary_key=True)
     cvss_v2: Mapped[str | None] = mapped_column(String, nullable=True)
     cvss_v3: Mapped[str | None] = mapped_column(String, nullable=True)
+    cvss_v4: Mapped[str | None] = mapped_column(String, nullable=True)
     published: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
@@ -301,6 +307,30 @@ def _core_table(name: str) -> Table:
     return Base.metadata.tables[name]
 
 
+def _has_cvss_v4_column(sync_connection: Connection) -> bool:
+    """Report whether the cves table already has the cvss_v4 column.
+
+    Args:
+        sync_connection: Synchronous connection used by the inspector.
+
+    Returns:
+        True when the cvss_v4 column exists in the cves table.
+    """
+    columns = inspect(sync_connection).get_columns("cves")
+    return any(column["name"] == "cvss_v4" for column in columns)
+
+
+async def _add_missing_cvss_v4(connection: AsyncConnection) -> None:
+    """Add the cvss_v4 column to databases created before it existed.
+
+    Args:
+        connection: Asynchronous connection used to alter the cves table.
+    """
+    if await connection.run_sync(_has_cvss_v4_column):
+        return
+    await connection.execute(text("ALTER TABLE cves ADD COLUMN cvss_v4 TEXT"))
+
+
 def _configure_connection(
     dbapi_connection: DBAPIConnection,
     connection_record: ConnectionPoolEntry,
@@ -392,6 +422,7 @@ class Database:
         """
         async with self.engine.begin() as connection:
             await connection.run_sync(Base.metadata.create_all)
+            await _add_missing_cvss_v4(connection)
 
     async def commit(self: Self) -> None:
         """Commit the active batch of database changes.
@@ -589,6 +620,7 @@ class Database:
             set_={
                 "cvss_v2": statement.excluded.cvss_v2,
                 "cvss_v3": statement.excluded.cvss_v3,
+                "cvss_v4": statement.excluded.cvss_v4,
                 "published": statement.excluded.published,
             },
         )
@@ -600,6 +632,7 @@ class Database:
                     "cve_id": cve.cve_id,
                     "cvss_v2": cve.cvss_v2,
                     "cvss_v3": cve.cvss_v3,
+                    "cvss_v4": cve.cvss_v4,
                     "published": cve.published,
                 }
                 for cve in cves

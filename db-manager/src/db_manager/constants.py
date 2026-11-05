@@ -30,6 +30,8 @@ NVD_API_URL: Final[str] = (
 CVSS_V3_METRIC_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(cvssMetricV3.+)"
 )
+# NVD metric key that carries CVSS v4 scores.
+CVSS_V4_METRIC_KEY: Final[str] = "cvssMetricV40"
 EXPLOITDB_REFERENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"https?://www.exploit-db.com/exploits/(\d+)"
 )
@@ -70,15 +72,14 @@ DEFAULT_DATABASE_PATH: Final[Path] = Path("data/cve.db")
 # Default directory for raw NVD pages, relative to the working directory.
 DEFAULT_NVD_RAW_DIR: Final[Path] = Path("data/nvd-raw")
 
-# Expected exact and ranged result widths, including reference flags.
-EXACT_COLUMN_COUNT: Final[int] = 9
-RANGED_COLUMN_COUNT: Final[int] = 11
+# Expected SQL result widths, including the CVSS columns and reference flags.
+EXACT_COLUMN_COUNT: Final[int] = 10
+RANGED_COLUMN_COUNT: Final[int] = 12
 
 # Column labels shared by command-line and Textual query result views.
 EXACT_HEADERS: Final[tuple[str, ...]] = (
     "CVE",
-    "CVSSv2",
-    "CVSSv3",
+    "CVSS",
     "Vendor",
     "Product",
     "Version",
@@ -88,8 +89,7 @@ EXACT_HEADERS: Final[tuple[str, ...]] = (
 )
 RANGE_HEADERS: Final[tuple[str, ...]] = (
     "CVE",
-    "CVSSv2",
-    "CVSSv3",
+    "CVSS",
     "Vendor",
     "Product",
     "StartInclude",

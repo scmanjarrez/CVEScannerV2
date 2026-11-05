@@ -57,6 +57,7 @@ async def flush_database_commands(
             cve_id=command.cve_id,
             cvss_v2=command.cvss_v2,
             cvss_v3=command.cvss_v3,
+            cvss_v4=command.cvss_v4,
             published=command.published,
         )
         for command in commands

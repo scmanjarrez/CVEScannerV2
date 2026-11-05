@@ -24,8 +24,7 @@ from .storage import (
 
 ExactRow = tuple[
     str,
-    str | None,
-    str | None,
+    str,
     str | None,
     str | None,
     str | None,
@@ -36,8 +35,7 @@ ExactRow = tuple[
 
 RangedRow = tuple[
     str,
-    str | None,
-    str | None,
+    str,
     str | None,
     str | None,
     str | None,
@@ -76,6 +74,7 @@ async def related(database: Database, product: str) -> list[ExactRow]:
             AffectedModel.cve_id,
             CveModel.cvss_v2,
             CveModel.cvss_v3,
+            CveModel.cvss_v4,
             ProductModel.vendor,
             ProductModel.product,
             ProductModel.version,
@@ -123,6 +122,7 @@ async def related_multi(
             MultiAffectedModel.cve_id,
             CveModel.cvss_v2,
             CveModel.cvss_v3,
+            CveModel.cvss_v4,
             ProductModel.vendor,
             ProductModel.product,
             MultiAffectedModel.version_start_including,
@@ -200,6 +200,33 @@ def _required_bool(value: object, column: str) -> bool:
     raise TypeError(message)
 
 
+def cvss_text(
+    cvss_v2: str | None,
+    cvss_v3: str | None,
+    cvss_v4: str | None,
+) -> str:
+    """Join the available CVSS scores into one display text.
+
+    Present scores are listed from v4 to v2, each as 'version:score' and
+    separated by spaces. Scores are shown with one decimal place.
+
+    Args:
+        cvss_v2: CVSS v2 score, or None when absent.
+        cvss_v3: CVSS v3 score, or None when absent.
+        cvss_v4: CVSS v4 score, or None when absent.
+
+    Returns:
+        Joined score text, or '-' when no score is present.
+    """
+    scores = (("v4", cvss_v4), ("v3", cvss_v3), ("v2", cvss_v2))
+    parts = [
+        f"{label}:{float(score):.1f}"
+        for label, score in scores
+        if score is not None
+    ]
+    return " ".join(parts) if parts else "-"
+
+
 def _exact_row(row: Sequence[object]) -> ExactRow:
     """Validate and type one exact-version query result.
 
@@ -218,14 +245,17 @@ def _exact_row(row: Sequence[object]) -> ExactRow:
         raise ValueError(message)
     return (
         _required_text(row[0], "cve_id"),
-        _optional_text(row[1], "cvss_v2"),
-        _optional_text(row[2], "cvss_v3"),
-        _optional_text(row[3], "vendor"),
-        _optional_text(row[4], "product"),
-        _optional_text(row[5], "version"),
-        _optional_text(row[6], "version_update"),
-        _required_bool(row[7], "exploit_exists"),
-        _required_bool(row[8], "metasploit_exists"),
+        cvss_text(
+            _optional_text(row[1], "cvss_v2"),
+            _optional_text(row[2], "cvss_v3"),
+            _optional_text(row[3], "cvss_v4"),
+        ),
+        _optional_text(row[4], "vendor"),
+        _optional_text(row[5], "product"),
+        _optional_text(row[6], "version"),
+        _optional_text(row[7], "version_update"),
+        _required_bool(row[8], "exploit_exists"),
+        _required_bool(row[9], "metasploit_exists"),
     )
 
 
@@ -247,16 +277,19 @@ def _ranged_row(row: Sequence[object]) -> RangedRow:
         raise ValueError(message)
     return (
         _required_text(row[0], "cve_id"),
-        _optional_text(row[1], "cvss_v2"),
-        _optional_text(row[2], "cvss_v3"),
-        _optional_text(row[3], "vendor"),
-        _optional_text(row[4], "product"),
-        _optional_text(row[5], "version_start_including"),
-        _optional_text(row[6], "version_start_excluding"),
-        _optional_text(row[7], "version_end_including"),
-        _optional_text(row[8], "version_end_excluding"),
-        _required_bool(row[9], "exploit_exists"),
-        _required_bool(row[10], "metasploit_exists"),
+        cvss_text(
+            _optional_text(row[1], "cvss_v2"),
+            _optional_text(row[2], "cvss_v3"),
+            _optional_text(row[3], "cvss_v4"),
+        ),
+        _optional_text(row[4], "vendor"),
+        _optional_text(row[5], "product"),
+        _optional_text(row[6], "version_start_including"),
+        _optional_text(row[7], "version_start_excluding"),
+        _optional_text(row[8], "version_end_including"),
+        _optional_text(row[9], "version_end_excluding"),
+        _required_bool(row[10], "exploit_exists"),
+        _required_bool(row[11], "metasploit_exists"),
     )
 
 

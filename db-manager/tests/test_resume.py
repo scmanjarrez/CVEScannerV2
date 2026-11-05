@@ -394,6 +394,7 @@ class ResumeTests(unittest.IsolatedAsyncioTestCase):
                         cve_id="CVE-2026-1000",
                         cvss_v2=None,
                         cvss_v3=None,
+                        cvss_v4=None,
                         published=2026,
                     ),
                     AffectedRecord(
