@@ -685,11 +685,19 @@ end
 local IRC_THROTTLED = 'ERROR :Closing Link: [10.1.0.1] (Throttled: '
   .. 'Reconnecting too fast) - Please wait 10 seconds\r\n'
 
-t.case('throttled irc probe retries once after 20 seconds', function()
-  local log, new_socket = irc_sequence({
-    { lines = { IRC_THROTTLED } },
-    { lines = { IRC_351 } },
-  })
+--- Return n throttled scripts followed by one successful 351 reply.
+local function throttled_then_ok(n)
+  local scripts = {}
+  for _ = 1, n do
+    table.insert(scripts, { lines = { IRC_THROTTLED } })
+  end
+  table.insert(scripts, { lines = { IRC_351 } })
+  return scripts
+end
+
+--- Run the irc probe on scripted sockets; return socket log, sleeps, matches.
+local function run_irc_retry(scripts)
+  local log, new_socket = irc_sequence(scripts)
   local sleeps, sleep = irc_sleeps()
   local scanner = t.load_scanner()
   scanner.stubs.nmap.new_socket = new_socket
@@ -698,35 +706,51 @@ t.case('throttled irc probe retries once after 20 seconds', function()
   matches.data.irc = {}
   scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.20' }, irc_port,
       matches)
-  t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
-  t.eq(log.created, 2)
-  t.eq(sleeps, { 20 })
+  return log, sleeps, matches
+end
+
+--- Assert that every socket opened by the probe was closed once.
+local function assert_all_closed(log)
   for _, socket_log in ipairs(log.sockets) do
     t.eq(socket_log.closed, 1)
   end
+end
+
+t.case('irc probe with no throttling never retries', function()
+  local log, sleeps, matches = run_irc_retry(throttled_then_ok(0))
+  t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+  t.eq(log.created, 1)
+  t.eq(sleeps, {})
+  assert_all_closed(log)
 end)
 
-t.case('irc probe gives up after a second throttled reply', function()
-  local log, new_socket = irc_sequence({
-    { lines = { IRC_THROTTLED } },
-    { lines = { IRC_THROTTLED } },
-  })
-  local sleeps, sleep = irc_sleeps()
-  local scanner = t.load_scanner()
-  scanner.stubs.nmap.new_socket = new_socket
-  scanner.stubs.stdnse.sleep = sleep
-  local matches = new_match_table()
-  matches.data.irc = {}
-  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.21' }, irc_port,
-      matches)
-  t.keys_eq(matches.data.irc, {})
-  t.truthy(matches.data.nmap[irc_nmap]['*'])
-  t.eq(log.created, 2)
-  t.eq(sleeps, { 20 })
-  for _, socket_log in ipairs(log.sockets) do
-    t.eq(socket_log.closed, 1)
-  end
-end)
+t.case('throttled irc probe succeeds after one 30 s retry',
+  function()
+    local log, sleeps, matches = run_irc_retry(throttled_then_ok(1))
+    t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+    t.eq(log.created, 2)
+    t.eq(sleeps, { 30 })
+    assert_all_closed(log)
+  end)
+
+t.case('throttled irc probe succeeds after two 30 s retries',
+  function()
+    local log, sleeps, matches = run_irc_retry(throttled_then_ok(2))
+    t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+    t.eq(log.created, 3)
+    t.eq(sleeps, { 30, 30 })
+    assert_all_closed(log)
+  end)
+
+t.case('irc probe gives up after two retries when throttled three times',
+  function()
+    local log, sleeps, matches = run_irc_retry(throttled_then_ok(3))
+    t.keys_eq(matches.data.irc, {})
+    t.truthy(matches.data.nmap[irc_nmap]['*'])
+    t.eq(log.created, 3)
+    t.eq(sleeps, { 30, 30 })
+    assert_all_closed(log)
+  end)
 
 t.case('unthrottled irc probe never sleeps', function()
   local log, new_socket = irc_sequence({ { lines = { IRC_351 } } })

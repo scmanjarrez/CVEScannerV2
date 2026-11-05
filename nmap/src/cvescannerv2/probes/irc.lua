@@ -3,8 +3,8 @@
 --
 -- Registers on the IRC port and reads the 351 (VERSION) reply to get
 -- the exact UnrealIRCd version. Network I/O: TCP through nmap sockets
--- (5 s timeout, one retry after 20 s when throttled). Reads and writes no
--- state or config.
+-- (5 s timeout, up to two retries when throttled: after 30 s and 30 s).
+-- Reads and writes no state or config.
 
 local nmap = require 'nmap'
 local stdnse = require 'stdnse'
@@ -15,7 +15,7 @@ local IRC_SERVICES = { irc = true, ircs = true }
 local IRC_REGISTER = 'NICK cvescan\r\nUSER cvescan 0 * :cvescan\r\n'
   .. 'VERSION\r\n'
 local IRC_MAX_READS = 10
-local IRC_RETRY_DELAY = 20
+local IRC_RETRY_DELAYS = { 30, 30 }
 
 --- Return the UnrealIRCd version from a 351 (VERSION) reply line.
 -- Return nil when the server name is not an Unreal version string.
@@ -74,14 +74,16 @@ local function irc_attempt(host, port)
 end
 
 --- Return the UnrealIRCd CPE and exact version from its VERSION reply.
--- A throttled server is retried once on a new socket after 20 seconds.
+-- A throttled server is retried on a new socket after each delay in
+-- IRC_RETRY_DELAYS, stopping at the first attempt that is not throttled.
 -- Return nil when the service does not answer with a 351 reply.
 local function irc_probe(host, port)
   local version, throttled = irc_attempt(host, port)
-  if throttled then
+  for _, delay in ipairs(IRC_RETRY_DELAYS) do
+    if not throttled then break end
     stdnse.verbose(2, 'irc throttled on %s:%d, retrying', host.ip, port.number)
-    stdnse.sleep(IRC_RETRY_DELAY)
-    version = irc_attempt(host, port)
+    stdnse.sleep(delay)
+    version, throttled = irc_attempt(host, port)
   end
   if version == nil then return nil end
   return { cpe = 'cpe:/a:unrealircd:unrealircd', version = version }
