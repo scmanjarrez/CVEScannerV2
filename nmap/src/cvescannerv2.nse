@@ -95,8 +95,9 @@ CVEs information gathered from nvd.nist.gov.
 ---
 
 categories = { "safe" }
--- Orden por runlevel: estos scripts fijan la versión en port.version, así
--- que corren antes. Sin -sV no tienen efecto.
+-- dependencies only raises the runlevel. With -sV every "version" script
+-- already runs in runlevel 1, so listing one here is not needed to read
+-- its port.version; the list forces this script into runlevel 2.
 dependencies = {
   "weblogic-t3-info", "oracle-tns-version", "docker-version",
   "jdwp-version", "vmware-version", "db2-das-info", "ike-version",

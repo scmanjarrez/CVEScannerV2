@@ -2031,3 +2031,26 @@ t.case('valid product cpe file fills the table', function()
   t.eq(scanner.modules.reference_files.load_reference_file(path, 'product_cpe'), true)
   t.eq(scanner.modules.state.product_cpe, GLASSFISH_TABLE)
 end)
+
+local MCAFEE_AGENT_CPE = 'cpe:/a:mcafee:agent'
+local VENTRILO_CPE = 'cpe:/a:flagship_industries:ventrilo'
+
+t.case('mcafee agent product maps to the agent cpe', function()
+  local scanner = t.load_scanner()
+  scanner.modules.state.product_cpe = {
+    ['McAfee ePolicy Orchestrator Agent'] = MCAFEE_AGENT_CPE }
+  local matches = product_matches(scanner, product_port(
+    'McAfee ePolicy Orchestrator Agent',
+    'cpe:/a:mcafee:epolicy_orchestrator', '5.0.5'))
+  t.truthy(matches.data.nmap[MCAFEE_AGENT_CPE]['5.0.5'])
+  t.keys_eq(matches.data.nmap, { MCAFEE_AGENT_CPE })
+end)
+
+t.case('ventrilo product maps to the ventrilo cpe', function()
+  local scanner = t.load_scanner()
+  scanner.modules.state.product_cpe = { ['Ventrilo'] = VENTRILO_CPE }
+  local matches = product_matches(scanner, product_port('Ventrilo',
+    'cpe:/a:ventrilo:ventrilo', '3.0.3'))
+  t.truthy(matches.data.nmap[VENTRILO_CPE]['3.0.3'])
+  t.keys_eq(matches.data.nmap, { VENTRILO_CPE })
+end)
