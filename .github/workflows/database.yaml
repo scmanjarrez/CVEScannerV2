@@ -1,0 +1,224 @@
+name: Update database
+
+on:
+  schedule:
+    - cron: "0 3 1,15 * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Update mode: incremental (default) or full rebuild"
+        type: choice
+        options:
+          - incremental
+          - full
+        default: incremental
+      publish:
+        description: "Publish the database to CVEScannerV2DB"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build database
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      NVD_KEY: ${{ secrets.NVD_KEY }}
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install db-manager dependencies
+        run: uv sync --locked --project db-manager
+
+      - name: Install sqlite3
+        run: |
+          set -eu
+          if ! command -v sqlite3 >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y sqlite3
+          fi
+
+      - name: Restore previous database
+        shell: bash
+        run: |
+          set -eu
+          git clone --depth 1 https://github.com/scmanjarrez/CVEScannerV2DB.git dbrepo-prev
+          PREV_SHA=$(git -C dbrepo-prev rev-parse HEAD)
+          echo "PREV_SHA=$PREV_SHA" >> "$GITHUB_ENV"
+          (cd dbrepo-prev && sh build.sh -o ../cve.db)
+          test -f cve.db
+
+      - name: Determine update mode
+        shell: bash
+        env:
+          INPUT_MODE: ${{ inputs.mode }}
+        run: |
+          set -eu
+          MODE="${INPUT_MODE:-incremental}"
+          HAS_CONDITIONS=$(sqlite3 cve.db "SELECT count(*) FROM sqlite_master WHERE name='conditions'")
+          if [ "$HAS_CONDITIONS" = "0" ]; then
+            echo "::notice::Previous database has no 'conditions' table (v3); forcing full rebuild"
+            MODE=full
+          fi
+          echo "MODE=$MODE" >> "$GITHUB_ENV"
+          echo "Update mode: $MODE"
+
+      - name: Prepare base database
+        shell: bash
+        run: |
+          set -eu
+          if [ "$MODE" = "full" ]; then
+            mv cve.db prev.db
+            uv run --project db-manager db-manager -d cve.db --noscrape
+            sqlite3 cve.db "ATTACH 'prev.db' AS p; UPDATE exploits SET name = (SELECT e.name FROM p.exploits e WHERE e.exploit_id = exploits.exploit_id) WHERE name IS NULL;"
+          else
+            cp cve.db prev.db
+          fi
+
+      - name: Update database (scrape)
+        shell: bash
+        run: |
+          set -eu
+          uv run --project db-manager db-manager -d cve.db
+
+      - name: Validate database
+        shell: bash
+        run: |
+          set -eu
+
+          ratio_ok() {
+            # $1 = label, $2 = new count, $3 = old count
+            if [ "$(( $2 * 100 ))" -lt "$(( $3 * 95 ))" ]; then
+              echo "::error::$1 dropped below 95% of previous database ($2 vs $3)"
+              exit 1
+            fi
+          }
+
+          INTEGRITY=$(sqlite3 cve.db "PRAGMA integrity_check")
+          if [ "$INTEGRITY" != "ok" ]; then
+            echo "::error::integrity_check failed: $INTEGRITY"
+            exit 1
+          fi
+
+          for TABLE in nvd_sync nvd_collections nvd_pages; do
+            COUNT=$(sqlite3 cve.db "SELECT count(*) FROM $TABLE")
+            if [ "$COUNT" != "0" ]; then
+              echo "::error::Checkpoint table $TABLE is not empty ($COUNT rows)"
+              exit 1
+            fi
+          done
+
+          NEW_LAST_MOD=$(sqlite3 cve.db "SELECT max(last_mod) FROM metadata")
+          OLD_LAST_MOD=$(sqlite3 prev.db "SELECT max(last_mod) FROM metadata")
+          if [ -z "$NEW_LAST_MOD" ]; then
+            echo "::error::metadata.last_mod is empty in new database"
+            exit 1
+          fi
+          if [ -n "$OLD_LAST_MOD" ]; then
+            if ! [[ "$NEW_LAST_MOD" > "$OLD_LAST_MOD" ]]; then
+              echo "::error::last_mod did not advance ($NEW_LAST_MOD vs previous $OLD_LAST_MOD)"
+              exit 1
+            fi
+          else
+            echo "::notice::Previous database has no comparable last_mod; skipping that check"
+          fi
+          echo "NEW_LAST_MOD=$NEW_LAST_MOD" >> "$GITHUB_ENV"
+
+          NEW_CVES=$(sqlite3 cve.db "SELECT count(*) FROM cves")
+          OLD_CVES=$(sqlite3 prev.db "SELECT count(*) FROM cves")
+          ratio_ok "cves" "$NEW_CVES" "$OLD_CVES"
+
+          NEW_PRODUCTS=$(sqlite3 cve.db "SELECT count(*) FROM products")
+          OLD_PRODUCTS=$(sqlite3 prev.db "SELECT count(*) FROM products")
+          ratio_ok "products" "$NEW_PRODUCTS" "$OLD_PRODUCTS"
+
+          HAS_CONDITIONS=$(sqlite3 cve.db "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='conditions'")
+          if [ "$HAS_CONDITIONS" != "1" ]; then
+            echo "::error::Table 'conditions' is missing"
+            exit 1
+          fi
+
+          HAS_CVSS_V4=$(sqlite3 cve.db "SELECT count(*) FROM pragma_table_info('cves') WHERE name='cvss_v4'")
+          if [ "$HAS_CVSS_V4" != "1" ]; then
+            echo "::error::Column cves.cvss_v4 is missing"
+            exit 1
+          fi
+
+      - name: Build publication tree
+        shell: bash
+        run: |
+          set -eu
+          mkdir out
+          sqlite3 cve.db .dump > dump.sql
+          DUMP_SHA=$(sha256sum dump.sql | cut -d' ' -f1)
+          echo "DUMP_SHA=$DUMP_SHA" >> "$GITHUB_ENV"
+          split -b 25M -d dump.sql out/dump.p
+          rm dump.sql
+          cp dbrepo/build.sh dbrepo/README.md dbrepo/.gitignore LICENSE out/
+
+      - name: Round-trip check
+        shell: bash
+        run: |
+          set -eu
+          (cd out && sh build.sh -o "$RUNNER_TEMP/rebuilt.db")
+          REBUILT_SHA=$(sqlite3 "$RUNNER_TEMP/rebuilt.db" .dump | sha256sum | cut -d' ' -f1)
+          if [ "$REBUILT_SHA" != "$DUMP_SHA" ]; then
+            echo "::error::Round-trip mismatch (rebuilt $REBUILT_SHA, expected $DUMP_SHA)"
+            exit 1
+          fi
+          echo "Round-trip OK ($DUMP_SHA)"
+
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cve.db
+          path: cve.db
+          retention-days: 15
+
+      - name: Publish to CVEScannerV2DB
+        id: publish
+        if: github.event_name == 'schedule' || inputs.publish
+        shell: bash
+        env:
+          DBREPO_DEPLOY_KEY: ${{ secrets.DBREPO_DEPLOY_KEY }}
+        run: |
+          set -eu
+          install -m 700 -d ~/.ssh
+          install -m 600 /dev/null ~/.ssh/dbrepo
+          printf '%s\n' "$DBREPO_DEPLOY_KEY" > ~/.ssh/dbrepo
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND='ssh -i ~/.ssh/dbrepo -o IdentitiesOnly=yes'
+
+          cd out
+          git init -b master
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -A
+          git commit -m "Update database (v4 ${GITHUB_SHA:0:7}, nvd $NEW_LAST_MOD)"
+          git remote add origin git@github.com:scmanjarrez/CVEScannerV2DB.git
+          git push --force-with-lease=master:"$PREV_SHA" origin master
+
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+  image:
+    name: Build image
+    needs: build
+    if: needs.build.outputs.published == 'true'
+    uses: ./.github/workflows/docker.yaml
+    secrets: inherit
+    permissions:
+      contents: read

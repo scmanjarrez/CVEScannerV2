@@ -93,10 +93,11 @@ Product and vendor aliases (`data/product-aliases.json`,
 
 ## Getting the database
 
-You can download a (semi-updated) copy from
-[CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB) (`.sql` files,
-or Actions → Latest → Summary → Artifacts; the repository is refreshed every
-two weeks), or build it yourself:
+The [CVEScannerV2DB](https://github.com/scmanjarrez/CVEScannerV2DB) repository
+contains the v4 database dump (`dump.pNN` files and `build.sh`). The
+`database.yaml` workflow of this repository generates it on the 1st and 15th
+of each month. CVEScannerV2DB no longer holds artifacts. For the old NSE (v3),
+use the `v3-final` tag of CVEScannerV2DB. You can also build it yourself:
 
 ```bash
 uv sync --project db-manager
@@ -107,6 +108,10 @@ uv run --project db-manager db-manager
 git clone https://github.com/scmanjarrez/CVEScannerV2DB
 cd CVEScannerV2DB && sh build.sh
 ```
+
+`build.sh` requires `sqlite3` and fails if `cve.db` already exists; use
+`--remove` or `-o` to replace it. The `database.yaml` workflow also uploads a
+`cve.db` artifact (kept for 15 days) on each run in Actions.
 
 > **Note**: `db-manager` needs an
 > [NVD API key](https://nvd.nist.gov/developers/request-an-api-key), saved in a
@@ -197,7 +202,8 @@ image already includes it.
 The multi-stage Docker build publishes two `scratch` images. The `db` target
 contains the latest database built from the `CVEScannerV2DB` dump repository;
 the `nodb` target omits it. Both contain only Nmap, its runtime dependencies,
-the NSE script and the data files the scanner needs.
+the NSE script and the data files the scanner needs. The `database.yaml`
+workflow publishes the dump and then rebuilds the `:db` image.
 
 - Database embedded: `scmanjarrez/cvescanner:db` or
   `scmanjarrez/cvescanner:latest`
