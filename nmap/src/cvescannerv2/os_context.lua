@@ -3,13 +3,13 @@
 --
 -- Read-only with respect to probes: only a cached host_probe_os result is
 -- used, never a new probe. No network or file I/O.
--- Reads state.host_os_probe, state.platform_families and the per-IP
--- state.host_os cache on every call; no config.
+-- Reads state.host_os_probe_result, state.platform_families and the per-IP
+-- state.host_os_family cache on every call; no config.
 
-local cpe_lib = require 'cvescannerv2.cpe'
+local cpe = require 'cvescannerv2.cpe'
 local state = require 'cvescannerv2.state'
 
-local split_cpe = cpe_lib.split_cpe
+local split_cpe = cpe.split_cpe
 
 local M = {}
 
@@ -85,11 +85,11 @@ end
 
 -- Cache the host.os family per IP; false marks a negative result.
 local function host_os_family(host)
-  if state.host_os[host.ip] == nil then
+  if state.host_os_family[host.ip] == nil then
     local ok, family = pcall(first_host_os_family, host)
-    state.host_os[host.ip] = ok and family or false
+    state.host_os_family[host.ip] = ok and family or false
   end
-  return state.host_os[host.ip] or nil
+  return state.host_os_family[host.ip] or nil
 end
 
 local function text_os(port)
@@ -103,7 +103,7 @@ end
 
 -- Read-only: only a result cached by host_probe_os is used, never a probe.
 local function os_context(host, port)
-  local probed = state.host_os_probe[host.ip]
+  local probed = state.host_os_probe_result[host.ip]
   if probed then
     return { family = probed.family, source = probed.source }
   end

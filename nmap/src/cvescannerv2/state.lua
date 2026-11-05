@@ -10,18 +10,18 @@ local M = {}
 -- Return fresh initial values. Tables are new on every call.
 local function defaults()
   return {
-    aliases = {},
+    product_aliases = {},
     vendor_aliases = {},
     product_cpe = {},
     platform_families = {},
-    host_os = {},
+    host_os_family = {},
     smb_info = {},
     ntp_info = {},
-    host_os_probe = {},
+    host_os_probe_result = {},
     catalog = { fingerprints = {}, paths = {}, probes = {} },
     catalog_loaded = false,
-    probes = {},
-    status = true,
+    probe_cache = {},
+    enabled = true,
   }
 end
 

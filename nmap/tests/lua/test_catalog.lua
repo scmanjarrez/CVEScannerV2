@@ -4,57 +4,57 @@
 local t = require 'harness'
 local s = t.load_scanner()
 
-local function new_matches()
+local function new_match_table()
   return { data = { nmap = {}, http = {} }, size = 0 }
 end
 
 t.suite('pattern validation')
 
 t.case('capture_count ignores escapes, classes and balances', function()
-  t.eq(s.capture_count('(%d+)'), 1)
-  t.eq(s.capture_count('%((%d+)%)'), 1)
-  t.eq(s.capture_count('[(]x'), 0)
-  t.eq(s.capture_count('(a)(b)'), 2)
-  t.eq(s.capture_count('%b()'), 0)
-  t.eq(s.capture_count('%f[%w](%d)'), 1)
+  t.eq(s.modules.validate.capture_count('(%d+)'), 1)
+  t.eq(s.modules.validate.capture_count('%((%d+)%)'), 1)
+  t.eq(s.modules.validate.capture_count('[(]x'), 0)
+  t.eq(s.modules.validate.capture_count('(a)(b)'), 2)
+  t.eq(s.modules.validate.capture_count('%b()'), 0)
+  t.eq(s.modules.validate.capture_count('%f[%w](%d)'), 1)
 end)
 
 t.case('valid_pattern checks captures, syntax and size', function()
-  t.truthy(s.valid_pattern('nginx/([%d.]+)', 1))
-  t.eq(s.valid_pattern('nginx/([%d.]+)', 0), false)
-  t.eq(s.valid_pattern('[a', 0), false)
-  t.eq(s.valid_pattern('', 0), false)
-  t.eq(s.valid_pattern(string.rep('a', 2049), 0), false)
+  t.truthy(s.modules.validate.valid_pattern('nginx/([%d.]+)', 1))
+  t.eq(s.modules.validate.valid_pattern('nginx/([%d.]+)', 0), false)
+  t.eq(s.modules.validate.valid_pattern('[a', 0), false)
+  t.eq(s.modules.validate.valid_pattern('', 0), false)
+  t.eq(s.modules.validate.valid_pattern(string.rep('a', 2049), 0), false)
 end)
 
 -- valid_pattern probes the pattern against an empty subject. Lua reports an
 -- unfinished capture only when matching reaches the end of the pattern, so
 -- the parentheses are counted explicitly in capture_count.
 t.case('unbalanced capture is rejected', function()
-  t.eq(s.valid_pattern('(%d+', 1), false)
+  t.eq(s.modules.validate.valid_pattern('(%d+', 1), false)
 end)
 
 t.case('valid_alias accepts vendor:product CPEs only', function()
-  t.truthy(s.valid_alias('cpe:/a:apache:http_server'))
-  t.eq(s.valid_alias('cpe:/a:apache:http_server:2.4'), false)
-  t.eq(s.valid_alias('cpe:2.3:a:apache:http_server'), false)
-  t.eq(s.valid_alias(42), false)
+  t.truthy(s.modules.validate.valid_alias('cpe:/a:apache:http_server'))
+  t.eq(s.modules.validate.valid_alias('cpe:/a:apache:http_server:2.4'), false)
+  t.eq(s.modules.validate.valid_alias('cpe:2.3:a:apache:http_server'), false)
+  t.eq(s.modules.validate.valid_alias(42), false)
 end)
 
 t.case('valid_channel', function()
   for _, channel in ipairs({ 'raw', 'body', 'title', 'script', 'cookie',
     'banner', 'hdr:server', 'meta:generator' }) do
-    t.truthy(s.valid_channel(channel), channel)
+    t.truthy(s.modules.validate.valid_channel(channel), channel)
   end
-  t.eq(s.valid_channel('hdr:'), false)
-  t.eq(s.valid_channel('foo'), false)
+  t.eq(s.modules.validate.valid_channel('hdr:'), false)
+  t.eq(s.modules.validate.valid_channel('foo'), false)
 end)
 
 t.case('valid_path', function()
-  t.truthy(s.valid_path('/admin/'))
-  t.eq(s.valid_path('admin'), false)
-  t.eq(s.valid_path('/a b'), false)
-  t.eq(s.valid_path('/x#y'), false)
+  t.truthy(s.modules.validate.valid_path('/admin/'))
+  t.eq(s.modules.validate.valid_path('admin'), false)
+  t.eq(s.modules.validate.valid_path('/a b'), false)
+  t.eq(s.modules.validate.valid_path('/x#y'), false)
 end)
 
 t.suite('catalogue validation')
@@ -70,28 +70,34 @@ local probe = {
 }
 
 t.case('fingerprints are grouped by channel', function()
-  local by_channel = s.validate_fingerprints({ rules = { nginx = rule } })
+  local by_channel = s.modules.validate.validate_fingerprints(
+    { rules = { nginx = rule } })
   t.eq(by_channel['hdr:server'][1].alias, 'cpe:/a:f5:nginx')
 end)
 
 t.case('one invalid rule rejects the whole catalogue', function()
   local bad = { alias = 'cpe:/a:x:y', channel = 'body', regex = '([%d' }
-  t.eq(s.validate_fingerprints({ rules = { nginx = rule, bad = bad } }), nil)
-  t.eq(s.validate_fingerprints({ rules = {} }), nil)
+  t.eq(s.modules.validate.validate_fingerprints({ rules = { nginx = rule,
+      bad = bad } }), nil)
+  t.eq(s.modules.validate.validate_fingerprints({ rules = {} }), nil)
 end)
 
 t.case('paths are deduplicated and validated', function()
-  t.eq(s.validate_paths({ paths = { '/a', '/a', '/b' } }), { '/a', '/b' })
-  t.eq(s.validate_paths({ paths = { '/a', 'b' } }), nil)
-  t.eq(s.validate_paths({ paths = {} }), nil)
+  t.eq(s.modules.validate.validate_paths({ paths = { '/a', '/a', '/b' } }),
+      { '/a', '/b' })
+  t.eq(s.modules.validate.validate_paths({ paths = { '/a', 'b' } }), nil)
+  t.eq(s.modules.validate.validate_paths({ paths = {} }), nil)
 end)
 
 t.case('probes require schema 1 and valid parts', function()
-  t.eq(#s.validate_probes({ schema = 1, probes = { probe } }), 1)
-  t.eq(s.validate_probes({ schema = 2, probes = { probe } }), nil)
+  t.eq(#s.modules.validate.validate_probes({ schema = 1, probes = { probe } }),
+      1)
+  t.eq(s.modules.validate.validate_probes({ schema = 2, probes = { probe } }),
+      nil)
   local broken = { alias = probe.alias, detect = probe.detect,
     extract = probe.extract, paths = { 'about' } }
-  t.eq(s.validate_probes({ schema = 1, probes = { broken } }), nil)
+  t.eq(s.modules.validate.validate_probes({ schema = 1, probes = { broken } }),
+      nil)
 end)
 
 t.case('build_catalog loads the three catalogue files', function()
@@ -104,44 +110,51 @@ t.case('build_catalog loads the three catalogue files', function()
     ['paths.json'] = { paths = { '/' } },
     ['probes.json'] = { schema = 1, probes = { probe } },
   }
-  local loaded = s.build_catalog(index, function(name) return files[name] end)
+  local loaded = s.modules.validate.build_catalog(index,
+      function(name) return files[name] end)
   t.truthy(loaded and loaded.fingerprints and loaded.paths and loaded.probes)
   index.catalogs.paths.file = 'other.json'
-  t.eq(s.build_catalog(index, function(name) return files[name] end), nil)
+  t.eq(s.modules.validate.build_catalog(index,
+      function(name) return files[name] end), nil)
 end)
 
 t.suite('response matching')
 
 t.case('safe_version trims and rejects junk', function()
-  t.eq(s.safe_version(' 1.2 '), '1.2')
-  t.eq(s.safe_version('*'), nil)
-  t.eq(s.safe_version(''), nil)
-  t.eq(s.safe_version('...'), nil)
-  t.eq(s.safe_version('1.2\n3'), nil)
-  t.eq(s.safe_version(string.rep('1', 129)), nil)
+  t.eq(s.modules.fingerprint_match.safe_version(' 1.2 '), '1.2')
+  t.eq(s.modules.fingerprint_match.safe_version('*'), nil)
+  t.eq(s.modules.fingerprint_match.safe_version(''), nil)
+  t.eq(s.modules.fingerprint_match.safe_version('...'), nil)
+  t.eq(s.modules.fingerprint_match.safe_version('1.2\n3'), nil)
+  t.eq(s.modules.fingerprint_match.safe_version(string.rep('1', 129)), nil)
 end)
 
 t.case('anchored_capture searches near the anchor only', function()
-  t.eq(s.anchored_capture('nginx/([%d.]+)', 'nginx', 'Server: nginx/1.4.6'),
+  t.eq(s.modules.fingerprint_match.anchored_capture('nginx/([%d.]+)', 'nginx',
+      'Server: nginx/1.4.6'),
     '1.4.6')
-  t.eq(s.anchored_capture('nginx/([%d.]+)', 'apache', 'nginx/1.4.6'), nil)
+  t.eq(s.modules.fingerprint_match.anchored_capture('nginx/([%d.]+)', 'apache',
+      'nginx/1.4.6'), nil)
   local far = 'Acme' .. string.rep(' ', 600) .. 'v9.9'
-  t.eq(s.anchored_capture('v([%d.]+)', 'Acme', far), nil)
+  t.eq(s.modules.fingerprint_match.anchored_capture('v([%d.]+)', 'Acme', far), nil)
 end)
 
 t.case('html_attribute handles quoting styles', function()
-  t.eq(s.html_attribute('<meta name="generator" content="WP 5.8">',
-    'content'), 'WP 5.8')
-  t.eq(s.html_attribute("<meta CONTENT='x 1'>", 'content'), 'x 1')
-  t.eq(s.html_attribute('<script src=a.js>', 'src'), 'a.js')
+  t.eq(s.modules.fingerprint_match.html_attribute(
+    '<meta name="generator" content="WP 5.8">', 'content'), 'WP 5.8')
+  t.eq(s.modules.fingerprint_match.html_attribute("<meta CONTENT='x 1'>", 'content'),
+      'x 1')
+  t.eq(s.modules.fingerprint_match.html_attribute('<script src=a.js>', 'src'),
+      'a.js')
 end)
 
 t.case('unquoted attribute with slashes', function()
-  t.eq(s.html_attribute('<script src=/js/a.js>', 'src'), '/js/a.js')
+  t.eq(s.modules.fingerprint_match.html_attribute('<script src=/js/a.js>', 'src'),
+      '/js/a.js')
 end)
 
 t.case('response_subjects splits a response into channels', function()
-  local subjects = s.response_subjects({
+  local subjects = s.modules.fingerprint_match.response_subjects({
     rawheader = { 'Server: nginx/1.4.6' },
     header = { server = 'nginx/1.4.6', ['x-powered-by'] = 'PHP/5.4.1' },
     cookies = { { name = 'PHPSESSID', value = 'abc' } },
@@ -158,23 +171,25 @@ t.case('response_subjects splits a response into channels', function()
 end)
 
 t.case('response_is_usable accepts 2xx and 3xx only', function()
-  t.eq(s.response_is_usable({ status = 200 }), true)
-  t.eq(s.response_is_usable({ status = 302 }), true)
-  t.eq(s.response_is_usable({ status = 403 }), false)
-  t.eq(s.response_is_usable({ status = 404 }), false)
-  t.eq(s.response_is_usable({}), false)
+  t.eq(s.modules.http_fingerprint.response_is_usable({ status = 200 }), true)
+  t.eq(s.modules.http_fingerprint.response_is_usable({ status = 302 }), true)
+  t.eq(s.modules.http_fingerprint.response_is_usable({ status = 403 }), false)
+  t.eq(s.modules.http_fingerprint.response_is_usable({ status = 404 }), false)
+  t.eq(s.modules.http_fingerprint.response_is_usable({}), false)
 end)
 
 t.case('match_subjects records versions and triggers probes', function()
   local scanner = t.load_scanner()
-  scanner.registry.catalog_loaded = true
-  scanner.registry.catalog = {
-    fingerprints = s.validate_fingerprints({ rules = { nginx = rule } }),
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = {
+    fingerprints = s.modules.validate.validate_fingerprints(
+      { rules = { nginx = rule } }),
     paths = { '/' },
-    probes = s.validate_probes({ schema = 1, probes = { probe } })
+    probes = s.modules.validate.validate_probes(
+      { schema = 1, probes = { probe } })
   }
-  local matches, triggered = new_matches(), {}
-  scanner.match_subjects({
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.fingerprint_match.match_subjects({
     ['hdr:server'] = { 'nginx/1.4.6' },
     title = { 'Acme Portal' }
   }, matches, 'http', triggered)
@@ -196,11 +211,12 @@ t.case('targeted probes fetch at most three paths per probe', function()
   local scanner = t.load_scanner({ http = http })
   local many = { alias = probe.alias, detect = probe.detect,
     extract = probe.extract, paths = { '/p1', '/p2', '/p3', '/p4' } }
-  scanner.registry.catalog_loaded = true
-  scanner.registry.catalog = { fingerprints = {}, paths = {},
-    probes = s.validate_probes({ schema = 1, probes = { many } }) }
-  local matches = new_matches()
-  scanner.run_targeted_probes({}, {}, matches,
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = { fingerprints = {}, paths = {},
+    probes = s.modules.validate.validate_probes({ schema = 1,
+        probes = { many } }) }
+  local matches = new_match_table()
+  scanner.modules.http_fingerprint.run_targeted_probes({}, {}, matches,
     { [probe.alias] = true })
   t.eq(requested, { '/p1', '/p2', '/p3' })
   t.truthy(matches.data.http[probe.alias]['2.1.0'])
@@ -217,16 +233,17 @@ local function run_probe(initial, body, status)
     end
   }
   local scanner = t.load_scanner({ http = http })
-  scanner.registry.catalog_loaded = true
-  scanner.registry.catalog = { fingerprints = {}, paths = {},
-    probes = s.validate_probes({ schema = 1, probes = { probe } }) }
-  local matches = new_matches()
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = { fingerprints = {}, paths = {},
+    probes = s.modules.validate.validate_probes({ schema = 1,
+        probes = { probe } }) }
+  local matches = new_match_table()
   for version in pairs(initial or {}) do
     matches.data.nmap[probe.alias] = matches.data.nmap[probe.alias] or {}
     matches.data.nmap[probe.alias][version] = true
     matches.size = matches.size + 1
   end
-  scanner.run_targeted_probes({}, {}, matches,
+  scanner.modules.http_fingerprint.run_targeted_probes({}, {}, matches,
     { [probe.alias] = true })
   return matches, requested
 end
@@ -275,9 +292,10 @@ t.case('samba lanmanager sets exact version, drops nmap range', function()
     return true, { lanmanager = 'Samba 3.0.20-Debian' }
   end, function()
     local scanner = t.load_scanner()
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.0.1' }, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.0.1' }, samba_port,
+        matches)
     t.truthy(matches.data.smb['cpe:/a:samba:samba']['3.0.20'])
     t.keys_eq(matches.data.nmap, {})
   end)
@@ -286,9 +304,10 @@ end)
 t.case('smb get_os status false falls back to nmap cpe', function()
   with_smb(function() return false, 'error' end, function()
     local scanner = t.load_scanner()
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.0.6' }, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.0.6' }, samba_port,
+        matches)
     t.keys_eq(matches.data.smb, {})
     t.truthy(matches.data.nmap['cpe:/a:samba:samba']['3.X - 4.X'])
   end)
@@ -297,9 +316,10 @@ end)
 t.case('smb probe error falls back to nmap cpe', function()
   with_smb(function() error('timeout') end, function()
     local scanner = t.load_scanner()
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.0.2' }, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.0.2' }, samba_port,
+        matches)
     t.keys_eq(matches.data.smb, {})
     t.truthy(matches.data.nmap['cpe:/a:samba:samba']['3.X - 4.X'])
   end)
@@ -314,9 +334,10 @@ t.case('port 80 never calls get_os', function()
     local scanner = t.load_scanner()
     local http_port = { number = 80, service = 'http',
       version = { cpe = { 'cpe:/a:samba:samba' }, version = '3.X' } }
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.0.4' }, http_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.0.4' }, http_port,
+        matches)
     t.eq(calls, 0)
     t.keys_eq(matches.data.smb, {})
   end)
@@ -330,8 +351,12 @@ t.case('smb probe is cached per host', function()
   end, function()
     local scanner = t.load_scanner()
     local host = { ip = '10.0.0.5' }
-    t.eq(scanner.smb_version(host, samba_port), '4.5.16')
-    t.eq(scanner.smb_version(host, samba_port), '4.5.16')
+    local matches = new_match_table()
+    matches.data.smb = {}
+    scanner.modules.port_matches.add_nmap_matches(host, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches(host, samba_port, matches)
+    t.truthy(matches.data.smb['cpe:/a:samba:samba']['4.5.16'])
+    t.keys_eq(matches.data.nmap, {})
     t.eq(calls, 1)
   end)
 end)
@@ -347,9 +372,10 @@ t.case('probes=none never calls get_os and keeps the nmap cpe', function()
     return true, { lanmanager = 'Samba 3.0.20' }
   end, function()
     local scanner = t.load_scanner({ args = { probes = 'none' } })
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.1.1' }, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.1.1' }, samba_port,
+        matches)
     t.eq(calls, 0)
     t.truthy(matches.data.nmap[samba_nmap]['3.X - 4.X'])
   end)
@@ -362,9 +388,10 @@ t.case('probes=smb runs the smb probe', function()
     return true, { lanmanager = 'Samba 3.0.20' }
   end, function()
     local scanner = t.load_scanner({ args = { probes = 'smb' } })
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.1.2' }, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.1.2' }, samba_port,
+        matches)
     t.eq(calls, 1)
     t.truthy(matches.data.smb[samba_nmap]['3.0.20'])
   end)
@@ -377,9 +404,10 @@ t.case('probes=irc does not run the smb probe', function()
     return true, { lanmanager = 'Samba 3.0.20' }
   end, function()
     local scanner = t.load_scanner({ args = { probes = 'irc' } })
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.0.1.3' }, samba_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.0.1.3' }, samba_port,
+        matches)
     t.eq(calls, 0)
     t.keys_eq(matches.data.smb, {})
   end)
@@ -388,9 +416,9 @@ end)
 t.case('probes csv list enables each named probe', function()
   with_smb(function() return false, 'unused' end, function()
     local scanner = t.load_scanner({ args = { probes = 'smb,irc' } })
-    t.eq(scanner.probe_enabled('smb'), true)
-    t.eq(scanner.probe_enabled('irc'), true)
-    t.eq(scanner.probe_enabled('http'), false)
+    t.eq(scanner.modules.probes.probe_enabled('smb'), true)
+    t.eq(scanner.modules.probes.probe_enabled('irc'), true)
+    t.eq(scanner.modules.probes.probe_enabled('http'), false)
   end)
 end)
 
@@ -402,8 +430,8 @@ t.case('failing version probe is cached as a miss', function()
   end }
   local scanner = t.load_scanner()
   local host, port = { ip = '10.0.2.1' }, { number = 9001 }
-  t.eq(scanner.run_version_probe(host, port, fake), nil)
-  t.eq(scanner.run_version_probe(host, port, fake), nil)
+  t.eq(scanner.modules.probes.run_version_probe(host, port, fake), nil)
+  t.eq(scanner.modules.probes.run_version_probe(host, port, fake), nil)
   t.eq(calls, 1)
 end)
 
@@ -415,48 +443,53 @@ t.case('version probe result is cached per ip and port', function()
   end }
   local scanner = t.load_scanner()
   local host = { ip = '10.0.2.2' }
-  local first = scanner.run_version_probe(host, { number = 8080 }, fake)
+  local first = scanner.modules.probes.run_version_probe(host,
+      { number = 8080 }, fake)
   t.eq(first.version, '1.0')
-  scanner.run_version_probe(host, { number = 8080 }, fake)
+  scanner.modules.probes.run_version_probe(host, { number = 8080 }, fake)
   t.eq(calls, 1)
-  scanner.run_version_probe(host, { number = 8081 }, fake)
+  scanner.modules.probes.run_version_probe(host, { number = 8081 }, fake)
   t.eq(calls, 2)
 end)
 
--- Cursor over fixed rows, as returned by registry.conn:execute.
-local function rows_cursor(rows)
-  local i = 0
-  return {
-    fetch = function()
-      i = i + 1
-      if rows[i] == nil then return nil end
-      return table.unpack(rows[i])
-    end,
-    close = function() end,
-  }
+-- Real luasql module for the database case; nil when it is not installed.
+local fixture = require 'fixture'
+local sqlite = fixture.load_sqlite()
+
+-- Run a database case, or skip it when luasql.sqlite3 is not installed.
+local function db_case(name, fn)
+  if sqlite then
+    t.case(name, fn)
+  else
+    t.skip(name, 'luasql.sqlite3 is not installed')
+  end
 end
 
-t.case('analysis reports a non-nmap origin as its own source', function()
+db_case('analysis reports a non-nmap origin as its own source', function()
+  local path = fixture.create({
+    cves = { { 'CVE-EXACT', '5.0', nil, 2000 } },
+    products = { { 1, 'apache', 'tomcat', '5.5', '*' } },
+    affected = { { 'CVE-EXACT', 1 } },
+  }, sqlite)
+  local env, conn = fixture.open(path, sqlite)
   local scanner = t.load_scanner()
-  local affected = { { 'CVE-EXACT', '5.0', nil, '5.5', '*', 0, 0 } }
-  scanner.registry.conn = { execute = function(_, sql)
-    if sql:find('INNER JOIN affected', 1, true) then
-      return rows_cursor(affected)
-    end
-    return rows_cursor({})
-  end }
-  scanner.registry.logger = { write = function() end }
-  scanner.registry.cache = {}
-  scanner.registry.json_out = { ['10.0.2.3'] = { ports = {} } }
-  local matches = new_matches()
+  scanner.modules.state.db_env, scanner.modules.state.db_conn = env, conn
+  scanner.modules.state.log_file = { write = function() end }
+  scanner.modules.state.service_cache = {}
+  scanner.modules.state.json_report = { ['10.0.2.3'] = { ports = {} } }
+  local matches = new_match_table()
   matches.data.irc = {}
   matches.data.irc['cpe:/a:apache:tomcat:5.5'] = { ['5.5'] = true }
   matches.size = 1
   local host = { ip = '10.0.2.3' }
   local port = { number = 80, protocol = 'tcp', service = 'http' }
-  scanner.analysis(host, port, matches, { os = {} })
-  local service = scanner.registry.json_out[host.ip].ports['80/tcp']
+  scanner.modules.port_analysis.analyze_port(host, port, matches,
+    { os = {} })
+  local service = scanner.modules.state.json_report[host.ip].ports['80/tcp']
     .services[1]
+  conn:close()
+  env:close()
+  os.remove(path)
   t.eq(service.version_source, 'irc')
 end)
 
@@ -501,9 +534,10 @@ t.case('351 reply sets the UnrealIRCd version', function()
   local log, new_socket = irc_stub({ lines = { IRC_351 } })
   local scanner = t.load_scanner()
   scanner.stubs.nmap.new_socket = new_socket
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.1' }, irc_port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.1' }, irc_port,
+      matches)
   t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
   t.keys_eq(matches.data.nmap, {})
   t.eq(log.closed, 1)
@@ -515,9 +549,9 @@ t.case('precise Nmap version skips the irc probe', function()
   scanner.stubs.nmap.new_socket = new_socket
   local port = { number = 6667, service = 'irc',
     version = { cpe = { irc_nmap }, version = '3.2.8.1' } }
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.2' }, port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.2' }, port, matches)
   t.eq(log.created, 0)
   t.truthy(matches.data.nmap[irc_nmap]['3.2.8.1'])
 end)
@@ -528,9 +562,9 @@ t.case('http service never runs the irc probe', function()
   scanner.stubs.nmap.new_socket = new_socket
   local port = { number = 6667, service = 'http',
     version = { cpe = { irc_nmap }, version = '' } }
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.3' }, port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.3' }, port, matches)
   t.eq(log.created, 0)
   t.truthy(matches.data.nmap[irc_nmap]['*'])
 end)
@@ -541,9 +575,9 @@ t.case('other product on an irc service never runs the probe', function()
   scanner.stubs.nmap.new_socket = new_socket
   local port = { number = 6667, service = 'irc',
     version = { cpe = { 'cpe:/a:ngircd:ngircd' }, version = '' } }
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.4' }, port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.4' }, port, matches)
   t.eq(log.created, 0)
   t.truthy(matches.data.nmap['cpe:/a:ngircd:ngircd']['*'])
 end)
@@ -553,9 +587,10 @@ t.case('probes=none and probes=smb skip the irc probe', function()
     local log, new_socket = irc_stub({ lines = { IRC_351 } })
     local scanner = t.load_scanner({ args = { probes = arg } })
     scanner.stubs.nmap.new_socket = new_socket
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.irc = {}
-    scanner.add_nmap_matches({ ip = '10.1.0.5' }, irc_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.5' }, irc_port,
+        matches)
     t.eq(log.created, 0, arg)
     t.truthy(matches.data.nmap[irc_nmap]['*'], arg)
   end
@@ -571,9 +606,10 @@ t.case('failed or non-Unreal replies fall back to the nmap cpe', function()
     local log, new_socket = irc_stub(script)
     local scanner = t.load_scanner()
     scanner.stubs.nmap.new_socket = new_socket
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.irc = {}
-    scanner.add_nmap_matches({ ip = '10.1.0.6' }, irc_port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.6' }, irc_port,
+        matches)
     t.keys_eq(matches.data.irc, {}, tostring(i))
     t.truthy(matches.data.nmap[irc_nmap]['*'], tostring(i))
     t.eq(log.created, 1, tostring(i))
@@ -587,11 +623,13 @@ t.case('PING is answered with PONG before the 351 reply', function()
   })
   local scanner = t.load_scanner()
   scanner.stubs.nmap.new_socket = new_socket
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.7' }, irc_port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.7' }, irc_port,
+      matches)
   t.eq(log.sent[2], 'PONG LAG123\r\n')
   t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+  t.keys_eq(matches.data.nmap, {})
 end)
 
 t.case('irc probe is cached per ip and port', function()
@@ -600,10 +638,11 @@ t.case('irc probe is cached per ip and port', function()
   scanner.stubs.nmap.new_socket = new_socket
   local host = { ip = '10.1.0.8' }
   for _ = 1, 2 do
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.irc = {}
-    scanner.add_nmap_matches(host, irc_port, matches)
+    scanner.modules.port_matches.add_nmap_matches(host, irc_port, matches)
     t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+    t.keys_eq(matches.data.nmap, {})
   end
   t.eq(log.created, 1)
 end)
@@ -641,9 +680,10 @@ t.case('throttled irc probe retries once after 20 seconds', function()
   local scanner = t.load_scanner()
   scanner.stubs.nmap.new_socket = new_socket
   scanner.stubs.stdnse.sleep = sleep
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.20' }, irc_port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.20' }, irc_port,
+      matches)
   t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
   t.eq(log.created, 2)
   t.eq(sleeps, { 20 })
@@ -661,9 +701,10 @@ t.case('irc probe gives up after a second throttled reply', function()
   local scanner = t.load_scanner()
   scanner.stubs.nmap.new_socket = new_socket
   scanner.stubs.stdnse.sleep = sleep
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.21' }, irc_port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.21' }, irc_port,
+      matches)
   t.keys_eq(matches.data.irc, {})
   t.truthy(matches.data.nmap[irc_nmap]['*'])
   t.eq(log.created, 2)
@@ -679,10 +720,12 @@ t.case('unthrottled irc probe never sleeps', function()
   local scanner = t.load_scanner()
   scanner.stubs.nmap.new_socket = new_socket
   scanner.stubs.stdnse.sleep = sleep
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.irc = {}
-  scanner.add_nmap_matches({ ip = '10.1.0.22' }, irc_port, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.22' }, irc_port,
+      matches)
   t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+  t.keys_eq(matches.data.nmap, {})
   t.eq(log.created, 1)
   t.eq(sleeps, {})
 end)
@@ -696,9 +739,10 @@ t.case('precise samba version skips the smb get_os call', function()
     local scanner = t.load_scanner()
     local port = { number = 445, service = 'microsoft-ds',
       version = { cpe = { samba_nmap }, version = '4.5.16' } }
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.smb = {}
-    scanner.add_nmap_matches({ ip = '10.1.0.9' }, port, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.9' }, port,
+        matches)
     t.eq(calls, 0)
     t.truthy(matches.data.nmap[samba_nmap]['4.5.16'])
   end)
@@ -711,8 +755,8 @@ local SAMBA_OS = 'Unix (Samba 3.0.20-Debian)'
 local SMB_PORT = { number = 445, protocol = 'tcp', service = 'microsoft-ds' }
 local HTTP_PORT = { number = 80, protocol = 'tcp', service = 'http' }
 local OS_FAMILIES = { linux = 'linux', microsoft = 'windows' }
-local OS_INFO = { ver = '5.5.3', vup = '*', from = nil, to = nil,
-  empty = false, range = false }
+local OS_INFO = { version = '5.5.3', update = '*', from = nil, to = nil,
+  matches_any = false, is_range = false }
 
 --- Return a cursor over fixed rows (local copy for this suite).
 local function os_rows(rows)
@@ -731,11 +775,11 @@ end
 -- Default platform rows make the CVE Linux-only.
 local function os_scanner(args, platform)
   local sc = t.load_scanner({ args = args })
-  sc.registry.platform_families = OS_FAMILIES
-  sc.registry.logger = { write = function() end }
-  sc.registry.json_out = { ['10.2.0.1'] = { ports = {} } }
+  sc.modules.state.platform_families = OS_FAMILIES
+  sc.modules.state.log_file = { write = function() end }
+  sc.modules.state.json_report = { ['10.2.0.1'] = { ports = {} } }
   platform = platform or { { 'CVE-LIN', 0, 'o', 'linux', 'kernel' } }
-  sc.registry.conn = { execute = function(_, sql)
+  sc.modules.state.db_conn = { execute = function(_, sql)
     if sql:find('sqlite_master', 1, true) then
       return os_rows({ { 'conditions' } })
     elseif sql:find('FROM conditions', 1, true) then
@@ -762,11 +806,12 @@ local function open_ports(sc, ports)
 end
 
 --- Run vulnerabilities for the tomcat CVE of one host.
-local function os_scan(sc, ip, ctx)
+local function os_scan(sc, ip, scan_ctx)
   local host = { ip = ip }
-  sc.registry.json_out[ip] = { ports = {} }
-  return sc.vulnerabilities(host, HTTP_PORT, 'cpe:/a:apache:tomcat:5.5.3',
-    'apache', 'tomcat', OS_INFO, ctx or { os = {}, backport = false })
+  sc.modules.state.json_report[ip] = { ports = {} }
+  return sc.modules.service_cves.find_service_cves(host, HTTP_PORT,
+      'cpe:/a:apache:tomcat:5.5.3',
+    'apache', 'tomcat', OS_INFO, scan_ctx or { os = {}, backport = false })
 end
 
 t.case('smb windows probe sets the family, one get_os call', function()
@@ -778,7 +823,10 @@ t.case('smb windows probe sets the family, one get_os call', function()
     local sc = os_scanner()
     open_ports(sc, { HTTP_PORT, SMB_PORT })
     -- Probe V runs first on the same host and shares the get_os result.
-    sc.smb_version({ ip = '10.2.0.2' }, SMB_PORT)
+    sc.modules.port_matches.add_nmap_matches({ ip = '10.2.0.2' }, { number = 445,
+      protocol = 'tcp', service = 'microsoft-ds',
+      version = { cpe = { 'cpe:/a:samba:samba' }, version = '3.X' } },
+      new_match_table())
     local _, meta = os_scan(sc, '10.2.0.2')
     t.eq(meta.os_context.family, 'windows')
     t.eq(meta.os_context.source, 'probe:smb_os')
@@ -794,7 +842,7 @@ t.case('samba os string is not an os family', function()
     open_ports(sc, { SMB_PORT })
     local _, meta = os_scan(sc, '10.2.0.3')
     t.eq(meta.os_context.family, nil)
-    t.eq(sc.registry.host_os_probe['10.2.0.3'], false)
+    t.eq(sc.modules.state.host_os_probe_result['10.2.0.3'], false)
   end)
 end)
 
@@ -858,18 +906,18 @@ end)
 
 t.case('os_context uses a cached probe before the cpe', function()
   local sc = t.load_scanner()
-  sc.registry.platform_families = OS_FAMILIES
-  sc.registry.host_os_probe['10.2.0.6'] = {
+  sc.modules.state.platform_families = OS_FAMILIES
+  sc.modules.state.host_os_probe_result['10.2.0.6'] = {
     family = 'windows', source = 'probe:smb_os' }
   local port = { number = 445, service = 'microsoft-ds',
     version = { cpe = { 'cpe:/o:linux:linux_kernel' } } }
-  local ctx = sc.os_context({ ip = '10.2.0.6' }, port)
-  t.eq(ctx.family, 'windows')
-  t.eq(ctx.source, 'probe:smb_os')
-  local plain = sc.os_context({ ip = '10.2.0.7' }, port)
+  local scan_ctx = sc.modules.os_context.os_context({ ip = '10.2.0.6' }, port)
+  t.eq(scan_ctx.family, 'windows')
+  t.eq(scan_ctx.source, 'probe:smb_os')
+  local plain = sc.modules.os_context.os_context({ ip = '10.2.0.7' }, port)
   t.eq(plain.family, 'linux')
   t.eq(plain.source, 'cpe')
-  t.eq(sc.registry.host_os_probe['10.2.0.7'], nil)
+  t.eq(sc.modules.state.host_os_probe_result['10.2.0.7'], nil)
 end)
 
 t.case('get_os error is cached as a negative result', function()
@@ -885,7 +933,7 @@ t.case('get_os error is cached as a negative result', function()
     t.eq(first.os_context.family, nil)
     t.eq(second.os_context.family, nil)
     t.eq(calls, 1)
-    t.eq(sc.registry.host_os_probe['10.2.0.8'], false)
+    t.eq(sc.modules.state.host_os_probe_result['10.2.0.8'], false)
   end)
 end)
 
@@ -934,22 +982,22 @@ t.case('known os or no conditional CVE never runs the probe', function()
 end)
 
 --- Run analysis for one tomcat 5.5.3 service on ip and port.
-local function os_analysis(sc, ip, port, ctx)
-  sc.registry.cache = sc.registry.cache or {}
-  sc.registry.json_out[ip] = { ports = {} }
+local function os_analysis(sc, ip, port, scan_ctx)
+  sc.modules.state.service_cache = sc.modules.state.service_cache or {}
+  sc.modules.state.json_report[ip] = { ports = {} }
   local matches = { data = { nmap = {
     ['cpe:/a:apache:tomcat:5.5.3'] = { ['5.5.3'] = true } } }, size = 1 }
-  sc.analysis({ ip = ip }, port, matches, ctx)
-  local services = sc.registry.json_out[ip].ports[
+  sc.modules.port_analysis.analyze_port({ ip = ip }, port, matches, scan_ctx)
+  local services = sc.modules.state.json_report[ip].ports[
     port.number .. '/tcp'].services
   return services[#services]
 end
 
---- Count CVE queries issued through registry.conn from now on.
+--- Count CVE queries issued through registry.db_conn from now on.
 local function count_cve_queries(sc)
   local n = 0
-  local real = sc.registry.conn.execute
-  sc.registry.conn.execute = function(conn, sql)
+  local real = sc.modules.state.db_conn.execute
+  sc.modules.state.db_conn.execute = function(conn, sql)
     if sql:find('INNER JOIN affected', 1, true) then n = n + 1 end
     return real(conn, sql)
   end
@@ -990,11 +1038,11 @@ end)
 t.case('known os cache is shared across hosts', function()
   local sc = os_scanner()
   open_ports(sc, { HTTP_PORT })
-  local ctx = { os = { family = 'linux', source = 'cpe' }, backport = false }
+  local scan_ctx = { os = { family = 'linux', source = 'cpe' }, backport = false }
   local queries = count_cve_queries(sc)
-  os_analysis(sc, '10.2.0.16', HTTP_PORT, ctx)
+  os_analysis(sc, '10.2.0.16', HTTP_PORT, scan_ctx)
   local after_first = queries()
-  local second = os_analysis(sc, '10.2.0.17', HTTP_PORT, ctx)
+  local second = os_analysis(sc, '10.2.0.17', HTTP_PORT, scan_ctx)
   t.eq(queries(), after_first)
   t.eq(second.vulnerabilities.info, 'cache')
 end)
@@ -1022,9 +1070,9 @@ local function abort_catalog(batches, args)
   })
   local paths = {}
   for i = 1, 300 do paths[i] = '/r' .. i end
-  scanner.registry.json_out = {}
-  scanner.registry.catalog_loaded = true
-  scanner.registry.catalog = { fingerprints = {}, paths = paths,
+  scanner.modules.state.json_report = {}
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = { fingerprints = {}, paths = paths,
     probes = {} }
   scanner.stubs.shortport.http = function() return true end
   return scanner, function() return calls end
@@ -1086,9 +1134,10 @@ end
 
 --- Run add_nmap_matches on a host and an NTP port.
 local function ntp_matches(scanner, ip, port)
-  local matches = new_matches()
+  local matches = new_match_table()
   matches.data.ntp = {}
-  scanner.add_nmap_matches({ ip = ip }, port or NTP_PORT, matches)
+  scanner.modules.port_matches.add_nmap_matches({ ip = ip }, port or NTP_PORT,
+      matches)
   return matches
 end
 
@@ -1114,6 +1163,7 @@ t.case('ntpd 4.2.8p15 reply sets the version and patch level', function()
   scanner.stubs.comm.exchange = exchange
   local matches = ntp_matches(scanner, '10.2.0.2')
   t.truthy(matches.data.ntp[NTP_CPE]['4.2.8p15'])
+  t.keys_eq(matches.data.nmap, {})
 end)
 
 t.case('ntpd reply without a patch level keeps only the version', function()
@@ -1124,6 +1174,7 @@ t.case('ntpd reply without a patch level keeps only the version', function()
   scanner.stubs.comm.exchange = exchange
   local matches = ntp_matches(scanner, '10.2.0.3')
   t.truthy(matches.data.ntp[NTP_CPE]['4.2.8'])
+  t.keys_eq(matches.data.nmap, {})
 end)
 
 t.case('non-ntpd, garbage and failed replies fall back to nmap', function()
@@ -1196,6 +1247,7 @@ t.case('ntp probe is cached per ip and port', function()
   for _ = 1, 2 do
     local matches = ntp_matches(scanner, '10.2.0.9')
     t.truthy(matches.data.ntp[NTP_CPE]['4.2.6p5'])
+    t.keys_eq(matches.data.nmap, {})
   end
   t.eq(log.calls, 1)
 end)
@@ -1284,9 +1336,10 @@ end
 
 local function upstream_scanner(decoded)
   local scanner = overlay_scanner(decoded)
-  scanner.registry.catalog_loaded = true
-  scanner.registry.catalog = {
-    fingerprints = s.validate_fingerprints({ rules = { nginx = rule } }),
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = {
+    fingerprints = s.modules.validate.validate_fingerprints(
+      { rules = { nginx = rule } }),
     paths = { '/' },
     probes = {}
   }
@@ -1300,12 +1353,13 @@ t.case('valid overlay fingerprint is merged and matches a banner', function()
   local path = overlay_file('fp')
   local scanner = upstream_scanner({
     fp = { fingerprints = { rules = { portal = local_rule } } } })
-  t.eq(scanner.registry.load_local_catalog(path), true)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  t.eq(store.load_local_catalog(path), true)
   os.remove(path)
-  t.eq(#scanner.registry.catalog.fingerprints['hdr:server'], 2)
-  local matches, triggered = new_matches(), {}
-  scanner.match_subjects({ ['hdr:server'] = { 'Portal/2.3' } },
-    matches, 'http', triggered)
+  t.eq(#scanner.modules.state.catalog.fingerprints['hdr:server'], 2)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.fingerprint_match.match_subjects(
+    { ['hdr:server'] = { 'Portal/2.3' } }, matches, 'http', triggered)
   t.truthy(matches.data.http['cpe:/a:acme:portal']['2.3'])
 end)
 
@@ -1315,60 +1369,65 @@ t.case('invalid overlay section is dropped, valid ones are kept', function()
   local scanner = upstream_scanner({ mixed = {
     fingerprints = { rules = { bad = bad_rule } },
     paths = { paths = { '/admin/' } } } })
-  scanner.registry.load_local_catalog(path)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  store.load_local_catalog(path)
   os.remove(path)
-  t.eq(#scanner.registry.catalog.fingerprints['hdr:server'], 1)
-  t.eq(scanner.registry.catalog.fingerprints.body, nil)
-  t.eq(scanner.registry.catalog.paths, { '/', '/admin/' })
+  t.eq(#scanner.modules.state.catalog.fingerprints['hdr:server'], 1)
+  t.eq(scanner.modules.state.catalog.fingerprints.body, nil)
+  t.eq(scanner.modules.state.catalog.paths, { '/', '/admin/' })
 end)
 
 t.case('absent overlay file leaves the catalogue identical', function()
   local scanner = upstream_scanner({})
-  local before = t.serialize(scanner.registry.catalog)
-  t.eq(scanner.registry.load_local_catalog('data/no-such-overlay.json'),
-    false)
-  t.eq(t.serialize(scanner.registry.catalog), before)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  local before = t.serialize(scanner.modules.state.catalog)
+  t.eq(store.load_local_catalog('data/no-such-overlay.json'), false)
+  t.eq(t.serialize(scanner.modules.state.catalog), before)
 end)
 
 t.case('invalid JSON overlay leaves the catalogue identical', function()
   local path = overlay_file('broken')
   local scanner = upstream_scanner({})
-  local before = t.serialize(scanner.registry.catalog)
-  t.eq(scanner.registry.load_local_catalog(path), false)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  local before = t.serialize(scanner.modules.state.catalog)
+  t.eq(store.load_local_catalog(path), false)
   os.remove(path)
-  t.eq(t.serialize(scanner.registry.catalog), before)
+  t.eq(t.serialize(scanner.modules.state.catalog), before)
 end)
 
 t.case('local_catalog=none leaves the catalogue identical', function()
   local path = overlay_file('fp')
   local scanner = upstream_scanner({
     fp = { fingerprints = { rules = { portal = local_rule } } } })
-  local before = t.serialize(scanner.registry.catalog)
-  t.eq(scanner.registry.load_local_catalog('none'), false)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  local before = t.serialize(scanner.modules.state.catalog)
+  t.eq(store.load_local_catalog('none'), false)
   os.remove(path)
-  t.eq(t.serialize(scanner.registry.catalog), before)
+  t.eq(t.serialize(scanner.modules.state.catalog), before)
 end)
 
 t.case('overlay is ignored without an upstream catalogue', function()
   local path = overlay_file('fp')
   local scanner = overlay_scanner({
     fp = { fingerprints = { rules = { portal = local_rule } } } })
-  t.eq(scanner.registry.load_local_catalog(path), false)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  t.eq(store.load_local_catalog(path), false)
   os.remove(path)
-  t.eq(scanner.registry.catalog.fingerprints, {})
+  t.eq(scanner.modules.state.catalog.fingerprints, {})
 end)
 
 t.case('overlay never writes files', function()
   local path = overlay_file('fp')
   local scanner = upstream_scanner({
     fp = { fingerprints = { rules = { portal = local_rule } } } })
+  local store = package.loaded['cvescannerv2.catalog.store']
   local original_open = io.open
   local modes = {}
   io.open = function(name, mode)
     table.insert(modes, mode or 'r')
     return original_open(name, mode)
   end
-  local ok, err = pcall(scanner.registry.load_local_catalog, path)
+  local ok, err = pcall(store.load_local_catalog, path)
   io.open = original_open
   os.remove(path)
   t.truthy(ok, err)
@@ -1399,10 +1458,11 @@ local function cups_scanner(http, accept_403)
     end,
     generate = function() return '{}' end
   } })
-  scanner.registry.catalog_loaded = true
-  scanner.registry.catalog = { fingerprints = {}, paths = { '/' },
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = { fingerprints = {}, paths = { '/' },
     probes = {} }
-  scanner.registry.load_local_catalog(path)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  store.load_local_catalog(path)
   os.remove(path)
   return scanner
 end
@@ -1431,18 +1491,18 @@ end)
 
 t.case('CUPS title with version is matched as http', function()
   local scanner = cups_scanner({})
-  t.eq(#scanner.registry.catalog.fingerprints.title, 1)
-  local matches, triggered = new_matches(), {}
-  scanner.match_subjects({ title = { 'Forbidden - CUPS v2.1.3' } },
-    matches, 'http', triggered)
+  t.eq(#scanner.modules.state.catalog.fingerprints.title, 1)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.fingerprint_match.match_subjects(
+    { title = { 'Forbidden - CUPS v2.1.3' } }, matches, 'http', triggered)
   t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
   t.eq(matches.data.nmap[CUPS_CPE], nil)
 end)
 
 t.case('CUPS word without a version is not matched', function()
   local scanner = cups_scanner({})
-  local matches, triggered = new_matches(), {}
-  scanner.match_subjects({ title = { 'Forbidden - CUPS',
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.fingerprint_match.match_subjects({ title = { 'Forbidden - CUPS',
     'Ubuntu CUPS print server' } }, matches, 'http', triggered)
   t.eq(matches.data.http[CUPS_CPE], nil)
   t.eq(matches.size, 0)
@@ -1450,23 +1510,25 @@ end)
 
 t.case('title without a version number is not matched', function()
   local scanner = cups_scanner({})
-  local matches, triggered = new_matches(), {}
-  scanner.match_subjects({ title = { 'CUPS version unknown' } },
-    matches, 'http', triggered)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.fingerprint_match.match_subjects(
+    { title = { 'CUPS version unknown' } }, matches, 'http', triggered)
   t.eq(matches.data.http[CUPS_CPE], nil)
 end)
 
 t.case('403 with an accept_403 rule yields the CUPS version', function()
   local scanner = cups_scanner(cups_http(403, CUPS_403), true)
-  local matches, triggered = new_matches(), {}
-  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.http_fingerprint.sweep_catalog({}, { number = 631 }, matches,
+      triggered)
   t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
 end)
 
 t.case('403 with a rule lacking the flag is not matched', function()
   local scanner = cups_scanner(cups_http(403, CUPS_403))
-  local matches, triggered = new_matches(), {}
-  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.http_fingerprint.sweep_catalog({}, { number = 631 }, matches,
+      triggered)
   t.eq(matches.data.http[CUPS_CPE], nil)
   t.eq(matches.size, 0)
 end)
@@ -1479,23 +1541,26 @@ t.case('403 does not trigger or run targeted probes', function()
     return { status = 403, body = CUPS_403, header = {} }
   end
   local scanner = cups_scanner(http, true)
-  scanner.registry.catalog.probes = { {
+  scanner.modules.state.catalog.probes = { {
     alias = CUPS_CPE, name = 'cups',
     detect = { { channel = 'title', anchor = 'CUPS', regex = 'CUPS' } },
     extract = { { anchor = 'CUPS', regex = 'CUPS v?(%d+%.%d+[%.%d]*)' } },
     paths = { '/cups' }
   } }
-  local matches, triggered = new_matches(), {}
-  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.http_fingerprint.sweep_catalog({}, { number = 631 }, matches,
+      triggered)
   t.eq(triggered[CUPS_CPE], nil)
-  scanner.run_targeted_probes({}, { number = 631 }, matches, triggered)
+  scanner.modules.http_fingerprint.run_targeted_probes({}, { number = 631 }, matches,
+      triggered)
   t.eq(gets, 0)
 end)
 
 t.case('200 with the CUPS title matches a rule without the flag', function()
   local scanner = cups_scanner(cups_http(200, CUPS_403))
-  local matches, triggered = new_matches(), {}
-  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.http_fingerprint.sweep_catalog({}, { number = 631 }, matches,
+      triggered)
   t.keys_eq(matches.data.http[CUPS_CPE], { '2.1.3' })
 end)
 
@@ -1503,19 +1568,21 @@ t.case('accept_403 must be boolean or the rule is rejected', function()
   local rule = { alias = CUPS_CPE, channel = 'title',
     regex = 'CUPS v?(%d+%.%d+[%.%d]*)' }
   rule.accept_403 = 'yes'
-  t.eq(s.validate_fingerprints({ rules = { cups = rule } }), nil)
+  t.eq(s.modules.validate.validate_fingerprints({ rules = { cups = rule } }),
+      nil)
   rule.accept_403 = true
-  t.eq(s.validate_fingerprints({ rules = { cups = rule } })
+  t.eq(s.modules.validate.validate_fingerprints({ rules = { cups = rule } })
     .title[1].accept_403, true)
   rule.accept_403 = nil
-  t.eq(s.validate_fingerprints({ rules = { cups = rule } })
+  t.eq(s.modules.validate.validate_fingerprints({ rules = { cups = rule } })
     .title[1].accept_403, false)
 end)
 
 t.case('404 body with the CUPS title is ignored', function()
   local scanner = cups_scanner(cups_http(404, CUPS_403))
-  local matches, triggered = new_matches(), {}
-  scanner.sweep_catalog({}, { number = 631 }, matches, triggered)
+  local matches, triggered = new_match_table(), {}
+  scanner.modules.http_fingerprint.sweep_catalog({}, { number = 631 }, matches,
+      triggered)
   t.eq(matches.data.http[CUPS_CPE], nil)
 end)
 
@@ -1535,9 +1602,10 @@ do
 
   --- Add the CUPS port to the matches through add_nmap_matches.
   local function cups_add(scanner, port)
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.cups = {}
-    scanner.add_nmap_matches({ ip = '10.2.0.1' }, port or port_ipp, matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = '10.2.0.1' },
+        port or port_ipp, matches)
     return matches
   end
 
@@ -1571,6 +1639,7 @@ do
       '<title>Home - CUPS 2.1.3</title>'))
     local matches = cups_add(scanner)
     t.keys_eq(matches.data.cups[CUPS_CPE], { '2.1.3' })
+    t.keys_eq(matches.data.nmap, {})
   end)
 
   t.case('other product title keeps the nmap cpe', function()
@@ -1692,9 +1761,10 @@ do
 
   --- Run add_nmap_matches on a host and a UPnP port.
   local function upnp_matches(scanner, ip, port)
-    local matches = new_matches()
+    local matches = new_match_table()
     matches.data.upnp = {}
-    scanner.add_nmap_matches({ ip = ip }, port or upnp_port(), matches)
+    scanner.modules.port_matches.add_nmap_matches({ ip = ip }, port or upnp_port(),
+        matches)
     return matches
   end
 
@@ -1718,6 +1788,7 @@ do
     scanner.stubs.comm.exchange = exchange
     local matches = upnp_matches(scanner, '10.3.0.2')
     t.truthy(matches.data.upnp[UPNP_CPE]['2.1.20190625'])
+    t.keys_eq(matches.data.nmap, {})
   end)
 
   t.case('other UPnP servers add nothing', function()
@@ -1813,6 +1884,7 @@ do
     for _ = 1, 2 do
       local matches = upnp_matches(scanner, '10.3.0.10')
       t.truthy(matches.data.upnp[UPNP_CPE]['1.8'])
+      t.keys_eq(matches.data.nmap, {})
     end
     t.eq(log.calls, 1)
   end)
@@ -1830,14 +1902,14 @@ local function product_port(product, cpe, version)
 end
 
 local function product_matches(scanner, port)
-  local matches = new_matches()
-  scanner.add_nmap_matches({ ip = '10.4.0.1' }, port, matches)
+  local matches = new_match_table()
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.4.0.1' }, port, matches)
   return matches
 end
 
 t.case('listed product replaces the wrong nmap cpe', function()
   local scanner = t.load_scanner()
-  scanner.registry.product_cpe = GLASSFISH_TABLE
+  scanner.modules.state.product_cpe = GLASSFISH_TABLE
   local matches = product_matches(scanner, product_port('Oracle GlassFish',
     'cpe:/a:oracle:jsp:2.3', '4.0'))
   t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0'])
@@ -1848,7 +1920,7 @@ end)
 
 t.case('listed product without an nmap cpe uses the table cpe', function()
   local scanner = t.load_scanner()
-  scanner.registry.product_cpe = GLASSFISH_TABLE
+  scanner.modules.state.product_cpe = GLASSFISH_TABLE
   local matches = product_matches(scanner, product_port('Oracle GlassFish',
     nil, '4.0'))
   t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0'])
@@ -1857,7 +1929,7 @@ end)
 
 t.case('listed product with empty version uses the wildcard', function()
   local scanner = t.load_scanner()
-  scanner.registry.product_cpe = GLASSFISH_TABLE
+  scanner.modules.state.product_cpe = GLASSFISH_TABLE
   local matches = product_matches(scanner, product_port('Oracle GlassFish',
     'cpe:/a:oracle:jsp:2.3', ''))
   t.truthy(matches.data.nmap[GLASSFISH_CPE]['*'])
@@ -1865,7 +1937,7 @@ end)
 
 t.case('listed product keeps the first numeric version token', function()
   local scanner = t.load_scanner()
-  scanner.registry.product_cpe = GLASSFISH_TABLE
+  scanner.modules.state.product_cpe = GLASSFISH_TABLE
   local matches = product_matches(scanner, product_port('Oracle GlassFish',
     'cpe:/a:oracle:jsp:2.3', 'build 4.0.1 x'))
   t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0.1'])
@@ -1873,8 +1945,8 @@ end)
 
 t.case('product aliases apply to the table cpe', function()
   local scanner = t.load_scanner()
-  scanner.registry.product_cpe = GLASSFISH_TABLE
-  scanner.registry.aliases = { glassfish_server = { 'glassfish' } }
+  scanner.modules.state.product_cpe = GLASSFISH_TABLE
+  scanner.modules.state.product_aliases = { glassfish_server = { 'glassfish' } }
   local matches = product_matches(scanner, product_port('Oracle GlassFish',
     'cpe:/a:oracle:jsp:2.3', '4.0'))
   t.truthy(matches.data.nmap[GLASSFISH_CPE]['4.0'])
@@ -1884,7 +1956,7 @@ end)
 
 t.case('unlisted product keeps the nmap cpe', function()
   local scanner = t.load_scanner()
-  scanner.registry.product_cpe = GLASSFISH_TABLE
+  scanner.modules.state.product_cpe = GLASSFISH_TABLE
   local matches = product_matches(scanner, product_port('Apache Tomcat',
     'cpe:/a:apache:tomcat:9.0', '9.0'))
   t.truthy(matches.data.nmap['cpe:/a:apache:tomcat:9.0']['9.0'])
@@ -1901,83 +1973,24 @@ end)
 t.case('invalid product cpe files leave the table empty', function()
   local broken = overlay_file('{ broken')
   local scanner = overlay_scanner({})
-  t.eq(scanner.valid_json(broken, 'product_cpe'), false)
-  t.eq(scanner.registry.product_cpe, {})
+  t.eq(scanner.modules.reference_files.load_reference_file(broken, 'product_cpe'), false)
+  t.eq(scanner.modules.state.product_cpe, {})
 
   local wrong = overlay_file('wrong')
   local bad = overlay_scanner({ wrong = { ['Oracle GlassFish'] = 42 } })
-  t.eq(bad.valid_json(wrong, 'product_cpe'), false)
-  t.eq(bad.registry.product_cpe, {})
+  t.eq(bad.modules.reference_files.load_reference_file(wrong, 'product_cpe'), false)
+  t.eq(bad.modules.state.product_cpe, {})
 
   local versioned = overlay_file('versioned')
   local versions = overlay_scanner({
     versioned = { ['Oracle GlassFish'] = 'cpe:/a:oracle:glassfish:4.0' } })
-  t.eq(versions.valid_json(versioned, 'product_cpe'), false)
-  t.eq(versions.registry.product_cpe, {})
+  t.eq(versions.modules.reference_files.load_reference_file(versioned, 'product_cpe'), false)
+  t.eq(versions.modules.state.product_cpe, {})
 end)
 
 t.case('valid product cpe file fills the table', function()
   local path = overlay_file('good')
   local scanner = overlay_scanner({ good = GLASSFISH_TABLE })
-  t.eq(scanner.valid_json(path, 'product_cpe'), true)
-  t.eq(scanner.registry.product_cpe, GLASSFISH_TABLE)
-end)
-
-t.suite('version probe matches init')
-
---- Return the matches table of portaction, which has no cups key.
-local function default_matches()
-  return { data = { nmap = {}, http = {}, smb = {}, irc = {}, ntp = {},
-    upnp = {} }, size = 0 }
-end
-
---- Return a copy of a version probe whose run returns a fixed result.
-local function stub_version_probe(probe)
-  return {
-    name = probe.name,
-    kind = 'version',
-    products = probe.products,
-    services = probe.services,
-    ports = probe.ports,
-    no_cpe = probe.no_cpe,
-    run = function()
-      return { cpe = 'cpe:/a:stub:' .. probe.name, version = '9.9' }
-    end,
-  }
-end
-
---- Return a scanner whose version probes all answer a fixed result.
--- The smb library is stubbed only while the scanner loads, so smb is on.
-local function stub_scanner()
-  package.loaded.smb = { get_os = function() return false end }
-  local scanner = t.load_scanner()
-  package.loaded.smb = nil
-  local probes = scanner.SERVICE_PROBES
-  for i, probe in ipairs(probes) do
-    if probe.kind == 'version' then
-      probes[i] = stub_version_probe(probe)
-    end
-  end
-  return scanner
-end
-
-t.case('every version probe fills its own matches key', function()
-  for _, probe in ipairs(t.load_scanner().SERVICE_PROBES) do
-    if probe.kind == 'version' then
-      local scanner = stub_scanner()
-      local product = next(probe.products or {}) or probe.name
-      local port = {
-        number = next(probe.ports or {}) or 1,
-        protocol = 'tcp',
-        service = next(probe.services or {}),
-        version = { cpe = { 'cpe:/a:stub:' .. product }, version = '' },
-      }
-      local matches = default_matches()
-      scanner.add_nmap_matches({ ip = '10.9.0.1' }, port, matches)
-      local cpe = 'cpe:/a:stub:' .. probe.name
-      t.truthy(matches.data[probe.name], probe.name)
-      t.eq(matches.data[probe.name][cpe]['9.9'], true, probe.name)
-      t.keys_eq(matches.data.nmap, {}, probe.name)
-    end
-  end
+  t.eq(scanner.modules.reference_files.load_reference_file(path, 'product_cpe'), true)
+  t.eq(scanner.modules.state.product_cpe, GLASSFISH_TABLE)
 end)

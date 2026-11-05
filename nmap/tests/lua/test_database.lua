@@ -126,16 +126,16 @@ local HOST = { ip = '192.0.2.10' }
 -- Build a scanner connected to the fixture with in-memory log and JSON.
 local function scanner_for(args, aliases, vendor_aliases)
   local scanner = t.load_scanner({ sql = sqlite, args = args })
-  local registry = scanner.registry
-  registry.env = assert(sqlite.sqlite3())
-  registry.conn = assert(registry.env:connect(DB_PATH))
+  local registry = scanner.modules.state
+  registry.db_env = assert(sqlite.sqlite3())
+  registry.db_conn = assert(registry.db_env:connect(DB_PATH))
   registry.log_lines = {}
-  registry.logger = {
+  registry.log_file = {
     write = function(_, line) table.insert(registry.log_lines, line) end
   }
-  registry.json_out = {}
-  registry.cache = {}
-  registry.aliases = aliases or {}
+  registry.json_report = {}
+  registry.service_cache = {}
+  registry.product_aliases = aliases or {}
   registry.vendor_aliases = vendor_aliases or {}
   return scanner
 end
@@ -153,7 +153,7 @@ local function scan(cpe, version, opts)
   local number = opts.port or 80
   local output = scanner.portaction(HOST, port(number, cpe, version))
   local cves = {}
-  local host = scanner.registry.json_out[HOST.ip]
+  local host = scanner.modules.state.json_report[HOST.ip]
   local entry = host and host.ports[number .. '/tcp']
   for _, service in ipairs(entry and entry.services or {}) do
     for id in pairs(service.vulnerabilities.cves or {}) do cves[id] = true end
@@ -178,7 +178,8 @@ t.case('output lists vendor, product and CVEs sorted by CVSS', function()
     'vupdate: *', 'version_source: nmap_cpe', 'cves: 2' })
   t.truthy(output[7]:find('CVE ID', 1, true), 'header line')
   t.truthy(output[7]:find('Conf', 1, true), 'confidence column')
-  t.truthy(output[8]:find('CVE-2010-0425', 1, true), 'highest confidence first')
+  t.truthy(output[8]:find('CVE-2010-0425', 1, true),
+      'highest confidence first')
   t.truthy(output[8]:find('HIGH', 1, true), 'exact version is high')
   t.truthy(output[8]:find('Yes', 1, true), 'ExploitDB flag')
   t.truthy(output[9]:find('CVE-2999-0001', 1, true))
@@ -189,7 +190,7 @@ t.case('minconf=medium hides low CVEs from the table, not the JSON', function()
     { args = { minconf = 'medium' } })
   t.eq(output[6], 'cves: 1 (total 2)')
   t.eq(table.concat(output, '\n'):find('CVE-2999-0001', 1, true), nil)
-  local cves = scanner.registry.json_out[HOST.ip].ports['80/tcp']
+  local cves = scanner.modules.state.json_report[HOST.ip].ports['80/tcp']
       .services[1].vulnerabilities.cves
   t.eq(cves['CVE-2999-0001'].confidence, 'low')
   t.eq(cves['CVE-2010-0425'].confidence, 'high')
@@ -203,14 +204,14 @@ end)
 
 t.case('JSON output carries Exploit-DB and Metasploit details', function()
   local _, _, scanner = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8')
-  local service = scanner.registry.json_out[HOST.ip].ports['80/tcp']
+  local service = scanner.modules.state.json_report[HOST.ip].ports['80/tcp']
       .services[1]
   t.eq(service.vendor, 'apache')
   t.eq(service.vulnerabilities.total, 2)
   t.eq(service.vulnerabilities.cves['CVE-2010-0425'].exploitdb[1].url,
     'https://www.exploit-db.com/exploits/11650')
   local _, _, ssl = scan('cpe:/a:openssl:openssl:1.0.1e', '1.0.1e')
-  t.eq(ssl.registry.json_out[HOST.ip].ports['80/tcp'].services[1]
+  t.eq(ssl.modules.state.json_report[HOST.ip].ports['80/tcp'].services[1]
     .vulnerabilities.cves['CVE-2014-0160'].metasploit[1].name,
     'auxiliary/scanner/ssl/openssl_heartbleed')
 end)
@@ -258,7 +259,7 @@ t.case('second port with the same product uses the cache', function()
   scan('cpe:/a:apache:http_server:2.2.8', '2.2.8', { scanner = scanner })
   local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { scanner = scanner, port = 8080 })
-  local service = scanner.registry.json_out[HOST.ip].ports['8080/tcp']
+  local service = scanner.modules.state.json_report[HOST.ip].ports['8080/tcp']
       .services[1]
   t.eq(service.vulnerabilities.info, 'cache')
   t.eq(service.vulnerabilities.total, 2)
@@ -313,7 +314,7 @@ end)
 
 t.case('all cursors are closed after a scan', function()
   local _, _, scanner = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8')
-  t.eq(scanner.registry.conn:close(), true,
+  t.eq(scanner.modules.state.db_conn:close(), true,
     'conn:close() fails while cursors remain open')
 end)
 
@@ -327,7 +328,7 @@ t.case('postaction writes the JSON report after a scan', function()
   os.remove(json_path)
   local scanner = scanner_for({ json = json_path })
   scanner.stubs.json.generate = function() return '{"ok":true}' end
-  scanner.registry.logger.close = function() end
+  scanner.modules.state.log_file.close = function() end
   scan('cpe:/a:apache:http_server:2.2.8', '2.2.8', { scanner = scanner })
   local ran, err = pcall(scanner.postaction)
   local file = io.open(json_path, 'r')

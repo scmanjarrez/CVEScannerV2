@@ -77,7 +77,7 @@ sh nmap/tests/docker/check.sh --fresh    # integración sin caché
 | --- | --- | --- |
 | `test_scanner.lua` | Redirecciones HTTP, lectura local del catálogo y puerto sin CVE. | - |
 | `lua/harness.lua` | Mini framework (`case`, `known_bug`, `skip`) y cargador del NSE con stubs. | - |
-| `lua/test_versions.lua` | `compare_version`, `version_parser`, `split_cpe`, `cpe_parser`, aliases. | 38 |
+| `lua/test_versions.lua` | `compare_version`, `parse_nmap_version`, `split_cpe`, `parse_cpe_version`, aliases. | 38 |
 | `lua/test_scoping.lua` | `scoped_multi_versions`, `scoped_versions`, orden CVSS y escape SQL. | 65 |
 | `lua/test_catalog.lua` | Validación del catálogo de Vulners y extracción de huellas HTTP. | 107 |
 | `lua/test_database.lua` | `portaction`/`postaction` de extremo a extremo sobre la fixture SQLite. | 23 |
@@ -87,7 +87,7 @@ sh nmap/tests/docker/check.sh --fresh    # integración sin caché
 | `lua/run.lua` | Ejecuta las suites de `lua/` y devuelve el código de salida. | - |
 
 Los recuentos son los `t.case(` de nivel superior de cada fichero. El total
-de `lua5.4 nmap/tests/lua/run.lua` (282 casos) es mayor porque algunos casos
+de `lua5.4 nmap/tests/lua/run.lua` (281 casos) es mayor porque algunos casos
 se generan en bucles (por ejemplo, `compare_version`).
 
 ## Resultados
@@ -103,23 +103,21 @@ suite sirve de regresión desde ahora y de checklist para las correcciones.
 
 ## Cómo funciona el cargador
 
-Las funciones del NSE son `local`. `harness.load_scanner()` añade al final del
-código fuente un `return { nombre = nombre, ... }` y lo carga con `load()`,
-de modo que las funciones se exportan desde el mismo chunk sin tocar el
-script. Si una función se renombra, hay que actualizar `EXPORTS` en
-`harness.lua`.
+`harness.load_scanner()` carga `cvescannerv2.nse` con `load()` y devuelve sus
+puntos de entrada: `portaction`, `preaction`, `postaction` y `portrule`. Las
+librerías NSE se sustituyen por stubs, que quedan en `scanner.stubs`.
 
-Las funciones movidas a `nmap/src/cvescannerv2/**.lua` se cargan con
-`require()`. El harness aplana sus campos en la tabla del escáner: cada campo
-de un módulo `cvescannerv2.*` que el entrypoint no define queda expuesto con
-su nombre original, así los tests las usan igual que antes. Los módulos se
-recorren en orden alfabético, con `vulns` primero porque su envoltorio de
-`add_platform_reasons` oculta el de `platform`. El registro se expone desde
-`cvescannerv2.state` si el entrypoint no define uno.
+Los módulos de `nmap/src/cvescannerv2/**.lua` se cargan con `require()` y se
+acceden como `scanner.modules.<nombre>`, donde `<nombre>` es el último
+componente del módulo (por ejemplo, `scanner.modules.service_cves` o
+`scanner.modules.state`). El snapshot se toma al cargar, así que cada escáner
+conserva sus propios módulos aunque se cargue otro después. Nada se copia a la
+tabla del escáner: los tests llaman a las mismas funciones que usa Nmap, sin
+alias ni exports solo de test.
 
 `lua/test_architecture.lua` impone el grafo de capas: un módulo solo puede
 hacer `require` de módulos de una capa estrictamente inferior, y no hay
 ciclos. También fija los dueños de las APIs de Nmap y de E/S (`get_script_args`
 solo en `config`, `luasql` solo en `db`, `io.open` solo en `util`,
-`catalog.store`, `refdata`, `log` y `report`). Si un módulo nuevo necesita una
+`catalog.store`, `reference_files`, `log` y `json_report`). Si un módulo nuevo necesita una
 de estas APIs, hay que añadirlo a la regla correspondiente en ese fichero.

@@ -1,15 +1,15 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 -- Minimal test framework and NSE loader that needs no Nmap installation.
 --
--- The scanner keeps its helpers as chunk locals. load_scanner() appends a
--- return statement to the script source, so the helpers are exported from
--- the same chunk without modifying cvescannerv2.nse.
+-- load_scanner() loads cvescannerv2.nse with load() and returns its entry
+-- points (portaction, preaction, postaction, portrule). The NSE libraries
+-- are replaced with stubs, exposed as scanner.stubs.
 --
--- Helpers moved into modules under nmap/src/cvescannerv2/ are loaded with
--- require() and then flattened into the scanner table: every field of a
--- cvescannerv2.* module that the entrypoint does not define is exposed on
--- the scanner, so tests reach moved functions the same way as before. The
--- registry is exposed from cvescannerv2.state when the entrypoint has none.
+-- The modules under nmap/src/cvescannerv2/ are loaded with require() and
+-- are reached as scanner.modules.<name>, where <name> is the last component
+-- of the module name (for example scanner.modules.service_cves; probes.init
+-- is modules.probes). Nothing is copied onto the scanner table, so tests call
+-- the same functions Nmap calls.
 
 local M = {}
 
@@ -93,41 +93,22 @@ function M.load_scanner(opts)
   local chunk = assert(load(SOURCE, '=nmap/src/cvescannerv2.nse'))
   local scanner = chunk()
 
-  -- Flatten the modules: expose their fields on the scanner table unless
-  -- the entrypoint already defines them. Sorted for a deterministic result.
-  local modules = {}
+  -- Snapshot taken now, so this scanner keeps its own modules even when a
+  -- later load_scanner() resets package.loaded.
+  local by_short_name = {}
   for name, value in pairs(package.loaded) do
-    if type(name) == 'string' and name:find('^cvescannerv2%.')
-        and type(value) == 'table' then
-      table.insert(modules, name)
+    if type(name) == 'string' and type(value) == 'table'
+        and name:find('^cvescannerv2%.') then
+      local short = name:match('([^.]+)$')
+      if short == 'init' then short = name:match('([^.]+)%.init$') end
+      by_short_name[short] = value
     end
   end
-  table.sort(modules)
-  -- Put vulns first: its wrapper add_platform_reasons hides the one in
-  -- platform, which the older tests expect. The first module to define a
-  -- key wins, so vulns must come before platform.
-  for i, name in ipairs(modules) do
-    if name == 'cvescannerv2.vulns' then
-      table.remove(modules, i)
-      table.insert(modules, 1, name)
-      break
+  scanner.modules = setmetatable(by_short_name, {
+    __index = function(_, key)
+      error('unknown module ' .. tostring(key), 2)
     end
-  end
-  for _, name in ipairs(modules) do
-    for key, value in pairs(package.loaded[name]) do
-      if scanner[key] == nil then scanner[key] = value end
-    end
-  end
-  local state = package.loaded['cvescannerv2.state']
-  if state ~= nil and scanner.registry == nil then
-    scanner.registry = state
-  end
-  -- Test-only alias: tests call scanner.registry.load_local_catalog(path).
-  if scanner.registry ~= nil and scanner.load_local_catalog ~= nil
-      and scanner.registry.load_local_catalog == nil then
-    scanner.registry.load_local_catalog = scanner.load_local_catalog
-  end
-
+  })
   scanner.stubs = stubs
   return scanner
 end

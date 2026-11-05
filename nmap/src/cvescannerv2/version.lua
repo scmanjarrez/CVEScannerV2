@@ -9,13 +9,13 @@ local M = {}
 
 local util = require 'cvescannerv2.util'
 local split_cpe = require('cvescannerv2.cpe').split_cpe
-local empty = util.empty
+local is_blank = util.is_blank
 
 
 --- Return the version and update, or the range text for a range.
-local function correct_version(info)
-  if not info.range then
-    return info.ver, info.vup
+local function display_version(info)
+  if not info.is_range then
+    return info.version, info.update
   else
     return info.from .. " - " .. info.to, "*"
   end
@@ -65,12 +65,12 @@ end
 -- Info record for a version Nmap could not detect ('-').
 local function unknown_info()
   return {
-    ver = '-',
-    vup = '-',
+    version = '-',
+    update = '-',
     from = nil,
     to = nil,
-    empty = false,
-    range = false
+    matches_any = false,
+    is_range = false
   }
 end
 
@@ -78,12 +78,12 @@ end
 -- Info record for a missing version, or '*', that matches any version.
 local function any_info()
   return {
-    ver = '*',
-    vup = '*',
+    version = '*',
+    update = '*',
     from = nil,
     to = nil,
-    empty = true,
-    range = false
+    matches_any = true,
+    is_range = false
   }
 end
 
@@ -91,16 +91,16 @@ end
 -- Info record for a range such as 3.x - 4.x or 3.3.x - 3.4.x, or nil.
 local function range_info(version)
   local p1, p2 = version:match('^(.-)%s+%-%s+(.+)$')
-  if empty(p1) or empty(p2) then return nil end
+  if is_blank(p1) or is_blank(p2) then return nil end
   local f1, f2 = p1:match('([^%a]*)(.*)')
   local t1, t2 = p2:match('([^%a]*)(.*)')
   return {
-    ver = nil,
-    vup = nil,
+    version = nil,
+    update = nil,
     from = f1 .. f2,
     to = t1 .. t2,
-    empty = false,
-    range = true
+    matches_any = false,
+    is_range = true
   }
 end
 
@@ -110,12 +110,12 @@ local function wildcard_range(version)
   local wildcard_prefix = version:match('^([%d%.]+)[xX]$')
   if not wildcard_prefix then return nil end
   return {
-    ver = nil,
-    vup = nil,
+    version = nil,
+    update = nil,
     from = wildcard_prefix .. '0',
     to = wildcard_prefix .. '9999999999',
-    empty = false,
-    range = true
+    matches_any = false,
+    is_range = true
   }
 end
 
@@ -132,27 +132,27 @@ local function numeric_info(version, cpe_update)
   if cpe_update and cpe_update ~= '' and cpe_update ~= '*'
       and cpe_update ~= '-' then
     p2 = cpe_update
-  elseif empty(p2) then
+  elseif is_blank(p2) then
     p2 = cpe_update == '-' and '-' or '*'
   end
   return {
-    ver = p1,
-    vup = p2,
+    version = p1,
+    update = p2,
     from = nil,
     to = nil,
-    empty = false,
-    range = false
+    matches_any = false,
+    is_range = false
   }
 end
 
 
 --- Return the product and the parsed info record for a version.
-local function version_parser(product, version, cpe_update)
+local function parse_nmap_version(product, version, cpe_update)
   version = clean_version(version)
   if version == '-' then
     return product, unknown_info()
   end
-  if empty(version) or version == '*' then
+  if is_blank(version) or version == '*' then
     return product, any_info()
   end
   local info = range_info(version)
@@ -163,10 +163,10 @@ end
 
 
 local function prefer_version(cpe_version, nmap_version)
-  if empty(nmap_version) or nmap_version == '*' then
+  if is_blank(nmap_version) or nmap_version == '*' then
     return cpe_version, 'nmap_cpe'
   end
-  if empty(cpe_version) or cpe_version == '*' then
+  if is_blank(cpe_version) or cpe_version == '*' then
     return nmap_version, 'nmap_version'
   end
   if nmap_version:match('^(.-)%s+%-%s+(.+)$') then
@@ -180,7 +180,7 @@ end
 
 
 --- Return vendor, product, info and source for a CPE and a version.
-local function cpe_parser(cpe, version)
+local function parse_cpe_version(cpe, version)
   local _, _, _, vendor, product, cpe_version, cpe_update = split_cpe(cpe)
   if not product then return nil, nil, nil end
 
@@ -190,7 +190,7 @@ local function cpe_parser(cpe, version)
     cpe_update = nil
   end
 
-  local parsed_product, info = version_parser(product, cpe_version, cpe_update)
+  local parsed_product, info = parse_nmap_version(product, cpe_version, cpe_update)
   return vendor, parsed_product, info, source
 end
 
@@ -267,7 +267,7 @@ end
 
 
 --- Return the version, or the default when it is nil or empty.
-local function default_version(version, default)
+local function version_or_default(version, default)
   if version == nil or version == '' then
     return default
   else
@@ -279,12 +279,12 @@ end
 -- Return 'x.y' when Nmap reported a two-part series without update, such
 -- as 5.5. Any other version shape yields nil.
 local function series_prefix(info)
-  if info.empty or info.range then return nil end
-  local ver = info.ver
+  if info.matches_any or info.is_range then return nil end
+  local ver = info.version
   if type(ver) ~= 'string' or not ver:match('^%d+%.%d+$') then
     return nil
   end
-  if not empty(info.vup) and info.vup ~= '*' then return nil end
+  if not is_blank(info.update) and info.update ~= '*' then return nil end
   return ver
 end
 
@@ -299,24 +299,24 @@ end
 
 --- Return whether the Nmap version is precise, so no probe is needed.
 -- Empty and '*' versions are never precise.
-local function nmap_version_precise(version)
-  if empty(version) or version == '*' then return false end
+local function is_precise_nmap_version(version)
+  if is_blank(version) or version == '*' then return false end
   -- A bare major number such as '4' or 'NTP v4' is a series, not a version.
   if version:match('^[%a ]*[vV]?%d+$') then return false end
   return is_precise_version(version)
 end
 
 
-M.correct_version = correct_version
+M.display_version = display_version
 M.is_series_version = is_series_version
 M.is_precise_version = is_precise_version
-M.version_parser = version_parser
-M.cpe_parser = cpe_parser
+M.parse_nmap_version = parse_nmap_version
+M.parse_cpe_version = parse_cpe_version
 M.compare_version = compare_version
-M.default_version = default_version
+M.version_or_default = version_or_default
 M.series_prefix = series_prefix
 M.spans_series = spans_series
-M.nmap_version_precise = nmap_version_precise
+M.is_precise_nmap_version = is_precise_nmap_version
 
 
 return M

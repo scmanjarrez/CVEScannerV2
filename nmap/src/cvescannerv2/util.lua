@@ -8,17 +8,17 @@ local M = {}
 
 
 --- Return whether a value is nil or the empty string.
-local function empty(str)
+local function is_blank(str)
   return str == nil or str == ''
 end
-M.empty = empty
+M.is_blank = is_blank
 
 
-local function exists(file)
+local function is_readable_file(file)
   local f = io.open(file, 'r')
   return f ~= nil and f:close()
 end
-M.exists = exists
+M.is_readable_file = is_readable_file
 
 
 local function fmt(msg, ...)
@@ -32,7 +32,7 @@ end
 
 -- Implementation of named parameters from RiciLake@lua-users. A table value
 -- becomes a comma-separated list of quoted literals, e.g. 'a', 'b'.
-local function fmtn(msg, tab)
+local function format_sql_named(msg, tab)
   return (msg:gsub(
     '($%b{})',
     function(nparam)
@@ -50,7 +50,7 @@ local function fmtn(msg, tab)
     end
   ))
 end
-M.fmtn = fmtn
+M.format_sql_named = format_sql_named
 
 
 return M

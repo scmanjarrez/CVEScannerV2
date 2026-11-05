@@ -12,17 +12,18 @@ local SRC = 'nmap/src/cvescannerv2'
 local LAYER = {
   util = 0, state = 0, config = 0, cpe = 0,
   version = 1,
-  matches = 2, ['catalog.validate'] = 2, refdata = 2, db = 2, log = 2,
-  report = 2,
+  match_table = 2, ['catalog.validate'] = 2, reference_files = 2,
+  db = 2, log = 2, json_report = 2,
   ['catalog.store'] = 3,
-  fingerprint = 3, oscontext = 3,
+  fingerprint_match = 3, os_context = 3,
   ['probes.smb'] = 3, ['probes.irc'] = 3, ['probes.ntp'] = 3,
   ['probes.upnp'] = 3,
-  httpscan = 4, ['probes.cups'] = 4,
-  ['probes.init'] = 5, scope = 5, platform = 5, confidence = 5,
-  collect = 6, render = 6,
-  vulns = 7,
-  analysis = 8,
+  http_fingerprint = 4, ['probes.cups'] = 4,
+  ['probes.init'] = 5, version_scope = 5, platform_match = 5,
+  confidence = 5,
+  port_matches = 6, text_output = 6,
+  service_cves = 7,
+  port_analysis = 8,
   lifecycle = 9,
 }
 
@@ -38,7 +39,7 @@ local OWNERS = {
   { api = 'SCRIPT_TYPE', owners = {} },
   { api = 'luasql', owners = { 'db' } },
   { api = 'io.open', owners = {
-    'util', 'catalog.store', 'refdata', 'log', 'report' } },
+    'util', 'catalog.store', 'reference_files', 'log', 'json_report' } },
 }
 
 local function fail(fmt, ...)

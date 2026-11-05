@@ -3,18 +3,18 @@
 --
 -- Stores detected versions in the shared matches table and removes
 -- series entries once a precise version is known for the same CPE.
--- No network or file I/O. Reads state.aliases; does not touch config.
+-- No network or file I/O. Reads state.product_aliases; does not touch config.
 
 local stdnse = require 'stdnse'
 local state = require 'cvescannerv2.state'
-local cpe_lib = require 'cvescannerv2.cpe'
-local ver_mod = require 'cvescannerv2.version'
+local cpe = require 'cvescannerv2.cpe'
+local version = require 'cvescannerv2.version'
 
 local M = {}
 
-local split_cpe = cpe_lib.split_cpe
-local is_precise_version = ver_mod.is_precise_version
-local is_series_version = ver_mod.is_series_version
+local split_cpe = cpe.split_cpe
+local is_precise_version = version.is_precise_version
+local is_series_version = version.is_series_version
 
 
 local function add_cpe_version(cpe, version, matches, location)
@@ -38,8 +38,8 @@ local function add_cpe_aliases(cpe, version, matches, location)
   if not parts then return end
   local product_index = offset + 2
   -- Product aliases
-  if state.aliases[product] then
-    for _, alias in pairs(state.aliases[product]) do
+  if state.product_aliases[product] then
+    for _, alias in pairs(state.product_aliases[product]) do
       parts[product_index] = alias
       add_cpe_version(table.concat(parts, ":"), version, matches, location)
     end

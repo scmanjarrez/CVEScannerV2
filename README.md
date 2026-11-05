@@ -646,29 +646,29 @@ The NSE modules form layers. Each layer number is listed below.
 | `config` | L0 | Reads and normalizes every script argument. |
 | `cpe` | L0 | Pure CPE 2.2 and 2.3 string parser. |
 | `version` | L1 | Version parsing and comparison. |
-| `matches` | L2 | Records detected versions and prunes series entries. |
+| `match_table` | L2 | Records detected versions and prunes series entries. |
 | `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
-| `refdata` | L2 | Loads and validates the reference data files. |
+| `reference_files` | L2 | Loads and validates the reference data files. |
 | `db` | L2 | SQLite access. |
 | `log` | L2 | Log file helpers. |
-| `report` | L2 | JSON report helpers. |
+| `json_report` | L2 | JSON report helpers. |
 | `catalog.store` | L3 | Vulners catalogue loading from `data/` and the local catalogue overlay. |
-| `fingerprint` | L3 | Fingerprint matching against catalogue rules and response text. |
-| `oscontext` | L3 | Operating system context from Nmap and catalogue data. |
+| `fingerprint_match` | L3 | Fingerprint matching against catalogue rules and response text. |
+| `os_context` | L3 | Operating system context from Nmap and catalogue data. |
 | `probes.smb` | L3 | SMB version and OS probes. |
 | `probes.irc` | L3 | UnrealIRCd version probe. |
 | `probes.ntp` | L3 | ntpd version probe (readvar). |
 | `probes.upnp` | L3 | miniupnpd version probe (SSDP). |
-| `httpscan` | L4 | HTTP fingerprint engine: targeted probes and opt-in catalogue sweep. |
+| `http_fingerprint` | L4 | HTTP fingerprint engine: targeted probes and opt-in catalogue sweep. |
 | `probes.cups` | L4 | CUPS version probe from the GET / page title. |
 | `probes.init` | L5 | Probe list, selection and dispatch with a per-key cache. |
-| `scope` | L5 | Scope matching of NVD rows against the observed version. |
-| `platform` | L5 | OS platform compatibility of CVE configurations. |
+| `version_scope` | L5 | Scope matching of NVD rows against the observed version. |
+| `platform_match` | L5 | OS platform compatibility of CVE configurations. |
 | `confidence` | L5 | Confidence levels and ordering of CVE rows. |
-| `collect` | L6 | Match collection for one port. |
-| `render` | L6 | Text output lines for one service. |
-| `vulns` | L7 | Vulnerability lookup for one service and JSON report entries. |
-| `analysis` | L8 | Analysis of the matches of one port. |
+| `port_matches` | L6 | Match collection for one port. |
+| `text_output` | L6 | Text output lines for one service. |
+| `service_cves` | L7 | Vulnerability lookup for one service and JSON report entries. |
+| `port_analysis` | L8 | Analysis of the matches of one port. |
 | `lifecycle` | L9 | Rules that decide whether the script runs and the Nmap script actions. |
 
 A module only imports modules from strictly lower layers. The rule is checked by

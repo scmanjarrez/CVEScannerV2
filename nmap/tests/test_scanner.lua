@@ -53,10 +53,9 @@ local function run_case(limit, redirect_status, fail_redirect)
   redirect_limit = tostring(limit)
   nmap.registry = {}
   fresh_modules()
-  local scanner = assert(load(source .. [[
-    return { sweep = require 'cvescannerv2.httpscan'.sweep_catalog, registry = require 'cvescannerv2.state' }
-  ]]))()
-  local registry = scanner.registry
+  assert(load(source))()
+  local httpscan = require 'cvescannerv2.http_fingerprint'
+  local registry = require 'cvescannerv2.state'
   local alias = 'cpe:/a:example:widget'
   registry.catalog_loaded = true
   registry.catalog = {
@@ -92,7 +91,7 @@ local function run_case(limit, redirect_status, fail_redirect)
     return {status = 200, header = {}, body = 'Widget 1.2.3'}
   end
   local matches = {data = {http = {}, nmap = {}}, size = 0}
-  scanner.sweep({ip = '127.0.0.1'}, {number = 80}, matches, {})
+  httpscan.sweep_catalog({ip = '127.0.0.1'}, {number = 80}, matches, {})
   assert(matches.data.http[alias]['2.0'], 'Normal responses must still match')
   if limit > 0 and redirect_status ~= 200 then
     assert(#gets == 1 and gets[1] == '/redirect', 'Reissue the correct path')
@@ -200,21 +199,22 @@ io.open = original_open
 modules.json.parse = original_parse or function() return true, {} end
 
 fresh_modules()
-local scanner = assert(load(source .. [[
-  return { port = portaction, registry = require 'cvescannerv2.state' }
+local port = assert(load(source .. [[
+  return portaction
 ]]))()
+state = require 'cvescannerv2.state'
 modules.shortport.http = function() return false end
 modules.shortport.ssl = function() return false end
-scanner.registry.catalog_loaded = false
-scanner.registry.json_out = {}
-scanner.registry.cache = {}
-scanner.registry.logger = {write = no_op}
-scanner.registry.conn = {
+state.catalog_loaded = false
+state.json_report = {}
+state.service_cache = {}
+state.log_file = {write = no_op}
+state.db_conn = {
   execute = function()
     return {fetch = function() return nil end, close = no_op}
   end
 }
-assert(scanner.port({ip = '127.0.0.1'}, {
+assert(port({ip = '127.0.0.1'}, {
   number = 22,
   protocol = 'tcp',
   service = 'ssh',

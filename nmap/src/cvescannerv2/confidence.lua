@@ -30,7 +30,7 @@ local REASON_LEVEL = {
 
 local LEVEL_RANK = { low = 1, medium = 2, high = 3 }
 
-local CONF_LABEL = { high = 'HIGH', medium = 'MED', low = 'LOW' }
+local LEVEL_LABEL = { high = 'HIGH', medium = 'MED', low = 'LOW' }
 
 --- Order rows by confidence first, then by CVSSv3 and CVSSv2.
 local function confidence_comparator(a, b)
@@ -58,7 +58,7 @@ end
 
 
 --- Set rec.confidence on every CVE and count the levels.
-local function score_vulns(vulns)
+local function assign_confidence(vulns)
   local summary = { high = 0, medium = 0, low = 0 }
   for _, rec in pairs(vulns) do
     rec.confidence = confidence_of(rec.reasons)
@@ -77,10 +77,10 @@ end
 
 M.cvss_comparator = cvss_comparator
 M.LEVEL_RANK = LEVEL_RANK
-M.CONF_LABEL = CONF_LABEL
+M.LEVEL_LABEL = LEVEL_LABEL
 M.confidence_comparator = confidence_comparator
 M.confidence_of = confidence_of
-M.score_vulns = score_vulns
+M.assign_confidence = assign_confidence
 M.add_reason = add_reason
 
 return M

@@ -7,11 +7,11 @@
 -- through the matches module.
 
 local state = require 'cvescannerv2.state'
-local match_mod = require 'cvescannerv2.matches'
+local match_table = require 'cvescannerv2.match_table'
 
 local M = {}
 
-local add_cpe_version = match_mod.add_cpe_version
+local add_cpe_version = match_table.add_cpe_version
 
 local function add_subject(subjects, channel, value)
   if type(value) ~= 'string' or value == '' then return end
@@ -219,7 +219,7 @@ local function match_banner(port, matches, triggered)
 end
 
 --- Return the version extracted by a probe from body, or nil.
-local function probe_version(probe, body)
+local function extract_probe_version(probe, body)
   for _, extractor in ipairs(probe.extract) do
     if anchor_matches(extractor.anchor, body) then
       local version = anchored_capture(extractor.regex,
@@ -236,6 +236,6 @@ M.safe_version = safe_version
 M.anchored_capture = anchored_capture
 M.match_subjects = match_subjects
 M.match_banner = match_banner
-M.probe_version = probe_version
+M.extract_probe_version = extract_probe_version
 
 return M

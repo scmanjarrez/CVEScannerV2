@@ -4,8 +4,8 @@
 -- Lists the version and OS probes of the SMB, IRC, NTP, UPnP and CUPS
 -- services, selects them with the probes argument and runs them with a
 -- per-key cache. No direct I/O: the probe modules do the network work.
--- Reads config.probes and config.probes_set; uses state.probes and
--- state.host_os_probe as caches.
+-- Reads config.probes and config.probes_set; uses state.probe_cache and
+-- state.host_os_probe_result as caches.
 
 local nmap = require 'nmap'
 local stdnse = require 'stdnse'
@@ -64,10 +64,10 @@ end
 -- probed at most once.
 local function run_version_probe(host, port, probe)
   if not probe_enabled(probe.name) then return nil end
-  local cache = state.probes[probe.name]
+  local cache = state.probe_cache[probe.name]
   if cache == nil then
     cache = {}
-    state.probes[probe.name] = cache
+    state.probe_cache[probe.name] = cache
   end
   local key = fmt('%s:%s', host.ip, port.number)
   if probe.cache_key then key = probe.cache_key(host, port) end
@@ -105,24 +105,24 @@ end
 -- Return {family, source} or nil. The round is cached per IP, false marks
 -- a negative result, and a Nmap mutex serializes it when available.
 local function host_probe_os(host)
-  if state.host_os_probe[host.ip] == nil then
+  if state.host_os_probe_result[host.ip] == nil then
     local lock = nil
     if type(nmap.mutex) == 'function' then lock = nmap.mutex(host.ip) end
     if lock then lock('lock') end
-    if state.host_os_probe[host.ip] == nil then
+    if state.host_os_probe_result[host.ip] == nil then
       local ok, family, name = pcall(first_os_probe, host)
       if ok and family ~= nil then
-        state.host_os_probe[host.ip] = {
+        state.host_os_probe_result[host.ip] = {
           family = family,
           source = 'probe:' .. name,
         }
       else
-        state.host_os_probe[host.ip] = false
+        state.host_os_probe_result[host.ip] = false
       end
     end
     if lock then lock('done') end
   end
-  return state.host_os_probe[host.ip] or nil
+  return state.host_os_probe_result[host.ip] or nil
 end
 M.host_probe_os = host_probe_os
 
@@ -130,7 +130,7 @@ M.host_probe_os = host_probe_os
 -- Without a product (no Nmap CPE) only the 'no_cpe' probes of the service
 -- apply. Skip the probes when the Nmap version is already precise.
 local function version_probe_result(host, port, product, nmap_version)
-  if version.nmap_version_precise(nmap_version) then return nil end
+  if version.is_precise_nmap_version(nmap_version) then return nil end
   for _, probe in ipairs(SERVICE_PROBES) do
     local applies
     if product ~= nil then
@@ -147,13 +147,5 @@ local function version_probe_result(host, port, product, nmap_version)
   return nil
 end
 M.version_probe_result = version_probe_result
-
---- Return the exact Samba version reported by the SMB service.
-local function smb_version(host, port)
-  if not probe_applies(smb.SMB_PROBE, port, 'samba') then return nil end
-  local result = run_version_probe(host, port, smb.SMB_PROBE)
-  return result and result.version or nil
-end
-M.smb_version = smb_version
 
 return M

@@ -7,27 +7,27 @@
 -- in 'probes' and 'httpscan'. Reads 'state.product_cpe'.
 
 local cpe = require 'cvescannerv2.cpe'
-local fingerprint = require 'cvescannerv2.fingerprint'
-local httpscan = require 'cvescannerv2.httpscan'
-local match_mod = require 'cvescannerv2.matches'
+local fingerprint = require 'cvescannerv2.fingerprint_match'
+local httpscan = require 'cvescannerv2.http_fingerprint'
+local match_table = require 'cvescannerv2.match_table'
 local probes = require 'cvescannerv2.probes.init'
 local state = require 'cvescannerv2.state'
 local util = require 'cvescannerv2.util'
 
 local M = {}
 
-local empty = util.empty
-local add_cpe_version = match_mod.add_cpe_version
-local add_cpe_aliases = match_mod.add_cpe_aliases
+local is_blank = util.is_blank
+local add_cpe_version = match_table.add_cpe_version
+local add_cpe_aliases = match_table.add_cpe_aliases
 local split_cpe = cpe.split_cpe
 local match_banner = fingerprint.match_banner
-local http_match = httpscan.http_match
+local match_http_fingerprints = httpscan.match_http_fingerprints
 local use_http_engine = httpscan.use_http_engine
 local version_probe_result = probes.version_probe_result
 
 
 --- Return an empty matches table with one bucket per origin.
-function M.new_matches()
+function M.new_match_table()
   return {
     ['data'] = {
       ['nmap'] = {}, ['http'] = {}, ['smb'] = {}, ['irc'] = {},
@@ -50,7 +50,7 @@ local function add_nmap_matches(host, port, matches)
     cpe = override
     detected_version = (detected_version or ''):match('%d[%d%.]*')
   end
-  if empty(detected_version) then detected_version = '*' end
+  if is_blank(detected_version) then detected_version = '*' end
   local product = nil
   if cpe ~= nil then
     local _, _, _, _, name = split_cpe(cpe)
@@ -74,15 +74,15 @@ M.add_nmap_matches = add_nmap_matches
 --- Return the matches recorded for one port.
 -- The Nmap version comes first, then the banner and the HTTP fingerprint
 -- engine.
-function M.port(host, port)
-  local matches = M.new_matches()
+function M.collect_port_matches(host, port)
+  local matches = M.new_match_table()
   local triggered = {}
   if port.version ~= nil then
     add_nmap_matches(host, port, matches)
   end
   match_banner(port, matches, triggered)
   if use_http_engine(host, port) then
-    http_match(host, port, matches, triggered)
+    match_http_fingerprints(host, port, matches, triggered)
   end
   return matches
 end

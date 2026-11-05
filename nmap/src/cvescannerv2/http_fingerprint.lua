@@ -11,21 +11,21 @@ local nmap = require 'nmap'
 local shortport = require 'shortport'
 local stdnse = require 'stdnse'
 local config = require 'cvescannerv2.config'
-local fingerprint = require 'cvescannerv2.fingerprint'
-local match_mod = require 'cvescannerv2.matches'
+local fingerprint = require 'cvescannerv2.fingerprint_match'
+local match_table = require 'cvescannerv2.match_table'
 local state = require 'cvescannerv2.state'
 local util = require 'cvescannerv2.util'
-local ver_mod = require 'cvescannerv2.version'
+local version = require 'cvescannerv2.version'
 
 local M = {}
 
 local fmt = util.fmt
-local add_cpe_version = match_mod.add_cpe_version
-local cpe_has_precise_version = match_mod.cpe_has_precise_version
-local prune_series_versions = match_mod.prune_series_versions
-local is_precise_version = ver_mod.is_precise_version
+local add_cpe_version = match_table.add_cpe_version
+local cpe_has_precise_version = match_table.cpe_has_precise_version
+local prune_series_versions = match_table.prune_series_versions
+local is_precise_version = version.is_precise_version
 local match_subjects = fingerprint.match_subjects
-local probe_version = fingerprint.probe_version
+local extract_probe_version = fingerprint.extract_probe_version
 local response_subjects = fingerprint.response_subjects
 
 
@@ -56,7 +56,7 @@ local function run_targeted_probes(host, port, matches, triggered)
         if type(response) == 'table' and response_is_usable(response) then
           local body = response.body
           if type(body) == 'string' then
-            local version = probe_version(probe, body)
+            local version = extract_probe_version(probe, body)
             if version then
               add_cpe_version(probe.alias, version, matches, 'http')
               if is_precise_version(version) then
@@ -130,7 +130,7 @@ local function sweep_catalog(host, port, matches, triggered)
 end
 
 --- Run the catalogue sweep and targeted probes when catalogue is loaded.
-local function http_match(host, port, matches, triggered)
+local function match_http_fingerprints(host, port, matches, triggered)
   if state.catalog_loaded then
     -- The catalogue sweep only runs with sweep=1 because it is slow.
     if config.sweep then
@@ -167,7 +167,7 @@ end
 M.response_is_usable = response_is_usable
 M.run_targeted_probes = run_targeted_probes
 M.sweep_catalog = sweep_catalog
-M.http_match = http_match
+M.match_http_fingerprints = match_http_fingerprints
 M.use_http_engine = use_http_engine
 
 return M

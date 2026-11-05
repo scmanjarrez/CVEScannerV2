@@ -3,9 +3,9 @@
 --
 -- Opens and closes the luasql connection and runs the catalogue queries.
 -- Its only I/O is the SQLite file. It reads state.vendor_aliases and
--- writes state.env, state.conn and state.has_conditions.
+-- writes state.db_env, state.db_conn and state.has_conditions.
 -- The connection lives in the state module and is read on every call, so
--- tests can replace state.conn with a fake connection.
+-- tests can replace state.db_conn with a fake connection.
 
 local util = require 'cvescannerv2.util'
 local state = require 'cvescannerv2.state'
@@ -13,7 +13,7 @@ local state = require 'cvescannerv2.state'
 local M = {}
 
 local fmt = util.fmt
-local fmtn = util.fmtn
+local format_sql_named = util.format_sql_named
 
 -- Recent Nmap versions drop Lua's C-module searcher, so `require` cannot load
 -- luasql.sqlite3 from package.cpath. Fall back to locating the .so by hand.
@@ -46,29 +46,29 @@ end
 
 local sql = load_luasql()
 
---- Return the SQL template for qtype, nil when qtype is unknown.
-local function query(qtype)
-  if qtype == 'cve_score' then
+--- Return the SQL template for name, nil when name is unknown.
+local function sql_template(name)
+  if name == 'cvss_scores' then
     return [[
              SELECT cvss_v2, cvss_v3
              FROM cves
              WHERE cve_id = '%s'
              ]]
-  elseif qtype == 'exploit_info' then
+  elseif name == 'exploit_refs' then
     return [[
              SELECT exploits.exploit_id, exploits.name
              FROM referenced_exploit
              INNER JOIN exploits ON referenced_exploit.exploit_id = exploits.exploit_id
              WHERE referenced_exploit.cve_id = '%s'
              ]]
-  elseif qtype == 'metasploit_info' then
+  elseif name == 'metasploit_refs' then
     return [[
              SELECT metasploits.name
              FROM referenced_metasploit
              INNER JOIN metasploits ON referenced_metasploit.metasploit_id = metasploits.metasploit_id
              WHERE referenced_metasploit.cve_id = '%s'
              ]]
-  elseif qtype == 'multiaffected' then
+  elseif name == 'range_affected' then
     return [[
              SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
              multiaffected.versionStartIncluding, multiaffected.versionStartExcluding,
@@ -80,7 +80,7 @@ local function query(qtype)
              WHERE product_id IN
              (SELECT product_id FROM products WHERE vendor IN (${v}) AND product = '${p}' AND version = '*')
              ]]
-  elseif qtype == 'multiaffected_empty' then
+  elseif name == 'range_affected_unbounded' then
     return [[
              SELECT multiaffected.cve_id, cves.cvss_v2, cves.cvss_v3,
              multiaffected.versionStartIncluding, multiaffected.versionStartExcluding,
@@ -94,18 +94,18 @@ local function query(qtype)
              AND versionStartIncluding IS NULL AND versionStartExcluding IS NULL
              AND versionEndIncluding IS NULL AND versionEndExcluding IS NULL
              ]]
-  elseif qtype == 'product_vendors' then
+  elseif name == 'product_vendors' then
     return [[
              SELECT DISTINCT vendor FROM products
              WHERE product = '${p}'
              ]]
-  elseif qtype == 'series_children' then
+  elseif name == 'series_children' then
     return [[
              SELECT EXISTS (SELECT 1 FROM products
              WHERE vendor IN (${v}) AND product = '${p}'
              AND version LIKE '${s}.%')
              ]]
-  elseif qtype == 'platform_conditions' then
+  elseif name == 'platform_conditions' then
     return [[
              SELECT DISTINCT conditions.cve_id, conditions.config_idx,
              conditions.part, conditions.vendor, conditions.product
@@ -113,7 +113,7 @@ local function query(qtype)
              INNER JOIN products ON conditions.product_id = products.product_id
              WHERE products.vendor IN (${v}) AND products.product = '${p}'
              ]]
-  elseif qtype == 'affected' then
+  elseif name == 'exact_affected' then
     return [[
              SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3,
              products.version, products.version_update,
@@ -129,8 +129,8 @@ end
 
 -- Distinct vendors that have rows for product in the database.
 local function product_vendors(product)
-  local cur = state.conn:execute(
-    fmtn(query('product_vendors'), { p = product }))
+  local cur = state.db_conn:execute(
+    format_sql_named(sql_template('product_vendors'), { p = product }))
   local names = {}
   local name = cur:fetch()
   while name do
@@ -168,7 +168,7 @@ end
 
 --- True when the database has rows 'series.%' for the product.
 local function series_has_children(vendors, product, series)
-  local cur = state.conn:execute(fmtn(query('series_children'),
+  local cur = state.db_conn:execute(format_sql_named(sql_template('series_children'),
     { v = vendors, p = product, s = series }))
   local found = cur:fetch()
   cur:close()
@@ -179,7 +179,7 @@ end
 -- Nothing is logged here; the caller decides how to report a missing table.
 local function has_conditions()
   if state.has_conditions == nil then
-    local cur = state.conn:execute(
+    local cur = state.db_conn:execute(
       "SELECT name FROM sqlite_master "
       .. "WHERE type = 'table' AND name = 'conditions'")
     state.has_conditions = cur:fetch() ~= nil
@@ -190,8 +190,8 @@ end
 
 
 --- Return the CVSS v2 and v3 scores of a CVE, nil when unknown.
-local function cve_score(vuln)
-  local cur = state.conn:execute(fmt(query('cve_score'), vuln))
+local function cvss_scores(vuln)
+  local cur = state.db_conn:execute(fmt(sql_template('cvss_scores'), vuln))
   local cvssv2, cvssv3 = cur:fetch()
   cur:close()
   return cvssv2, cvssv3
@@ -199,8 +199,8 @@ end
 
 
 --- Return the Exploit-DB entries of a CVE as {id, name} in query order.
-local function exploitdb(vuln)
-  local cur = state.conn:execute(fmt(query('exploit_info'), vuln))
+local function exploitdb_refs(vuln)
+  local cur = state.db_conn:execute(fmt(sql_template('exploit_refs'), vuln))
   local list = {}
   local exploit, name = cur:fetch()
   while exploit do
@@ -213,8 +213,8 @@ end
 
 
 --- Return the Metasploit module names of a CVE in query order.
-local function metasploit(vuln)
-  local cur = state.conn:execute(fmt(query('metasploit_info'), vuln))
+local function metasploit_refs(vuln)
+  local cur = state.db_conn:execute(fmt(sql_template('metasploit_refs'), vuln))
   local names = {}
   local name = cur:fetch()
   while name do
@@ -228,12 +228,12 @@ end
 
 -- Return the CVEs affecting a range of versions of the product.
 -- Each row is a table with the id, scores, range bounds and the flags
--- ExploitDB and Metasploit. With empty true, only the rows without range
--- bounds are returned.
-local function affected_multi(vendors, product, empty)
-  local qtype = empty and 'multiaffected_empty' or 'multiaffected'
-  local cur = state.conn:execute(
-    fmtn(query(qtype), { v = vendors, p = product }))
+-- ExploitDB and Metasploit. With matches_any true, only the rows without
+-- range bounds are returned.
+local function range_affected_rows(vendors, product, matches_any)
+  local name = matches_any and 'range_affected_unbounded' or 'range_affected'
+  local cur = state.db_conn:execute(
+    format_sql_named(sql_template(name), { v = vendors, p = product }))
   local rows = {}
   local vuln, cvssv2, cvssv3, st_in, st_ex, en_in, en_ex, exploitdb_flag,
     metasploit_flag = cur:fetch()
@@ -260,11 +260,11 @@ end
 -- Return the CVEs affecting an exact version of the product.
 -- Each row is a table with the id, scores, the version and update fields
 -- and the flags ExploitDB and Metasploit.
-local function affected_exact(vendors, product)
-  local cur = state.conn:execute(
-    fmtn(query('affected'), { v = vendors, p = product }))
+local function exact_affected_rows(vendors, product)
+  local cur = state.db_conn:execute(
+    format_sql_named(sql_template('exact_affected'), { v = vendors, p = product }))
   local rows = {}
-  local vuln, cvssv2, cvssv3, pr_v, pr_vu, exploitdb_flag,
+  local vuln, cvssv2, cvssv3, pr_v, row_update, exploitdb_flag,
     metasploit_flag = cur:fetch()
   while vuln do
     rows[#rows + 1] = {
@@ -272,11 +272,11 @@ local function affected_exact(vendors, product)
       CVSSV2 = cvssv2,
       CVSSV3 = cvssv3,
       version = pr_v,
-      version_update = pr_vu,
+      version_update = row_update,
       ExploitDB = exploitdb_flag,
       Metasploit = metasploit_flag,
     }
-    vuln, cvssv2, cvssv3, pr_v, pr_vu, exploitdb_flag,
+    vuln, cvssv2, cvssv3, pr_v, row_update, exploitdb_flag,
       metasploit_flag = cur:fetch()
   end
   cur:close()
@@ -286,8 +286,8 @@ end
 
 -- Return the platform conditions of the product, grouped by CVE id.
 -- Each group is a list of tables with config_idx, part, vendor and product.
-local function platform_rows(vendors, product)
-  local cur = state.conn:execute(fmtn(query('platform_conditions'),
+local function platform_condition_rows(vendors, product)
+  local cur = state.db_conn:execute(format_sql_named(sql_template('platform_conditions'),
     { v = vendors, p = product }))
   local rows_by_cve = {}
   local cve, config_idx, part, vendor, name = cur:fetch()
@@ -308,8 +308,8 @@ end
 
 --- Open the database file at path and keep the connection in the state.
 function M.open(path)
-  state.env = sql.sqlite3()
-  state.conn = state.env:connect(path)
+  state.db_env = sql.sqlite3()
+  state.db_conn = state.db_env:connect(path)
 end
 
 
@@ -317,21 +317,21 @@ end
 -- Return closed, err: err holds the message when closing the connection
 -- failed. Nothing is logged here.
 function M.close()
-  local closed, err = pcall(state.conn.close, state.conn)
-  state.env:close()
+  local closed, err = pcall(state.db_conn.close, state.db_conn)
+  state.db_env:close()
   return closed, err
 end
 
 
-M.query = query
+M.sql_template = sql_template
 M.vendor_scope = vendor_scope
 M.series_has_children = series_has_children
 M.has_conditions = has_conditions
-M.cve_score = cve_score
-M.exploitdb = exploitdb
-M.metasploit = metasploit
-M.affected_multi = affected_multi
-M.affected_exact = affected_exact
-M.platform_rows = platform_rows
+M.cvss_scores = cvss_scores
+M.exploitdb_refs = exploitdb_refs
+M.metasploit_refs = metasploit_refs
+M.range_affected_rows = range_affected_rows
+M.exact_affected_rows = exact_affected_rows
+M.platform_condition_rows = platform_condition_rows
 
 return M
