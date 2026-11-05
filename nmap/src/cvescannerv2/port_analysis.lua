@@ -100,7 +100,15 @@ local function service_result(host, port, cpe, vendor, product, ver_text,
 end
 
 
--- Add the result of a service to the report, the log and the totals.
+-- Key of a result within one port: vendor, product, version and update.
+local function result_key(result)
+  return fmt('%s|%s|%s|%s', result.vendor, result.product,
+    result.version, tostring(result.update))
+end
+
+
+-- Add the result of a service to the report, the log and the totals. Called
+-- once per service and port: analyze_match skips repeated results.
 local function record_service(host, port, result, origin)
   local total = result.counts.total
   if total > 0 then
@@ -119,14 +127,11 @@ local function record_service(host, port, result, origin)
 end
 
 
--- Add the Nmap lines and the structured rows of a result to out, once per
--- vendor, product, version and update. Results without CVEs add nothing.
+-- Add the Nmap lines and the structured rows of a result to out and mark
+-- its key in out.logged. Results without CVEs add nothing and are not marked.
 local function add_output(out, cfg, result)
   if result.counts.total == 0 then return end
-  local key = fmt('%s|%s|%s|%s', result.vendor, result.product,
-    result.version, tostring(result.update))
-  if out.logged[key] ~= nil then return end
-  out.logged[key] = true
+  out.logged[result_key(result)] = true
   out.structured[#out.structured + 1] = render.structured_output(result, cfg)
   if #out.lines > 0 then out.lines[#out.lines + 1] = "" end
   for _, line in ipairs(render.nmap_lines(result, cfg)) do
@@ -160,13 +165,16 @@ local function analyze_match(host, port, scan_ctx, origin, cpe, version_str,
   }
   local result, cached_from = service_result(host, port, cpe, vendor,
     product, ver_text, update, info, svc_ctx)
+  -- Only one entry per service and port: a repeated result is skipped.
+  if out.logged[result_key(result)] ~= nil then return end
   record_service(host, port, result, cached_from)
   add_output(out, cfg, result)
 end
 
 
 --- Return the structured rows and the Nmap lines of a port's matches.
--- scan_ctx has the OS and distro data. Returns two lists.
+-- scan_ctx has the OS and distro data. Returns two lists. The dedupe state
+-- (out.logged) is local to this call, so each port starts empty.
 local function analyze_port(host, port, matches, scan_ctx)
   local out = { structured = {}, lines = {}, logged = {} }
   local cfg = {

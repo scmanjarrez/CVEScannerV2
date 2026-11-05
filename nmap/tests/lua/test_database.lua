@@ -315,6 +315,71 @@ t.case('second port with the same product uses the cache', function()
   t.eq(output[2], 'CVEs: 2  high: 1  medium: 0  low: 1')
 end)
 
+-- Number of products in the JSON report for a TCP port of HOST.
+local function product_count(report, port_number)
+  local count = 0
+  for _, host in ipairs(report or {}) do
+    if host.ip == HOST.ip then
+      for _, entry in ipairs(host.ports) do
+        if entry.port == port_number and entry.protocol == 'tcp' then
+          count = count + #entry.products
+        end
+      end
+    end
+  end
+  return count
+end
+
+-- Replace the collected matches of a port with entries of the form
+-- { origin, cpe, version }, so one port can show several origins.
+local function use_matches(scanner, entries)
+  local collect = scanner.modules.port_matches
+  collect.collect_port_matches = function()
+    local matches = collect.new_match_table()
+    for _, entry in ipairs(entries) do
+      local bucket = matches.data[entry[1]]
+      bucket[entry[2]] = bucket[entry[2]] or {}
+      bucket[entry[2]][entry[3]] = true
+      matches.size = matches.size + 1
+    end
+    return matches
+  end
+end
+
+t.case('same product from two origins on one port is reported once', function()
+  local cpe = 'cpe:/a:apache:http_server:2.2.8'
+  local scanner = scanner_for()
+  scanner.modules.state.totals = { hosts = 0, services = 0, cves = 0 }
+  use_matches(scanner, {
+    { 'nmap', cpe, '2.2.8' },
+    { 'http', cpe, '2.2.8' },
+  })
+  local _, text = scanner.portaction(HOST, port(80, cpe, '2.2.8'))
+  local report = scanner.modules.state.json_report
+  t.eq(product_count(report, 80), 1, 'one JSON entry for the port')
+  t.eq(scanner.modules.state.totals.services, 1, 'one service in totals')
+  t.eq(scanner.modules.state.totals.cves, 2, 'CVEs counted once')
+  local lines = split_lines(text)
+  local summaries = 0
+  for _, line in ipairs(lines or {}) do
+    if line:find('CVEs: ', 1, true) == 1 then summaries = summaries + 1 end
+  end
+  t.eq(summaries, 1, 'one Nmap summary line')
+end)
+
+t.case('same product on two ports gives one entry per port', function()
+  local cpe = 'cpe:/a:apache:http_server:2.2.8'
+  local scanner = scanner_for()
+  scanner.modules.state.totals = { hosts = 0, services = 0, cves = 0 }
+  scan(cpe, '2.2.8', { scanner = scanner })
+  scan(cpe, '2.2.8', { scanner = scanner, port = 8080 })
+  local report = scanner.modules.state.json_report
+  t.eq(product_count(report, 80), 1, 'first port entry')
+  t.eq(product_count(report, 8080), 1, 'second port entry')
+  t.eq(scanner.modules.state.totals.services, 2, 'two services in totals')
+  t.eq(find_product(report, HOST.ip, 8080).cached, true)
+end)
+
 t.case('maxcve limits printed rows but not JSON', function()
   local output, cves = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { args = { maxcve = '1' } })
