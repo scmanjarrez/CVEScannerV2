@@ -9,3 +9,4 @@
 !data/platform-families.json
 !data/local-catalog.json
 !data/product-cpe.json
+!scripts/download-catalog.sh

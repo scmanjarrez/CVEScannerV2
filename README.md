@@ -222,9 +222,9 @@ docker run -v "$PWD/data:/CVEScannerV2/data" \
 Build either target locally with Docker Buildx:
 
 ```bash
-docker buildx build --load --target nodb \
+docker buildx build --load --target nodb -f docker/Dockerfile \
   -t scmanjarrez/cvescanner:nodb .
-docker buildx build --load --target db \
+docker buildx build --load --target db -f docker/Dockerfile \
   --build-arg DATABASE_REFRESH="$(date +%s)" \
   -t scmanjarrez/cvescanner:db .
 ```

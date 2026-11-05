@@ -15,6 +15,7 @@ COPY .dockerignore ./.dockerignore
 COPY data/product-aliases.json data/vendor-aliases.json \
     data/platform-families.json data/local-catalog.json \
     data/product-cpe.json ./data/
+COPY scripts/download-catalog.sh ./scripts/download-catalog.sh
 
 ENV LUA=lua5.4
 ENTRYPOINT ["sh", "nmap/tests/run.sh"]
