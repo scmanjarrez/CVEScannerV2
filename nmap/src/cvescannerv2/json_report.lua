@@ -155,7 +155,10 @@ local function write(path, doc_ctx)
     args = { minconf = doc_ctx.minconf, maxcve = doc_ctx.maxcve },
     hosts = array(state.json_report or {}),
   }
-  local json_out = io.open(path, 'a')
+  local json_out, open_err = io.open(path, 'a')
+  if not json_out then
+    error('cannot open ' .. path .. ': ' .. tostring(open_err))
+  end
   json_out:write(json.generate(doc))
   json_out:write("\n")
   json_out:close()

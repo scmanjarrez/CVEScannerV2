@@ -69,6 +69,7 @@ local function load_modules()
   local modules = {}
   local handle = io.popen(
     "find nmap/src/cvescannerv2 -name '*.lua' 2>/dev/null | sort")
+  assert(handle, 'cannot list nmap/src/cvescannerv2')
   for path in handle:lines() do
     local name = path:sub(#SRC + 2)
     name = name:gsub('%.lua$', '')

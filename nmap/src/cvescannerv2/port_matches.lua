@@ -12,10 +12,12 @@ local httpscan = require 'cvescannerv2.http_fingerprint'
 local match_table = require 'cvescannerv2.match_table'
 local probes = require 'cvescannerv2.probes.init'
 local state = require 'cvescannerv2.state'
+local stdnse = require 'stdnse'
 local util = require 'cvescannerv2.util'
 
 local M = {}
 
+local fmt = util.fmt
 local is_blank = util.is_blank
 local add_cpe_version = match_table.add_cpe_version
 local add_cpe_aliases = match_table.add_cpe_aliases
@@ -43,30 +45,35 @@ end
 -- A product listed in the product CPE table uses the table CPE instead
 -- of the Nmap one, with the first numeric token of the Nmap version.
 local function add_nmap_matches(host, port, matches)
-  local cpe = port.version.cpe and port.version.cpe[1] or nil
+  local cpe_str = port.version.cpe and port.version.cpe[1] or nil
   local detected_version = port.version.version
   local override = state.product_cpe[port.version.product]
   if override ~= nil then
-    cpe = override
+    cpe_str = override
     detected_version = (detected_version or ''):match('%d[%d%.]*')
   end
   if is_blank(detected_version) then detected_version = '*' end
   local product = nil
-  if cpe ~= nil then
-    local _, _, _, _, name = split_cpe(cpe)
+  if cpe_str ~= nil then
+    local _, _, _, _, name = split_cpe(cpe_str)
     product = name
   end
   local probe, result = version_probe_result(host, port, product,
     detected_version)
   if probe then
+    if result == nil then
+      stdnse.verbose(2, fmt('Version probe %s returned no result',
+        probe.name))
+      return
+    end
     local version = result.version .. (result.update or '')
     matches.data[probe.name] = matches.data[probe.name] or {}
     add_cpe_version(result.cpe, version, matches, probe.name)
     return
   end
-  if cpe == nil then return end
-  add_cpe_version(cpe, detected_version, matches, 'nmap')
-  add_cpe_aliases(cpe, detected_version, matches, 'nmap')
+  if cpe_str == nil then return end
+  add_cpe_version(cpe_str, detected_version, matches, 'nmap')
+  add_cpe_aliases(cpe_str, detected_version, matches, 'nmap')
 end
 M.add_nmap_matches = add_nmap_matches
 

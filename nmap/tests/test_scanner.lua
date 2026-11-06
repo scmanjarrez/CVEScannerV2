@@ -125,6 +125,8 @@ local files = {}
 local parsed = {}
 local opened = {}
 local closed = false
+-- Deliberate mock: io.open is replaced on purpose to isolate the cache read.
+---@diagnostic disable-next-line: duplicate-set-field
 io.open = function(path, mode)
   table.insert(opened, {path = path, mode = mode})
   local body = files[path]

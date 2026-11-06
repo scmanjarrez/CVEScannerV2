@@ -1,0 +1,8 @@
+{
+ "runtime.version": "Lua 5.4",
+ "runtime.path": ["?.lua","?/init.lua","nmap/src/?.lua","nmap/src/?/init.lua","nmap/tests/lua/?.lua"],
+ "workspace.library": ["/usr/local/share/nmap/nselib"],
+ "workspace.checkThirdParty": false,
+ "workspace.ignoreDir": ["CVEScannerV2DB","dbrepo","db-manager",".workflow","tmp","results","data","docker"],
+ "diagnostics.globals": ["description","categories","dependencies","author","prerule","hostrule","portrule","postrule","action","SCRIPT_TYPE","SCRIPT_PATH","SCRIPT_NAME","preaction","portaction","postaction"]
+}

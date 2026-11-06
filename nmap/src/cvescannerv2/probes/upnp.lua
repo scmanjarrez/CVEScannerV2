@@ -8,7 +8,7 @@
 local stdnse = require 'stdnse'
 local util = require 'cvescannerv2.util'
 
-local comm_ok, comm = pcall(require, 'comm')
+local _, comm = pcall(require, 'comm')
 
 local M = {}
 

@@ -110,9 +110,9 @@ function M.load_local_catalog(path)
 
   --- Return the validated section 'key' of the overlay, or nil.
   -- An absent section is skipped silently. An invalid one is logged.
-  local function section(key, validate)
+  local function section(key, check)
     if data[key] == nil then return nil end
-    local valid = type(data[key]) == 'table' and validate(data[key])
+    local valid = type(data[key]) == 'table' and check(data[key])
     if not valid then
       stdnse.verbose(1, fmt('Invalid local catalogue section %s; skipped.',
         key))

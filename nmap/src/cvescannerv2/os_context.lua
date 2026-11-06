@@ -55,15 +55,15 @@ local function vendor_family(vendor)
   return state.platform_families[string.lower(vendor)]
 end
 
-local function family_from_cpe(cpe)
-  local _, _, kind, vendor = split_cpe(cpe)
+local function family_from_cpe(cpe_str)
+  local _, _, kind, vendor = split_cpe(cpe_str)
   if kind ~= 'o' then return nil end
   return vendor_family(vendor)
 end
 
 local function cpes_family(cpes)
-  for _, cpe in ipairs(cpes or {}) do
-    local family = family_from_cpe(cpe)
+  for _, cpe_str in ipairs(cpes or {}) do
+    local family = family_from_cpe(cpe_str)
     if family then return family end
   end
   return nil

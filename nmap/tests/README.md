@@ -122,3 +122,15 @@ ciclos. También fija los dueños de las APIs de Nmap y de E/S (`get_script_args
 solo en `config`, `luasql` solo en `db`, `io.open` solo en `util`,
 `catalog.store`, `reference_files`, `log` y `json_report`). Si un módulo nuevo necesita una
 de estas APIs, hay que añadirlo a la regla correspondiente en ese fichero.
+
+## Gate LSP (lua-language-server)
+
+Comprueba los diagnósticos de Lua con el servidor de VS Code. Debe dar 0
+diagnósticos: `check.json` debe quedar con lista vacía. La configuración
+está en `.luarc.json`.
+
+```bash
+LLS=~/.vscode/extensions/sumneko.lua-3.19.2-linux-x64/server/bin/lua-language-server
+$LLS --check="$PWD" --configpath="$PWD/.luarc.json" --checklevel=Hint --check_format=json --logpath=/tmp/lls
+lua nmap/tests/lua/run.lua
+```

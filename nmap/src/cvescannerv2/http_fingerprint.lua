@@ -56,11 +56,11 @@ local function run_targeted_probes(host, port, matches, triggered)
         if type(response) == 'table' and response_is_usable(response) then
           local body = response.body
           if type(body) == 'string' then
-            local version = extract_probe_version(probe, body)
-            if version then
-              add_cpe_version(probe.alias, version, matches, 'http')
-              if is_precise_version(version) then
-                prune_series_versions(matches, probe.alias, version)
+            local ver = extract_probe_version(probe, body)
+            if ver then
+              add_cpe_version(probe.alias, ver, matches, 'http')
+              if is_precise_version(ver) then
+                prune_series_versions(matches, probe.alias, ver)
               end
             end
           end

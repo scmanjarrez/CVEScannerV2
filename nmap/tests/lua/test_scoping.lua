@@ -405,8 +405,9 @@ end)
 
 t.case('one compatible configuration clears the reason', function()
   local sc = platform_scanner({})
-  local rows = { plat(0, 'o', 'microsoft'), plat(1, 'o', 'linux') }
-  t.eq(sc.modules.platform_match.evaluate_platform(rows, { family = 'linux' }), nil)
+  local plat_rows = { plat(0, 'o', 'microsoft'), plat(1, 'o', 'linux') }
+  t.eq(sc.modules.platform_match.evaluate_platform(plat_rows,
+    { family = 'linux' }), nil)
 end)
 
 t.case('application-only configuration requires a component', function()
@@ -436,8 +437,8 @@ end)
 
 db_case('database without conditions table gives no reasons, one warning',
   function()
-    local rows = { { 'CVE-EXACT', '5.0', nil, '5.5', '*', 0, 0 } }
-    local sc, logged = platform_scanner({ affected = rows,
+    local exact_rows = { { 'CVE-EXACT', '5.0', nil, '5.5', '*', 0, 0 } }
+    local sc, logged = platform_scanner({ affected = exact_rows,
       platform = { { 'CVE-EXACT', 0, 'o', 'microsoft', 'windows' } } })
     local scan_ctx = { os = { family = 'linux' } }
     local host = { ip = '10.0.0.1' }
@@ -465,14 +466,14 @@ db_case('database without conditions table gives no reasons, one warning',
 t.suite('confidence reasons')
 
 t.case('exact_version: same version and update in the NVD row', function()
-  local rows = { { id = 'EV', version = '4.7', version_update = 'p1' } }
-  t.eq(exact(rows, '4.7', nil, 'p1').EV.reasons, { 'exact_version' })
+  local exact_rows = { { id = 'EV', version = '4.7', version_update = 'p1' } }
+  t.eq(exact(exact_rows, '4.7', nil, 'p1').EV.reasons, { 'exact_version' })
 end)
 
 t.case('update_unknown: concrete NVD update, observed update unknown',
   function()
-    local rows = { { id = 'UU', version = '4.7', version_update = 'p2' } }
-    t.eq(exact(rows, '4.7', nil, '*').UU.reasons, { 'update_unknown' })
+    local uu_rows = { { id = 'UU', version = '4.7', version_update = 'p2' } }
+    t.eq(exact(uu_rows, '4.7', nil, '*').UU.reasons, { 'update_unknown' })
   end)
 
 t.case('range_contains: NVD interval holds the observed version', function()
@@ -481,8 +482,8 @@ end)
 
 t.case('range_overlap: NVD interval overlaps only part of the range',
   function()
-    local rows = { { id = 'IN', StartInc = '2.4.10', EndExc = '2.4.20' } }
-    t.eq(multi(rows, '2.4.0', '2.4.9999999999').IN.reasons,
+    local range_rows = { { id = 'IN', StartInc = '2.4.10', EndExc = '2.4.20' } }
+    t.eq(multi(range_rows, '2.4.0', '2.4.9999999999').IN.reasons,
       { 'range_overlap' })
   end)
 
@@ -622,6 +623,7 @@ db_case('rows sort by confidence before CVSS, with the label', function()
   t.truthy(text:find('HIGH', 1, true))
   t.truthy(text:find('MED', 1, true))
   local child = entry_of(result, 'CVE-CHILD')
+  assert(child, 'CVE-CHILD missing from result')
   t.eq(child.confidence, 'medium')
   t.eq(child.reasons, { 'series_expanded' })
 end)

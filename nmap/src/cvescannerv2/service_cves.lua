@@ -227,7 +227,9 @@ end
 -- Return the version and update text of the service. A '*' or empty update
 -- is nil.
 local function version_text(info)
-  local ver_text, update = display_version(info)
+  local ver_text, raw_update = display_version(info)
+  ---@type string?
+  local update = raw_update
   if update == nil or update == '*' or update == '' then
     update = nil
   end
@@ -238,7 +240,7 @@ end
 -- Return the result of one service: its product data, the CVE entries
 -- sorted by confidence and the counters. Always returns a table, also
 -- when no CVE affects the service.
-local function find_service_cves(host, _port, cpe, vendor, product, info,
+local function find_service_cves(host, _, cpe, vendor, product, info,
     scan_ctx)
   warn_missing_cvss_v4()
   local vendors = vendor_scope(vendor, product)

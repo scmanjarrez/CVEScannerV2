@@ -504,6 +504,7 @@ db_case('analysis reports a non-nmap origin as its own source', function()
   conn:close()
   env:close()
   os.remove(path)
+  assert(product, 'product missing from json report')
   t.eq(product.version_source, 'irc')
 end)
 
@@ -1051,10 +1052,13 @@ t.case('unknown os cache is not shared across hosts', function()
     open_ports(sc, { SMB_PORT })
     local first = os_analysis(sc, '10.2.0.13', HTTP_PORT, { os = {},
       backport = false })
+    assert(first, 'first analysis missing')
+    assert(first.os_context, 'first analysis has no os_context')
     t.eq(first.os_context.family, 'windows')
     local second = os_analysis(sc, '10.2.0.14', HTTP_PORT, { os = {},
       backport = false })
     t.eq(calls, 2)
+    assert(second, 'second analysis missing')
     t.eq(second.cached, false)
   end)
 end)
@@ -1069,6 +1073,7 @@ t.case('unknown os cache is shared by ports of the same host', function()
   local second = os_analysis(sc, '10.2.0.15', alt_port,
     { os = {}, backport = false })
   t.eq(queries(), after_first)
+  assert(second, 'second analysis missing')
   t.eq(second.cached, true)
 end)
 
@@ -1081,6 +1086,7 @@ t.case('known os cache is shared across hosts', function()
   local after_first = queries()
   local second = os_analysis(sc, '10.2.0.17', HTTP_PORT, scan_ctx)
   t.eq(queries(), after_first)
+  assert(second, 'second analysis missing')
   t.eq(second.cached, true)
 end)
 
@@ -1455,7 +1461,7 @@ end)
 
 t.case('overlay never writes files', function()
   local path = overlay_file('fp')
-  local scanner = upstream_scanner({
+  upstream_scanner({
     fp = { fingerprints = { rules = { portal = local_rule } } } })
   local store = package.loaded['cvescannerv2.catalog.store']
   local original_open = io.open
@@ -1602,17 +1608,17 @@ t.case('200 with the CUPS title matches a rule without the flag', function()
 end)
 
 t.case('accept_403 must be boolean or the rule is rejected', function()
-  local rule = { alias = CUPS_CPE, channel = 'title',
+  local accept_rule = { alias = CUPS_CPE, channel = 'title',
     regex = 'CUPS v?(%d+%.%d+[%.%d]*)' }
-  rule.accept_403 = 'yes'
-  t.eq(s.modules.validate.validate_fingerprints({ rules = { cups = rule } }),
-      nil)
-  rule.accept_403 = true
-  t.eq(s.modules.validate.validate_fingerprints({ rules = { cups = rule } })
-    .title[1].accept_403, true)
-  rule.accept_403 = nil
-  t.eq(s.modules.validate.validate_fingerprints({ rules = { cups = rule } })
-    .title[1].accept_403, false)
+  accept_rule.accept_403 = 'yes'
+  t.eq(s.modules.validate.validate_fingerprints({
+    rules = { cups = accept_rule } }), nil)
+  accept_rule.accept_403 = true
+  t.eq(s.modules.validate.validate_fingerprints({
+    rules = { cups = accept_rule } }).title[1].accept_403, true)
+  accept_rule.accept_403 = nil
+  t.eq(s.modules.validate.validate_fingerprints({
+    rules = { cups = accept_rule } }).title[1].accept_403, false)
 end)
 
 t.case('404 body with the CUPS title is ignored', function()
