@@ -1131,7 +1131,7 @@ t.case('catalog continues when a batch has one answer', function()
   local scanner, calls = abort_catalog(function(n)
     if n == 1 then return { {}, { status = 404 } } end
     return {}
-  end)
+  end, { sweep = '2' })
   scanner.portaction({ ip = '10.4.0.5' }, ABORT_PORT)
   t.eq(calls(), 2)
 end)
@@ -1147,6 +1147,236 @@ t.case('catalogue sweep runs with sweep=1', function()
     { sweep = '1' })
   scanner.portaction({ ip = '10.4.0.7' }, ABORT_PORT)
   t.eq(calls(), 1)
+end)
+
+do
+t.suite('tiered sweep')
+
+local TIER_PORT = { number = 80, protocol = 'tcp', service = 'http' }
+local WP_ROOT = '<html><head><meta name="generator" '
+  .. 'content="WordPress 6.0"></head></html>'
+
+--- Return a reply function that answers '/' with body and 404 otherwise.
+local function root_reply(body)
+  return function(path)
+    if path == '/' then
+      return { status = 200, header = {}, body = body }
+    end
+    return { status = 404, header = {}, body = '' }
+  end
+end
+
+--- Return true when list holds item.
+local function listed(list, item)
+  for _, value in ipairs(list) do
+    if value == item then return true end
+  end
+  return false
+end
+
+--- Return true when any entry of list matches the Lua pattern.
+local function any_match(list, pattern)
+  for _, value in ipairs(list) do
+    if value:find(pattern) then return true end
+  end
+  return false
+end
+
+--- Return true when some entry of list appears more than once.
+local function has_duplicates(list)
+  local seen = {}
+  for _, value in ipairs(list) do
+    if seen[value] then return true end
+    seen[value] = true
+  end
+  return false
+end
+
+--- Build a scanner whose sweep requests are recorded and answered.
+-- opts.args: script arguments (default sweep=1).
+-- opts.reply: function(path) returning one response (default 404).
+-- opts.go: optional function(requests) replacing the pipeline reply.
+-- opts.extra: catalogue paths appended to the base catalogue.
+-- Returns the scanner, the requested paths and the catalogue paths.
+local function tiered_scanner(opts)
+  local requested = {}
+  local reply = opts.reply or function(_path)
+    return { status = 404, header = {}, body = '' }
+  end
+  local scanner = t.load_scanner({
+    args = opts.args or { sweep = '1' },
+    http = {
+      pipeline_add = function(path, _, requests)
+        table.insert(requested, path)
+        requests = requests or {}
+        table.insert(requests, path)
+        return requests
+      end,
+      pipeline_go = function(_, _, requests)
+        if opts.go then return opts.go(requests) end
+        local replies = {}
+        for idx, path in ipairs(requests) do
+          replies[idx] = reply(path)
+        end
+        return replies
+      end,
+    },
+  })
+  local paths = { '/', '/wp-content/plugins/a/readme.txt', '/wp-login.php',
+    '/x.php', '/y.aspx', '/z.jsp' }
+  for _, path in ipairs(scanner.modules.tiers.CORE) do
+    table.insert(paths, path)
+  end
+  for i = 1, 20 do
+    table.insert(paths, '/otro' .. i)
+  end
+  for _, path in ipairs(opts.extra or {}) do
+    table.insert(paths, path)
+  end
+  scanner.modules.state.json_report = {}
+  scanner.modules.state.catalog_loaded = true
+  scanner.modules.state.catalog = { fingerprints = {}, paths = paths,
+    probes = {} }
+  scanner.stubs.shortport.http = function() return true end
+  return scanner, requested, paths
+end
+
+t.case('sweep without evidence requests root, random and core', function()
+  local scanner, requested = tiered_scanner({})
+  scanner.portaction({ ip = '10.5.1.1' }, TIER_PORT)
+  t.eq(#requested, 18, 'expected root, random and 16 core paths')
+  t.eq(listed(requested, '/'), true)
+  for _, path in ipairs(scanner.modules.tiers.CORE) do
+    t.eq(listed(requested, path), true, 'missing core ' .. path)
+  end
+  t.eq(any_match(requested, '^/wp%-'), false)
+  t.eq(any_match(requested, '%.php$'), false)
+  t.eq(any_match(requested, '%.aspx$'), false)
+  t.eq(any_match(requested, '%.jsp$'), false)
+  t.eq(any_match(requested, '^/otro%d'), false)
+end)
+
+t.case('wordpress generator requests wordpress paths only', function()
+  local scanner, requested = tiered_scanner({
+    reply = root_reply(WP_ROOT) })
+  scanner.portaction({ ip = '10.5.1.2' }, TIER_PORT)
+  t.eq(listed(requested, '/wp-content/plugins/a/readme.txt'), true)
+  t.eq(listed(requested, '/wp-login.php'), true)
+  t.eq(any_match(requested, '%.aspx$'), false)
+  t.eq(any_match(requested, '%.jsp$'), false)
+end)
+
+t.case('wordpress requests never repeat a path', function()
+  local scanner, requested = tiered_scanner({
+    reply = root_reply(WP_ROOT) })
+  scanner.portaction({ ip = '10.5.1.3' }, TIER_PORT)
+  t.eq(has_duplicates(requested), false)
+end)
+
+t.case('nmap tomcat version requests z.jsp without root evidence', function()
+  local scanner, requested = tiered_scanner({})
+  local port = { number = 80, protocol = 'tcp', service = 'http',
+    version = { product = 'Apache Tomcat' } }
+  scanner.portaction({ ip = '10.5.1.4' }, port)
+  t.eq(listed(requested, '/z.jsp'), true)
+end)
+
+t.case('linked prefix requests its tail paths and not others', function()
+  local scanner, requested = tiered_scanner({
+    reply = root_reply('<a href="/otro3/index">x</a>'),
+    extra = { '/otro3/panel' } })
+  scanner.portaction({ ip = '10.5.1.5' }, TIER_PORT)
+  t.eq(listed(requested, '/otro3'), true)
+  t.eq(listed(requested, '/otro3/panel'), true)
+  t.eq(any_match(requested, '^/otro4'), false)
+end)
+
+t.case('catch-all root body does not reveal wordpress', function()
+  local catch_all = root_reply('catchall /wp-content/')
+  local scanner, requested = tiered_scanner({
+    reply = function(path)
+      if path == '/' then return catch_all(path) end
+      return { status = 200, header = {}, body = 'catchall /wp-content/' }
+    end })
+  scanner.portaction({ ip = '10.5.1.6' }, TIER_PORT)
+  t.eq(any_match(requested, '^/wp%-'), false)
+end)
+
+t.case('sweep budget caps the requests', function()
+  local scanner, requested = tiered_scanner({
+    args = { sweep = '1', sweep_budget = '5' },
+    reply = root_reply(WP_ROOT) })
+  scanner.portaction({ ip = '10.5.1.7' }, TIER_PORT)
+  t.eq(#requested <= 5, true, 'requests exceed the budget of 5')
+end)
+
+t.case('sweep level 2 requests each catalogue path once', function()
+  local scanner, requested, paths = tiered_scanner({
+    args = { sweep = '2' } })
+  scanner.portaction({ ip = '10.5.1.8' }, TIER_PORT)
+  for _, path in ipairs(paths) do
+    local count = 0
+    for _, value in ipairs(requested) do
+      if value == path then count = count + 1 end
+    end
+    t.eq(count, 1, 'requested times for ' .. path)
+  end
+  t.eq(#requested, #paths + 1, 'expected catalogue plus random path')
+end)
+
+t.case('silent batch stops the sweep after one call', function()
+  local calls = 0
+  local scanner, requested = tiered_scanner({
+    args = { sweep = '2' },
+    go = function()
+      calls = calls + 1
+      return {}
+    end })
+  scanner.portaction({ ip = '10.5.1.9' }, TIER_PORT)
+  t.eq(calls, 1)
+  t.eq(#requested, 2, 'expected only root and random path')
+end)
+end
+
+t.suite('sweep args')
+
+--- Config module of a scanner loaded with the given script arguments.
+local function sweep_config(args)
+  return t.load_scanner({ args = args }).modules.config
+end
+
+t.case('sweep defaults to level 0 and budget 50', function()
+  local cfg = sweep_config({})
+  t.eq(cfg.sweep_level, 0)
+  t.eq(cfg.sweep_budget, 50)
+  t.eq(cfg.sweep_budget_set, false)
+end)
+
+t.case('sweep=1 sets level 1', function()
+  t.eq(sweep_config({ sweep = '1' }).sweep_level, 1)
+end)
+
+t.case('sweep=2 sets level 2', function()
+  t.eq(sweep_config({ sweep = '2' }).sweep_level, 2)
+end)
+
+t.case('sweep=true and sweep=3 fall back to level 0', function()
+  t.eq(sweep_config({ sweep = 'true' }).sweep_level, 0)
+  t.eq(sweep_config({ sweep = '3' }).sweep_level, 0)
+end)
+
+t.case('sweep_budget=20 sets budget 20 and marks it set', function()
+  local cfg = sweep_config({ sweep_budget = '20' })
+  t.eq(cfg.sweep_budget, 20)
+  t.eq(cfg.sweep_budget_set, true)
+end)
+
+t.case('invalid sweep_budget falls back to 50 and is not set', function()
+  for _, raw in ipairs({ '-1', 'abc' }) do
+    local cfg = sweep_config({ sweep_budget = raw })
+    t.eq(cfg.sweep_budget, 50)
+    t.eq(cfg.sweep_budget_set, false)
+  end
 end)
 
 t.suite('ntp probe')
@@ -1477,6 +1707,84 @@ t.case('overlay never writes files', function()
   for _, mode in ipairs(modes) do
     t.eq(mode:find('[wa+]') == nil, true, 'mode ' .. mode)
   end
+end)
+
+t.suite('catalogue tiers')
+
+-- Catalogue files served from memory for data/ reads; other paths are real.
+local TIER_FILES = {
+  ['data/index.json'] = 'index',
+  ['data/fingerprints.json'] = 'fingerprints',
+  ['data/paths.json'] = 'paths',
+  ['data/probes.json'] = 'probes',
+}
+
+local TIER_JSON = {
+  index = { schema = 1, catalogs = {
+    fingerprints = { file = 'fingerprints.json' },
+    paths = { file = 'paths.json' },
+    probes = { file = 'probes.json' } } },
+  fingerprints = { rules = { nginx = rule } },
+  paths = { paths = { '/', '/index.php' } },
+  probes = { schema = 1, probes = { probe } },
+  nuevo = { paths = { paths = { '/nuevo.php' } } },
+}
+
+--- Run fn with the TIER_FILES bodies served by io.open.
+local function with_data_files(fn)
+  local original_open = io.open
+  io.open = function(name, mode)
+    local body = TIER_FILES[name]
+    if body == nil then return original_open(name, mode) end
+    return { read = function() return body end, close = function() end }
+  end
+  local ok, err = pcall(fn)
+  io.open = original_open
+  if not ok then error(err, 0) end
+end
+
+--- Return true when list holds item.
+local function contains(list, item)
+  for _, value in ipairs(list or {}) do
+    if value == item then return true end
+  end
+  return false
+end
+
+t.case('load_catalog builds the sweep tiers', function()
+  local scanner = overlay_scanner(TIER_JSON)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  with_data_files(function()
+    t.eq(store.load_catalog(), true)
+  end)
+  local sweep = scanner.modules.state.catalog.sweep
+  t.eq(type(sweep.core), 'table')
+  t.eq(type(sweep.families), 'table')
+  t.eq(type(sweep.tail), 'table')
+end)
+
+t.case('local overlay path is appended to the php family', function()
+  local path = overlay_file('nuevo')
+  local scanner = overlay_scanner(TIER_JSON)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  with_data_files(function()
+    store.load_catalog()
+    t.eq(store.load_local_catalog(path), true)
+  end)
+  os.remove(path)
+  local php = scanner.modules.state.catalog.sweep.families.php or {}
+  t.eq(php[#php], '/nuevo.php')
+end)
+
+t.case('without an overlay the sweep has no local path', function()
+  local scanner = overlay_scanner(TIER_JSON)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  with_data_files(function()
+    store.load_catalog()
+    t.eq(store.load_local_catalog('data/no-such-overlay.json'), false)
+  end)
+  local sweep = scanner.modules.state.catalog.sweep
+  t.eq(contains(sweep.families.php, '/nuevo.php'), false)
 end)
 
 t.suite('cups title fingerprint')

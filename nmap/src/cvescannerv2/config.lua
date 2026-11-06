@@ -10,6 +10,8 @@ local M = {}
 
 
 local MINCONF_LEVELS = { low = true, medium = true, high = true }
+local SWEEP_LEVELS = { ['1'] = 1, ['2'] = 2 }
+local DEFAULT_SWEEP_BUDGET = 50
 
 
 --- Read all script arguments once and store the normalized values in M.
@@ -27,7 +29,13 @@ function M.load()
   M.catalog = (stdnse.get_script_args('catalog') or 'auto'):lower()
   M.service = stdnse.get_script_args('service') or 'all'
   M.version = stdnse.get_script_args('version') or 'all'
-  M.sweep = stdnse.get_script_args('sweep') == '1'
+  M.sweep_level = SWEEP_LEVELS[stdnse.get_script_args('sweep')] or 0
+  local budget_raw = stdnse.get_script_args('sweep_budget')
+  local budget = tonumber(budget_raw)
+  M.sweep_budget_set = budget ~= nil and budget >= 0
+      and budget == math.floor(budget)
+  M.sweep_budget = M.sweep_budget_set and math.tointeger(budget)
+      or DEFAULT_SWEEP_BUDGET
   M.probes = (stdnse.get_script_args('probes') or 'all'):lower()
   M.probes_set = {}
   for name in M.probes:gmatch('[^,%s]+') do M.probes_set[name] = true end

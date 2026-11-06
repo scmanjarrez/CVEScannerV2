@@ -17,6 +17,8 @@ local SUITES = {
   'nmap/tests/lua/test_catalog.lua',
   'nmap/tests/lua/test_database.lua',
   'nmap/tests/lua/test_docker.lua',
+  'nmap/tests/lua/test_tiers.lua',
+  'nmap/tests/lua/test_sweep_evidence.lua',
   'nmap/tests/lua/test_architecture.lua',
 }
 

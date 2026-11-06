@@ -5,8 +5,8 @@
 -- in data/, validates them and stores the result in the shared state. Local
 -- overlays are merged into the loaded catalogue. Only this module reads the
 -- catalogue files. I/O: read-only access to files under data/ and to the
--- local overlay file. Reads config.catalog; writes state.catalog and
--- state.catalog_loaded.
+-- local overlay file. Reads config.catalog; writes state.catalog,
+-- state.catalog.sweep (the tiered paths) and state.catalog_loaded.
 
 local json = require 'json'
 local stdnse = require 'stdnse'
@@ -14,6 +14,7 @@ local stdnse = require 'stdnse'
 local config = require 'cvescannerv2.config'
 local state = require 'cvescannerv2.state'
 local util = require 'cvescannerv2.util'
+local tiers = require 'cvescannerv2.catalog.tiers'
 local validate = require 'cvescannerv2.catalog.validate'
 
 local M = {}
@@ -54,6 +55,7 @@ local function load_catalog_files()
   local loaded = build_catalog(index, read_catalog_json)
   if not loaded then return false end
   state.catalog = loaded
+  state.catalog.sweep = tiers.build(state.catalog.paths)
   state.catalog_loaded = true
   stdnse.verbose(1, fmt('Using Vulners catalogue from %s.',
     CATALOG_DIR))
@@ -143,6 +145,7 @@ function M.load_local_catalog(path)
     table.insert(loaded.probes, probe)
   end
   stdnse.verbose(1, fmt('Local catalogue %s merged.', path))
+  loaded.sweep = tiers.build(loaded.paths)
   return true
 end
 

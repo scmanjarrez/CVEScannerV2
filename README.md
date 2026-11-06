@@ -272,7 +272,8 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 | `db` | `data/cve.db` | CVE database location. |
 | `maxcve` | `10` | Maximum number of CVEs printed per service on screen. |
 | `maxredirect` | `1` | Maximum number of HTTP redirections followed. |
-| `sweep` | `0` | Request every catalogue path on HTTP ports (slow). Values: `0`, `1`. |
+| `sweep` | `0` | Tiered catalogue sweep on HTTP ports. Values: `0` (off), `1` (tiers, capped by `sweep_budget`), `2` (tiers plus every remaining catalogue path, slow). |
+| `sweep_budget` | `50` | Maximum requests per HTTP port with `sweep=1`. `sweep=2` ignores it unless set explicitly. |
 | `log` | `cvescannerv2.log` | Log file (includes every exploit and Metasploit module found). |
 | `json` | `cvescannerv2.json` | JSON report. |
 | `catalog` | `auto` | Vulners catalogue read from `data/` (`index.json`, `fingerprints.json`, `paths.json`, `probes.json`). The script never downloads it (see [Getting the HTTP catalogue](#getting-the-http-catalogue)). `none` disables HTTP fingerprinting and its HTTP probes. |
@@ -311,8 +312,11 @@ nmap -sV --script cvescannerv2 --script-args probes=irc <TARGET>
 # Disable the HTTP catalogue (no HTTP fingerprints, no HTTP probes)
 nmap -sV --script cvescannerv2 --script-args catalog=none <TARGET>
 
-# Also request every catalogue path on HTTP ports (slow)
+# Tiered sweep on HTTP ports (at most 50 requests per port)
 nmap -sV --script cvescannerv2 --script-args sweep=1 <TARGET>
+
+# Full sweep: every remaining catalogue path too (slow, previous behaviour)
+nmap -sV --script cvescannerv2 --script-args sweep=2 <TARGET>
 ```
 
 </details>
@@ -499,7 +503,7 @@ version and update is written once: the first detection wins.
 This section explains every decision the script makes between Nmap's output and
 the final list, so you can judge how much to trust a result.
 
-*Nmap CPE → product-cpe/aliases → service probes → banner fingerprints → HTTP catalogue (targeted probes; sweep opt-in) → version matching → OS/platform context → confidence.*
+*Nmap CPE → product-cpe/aliases → service probes → banner fingerprints → HTTP catalogue (targeted probes; tiered sweep opt-in) → version matching → OS/platform context → confidence.*
 
 ## Where the version comes from
 
@@ -603,8 +607,8 @@ be cheap and safe:
 
 - **Targeted, never blind.** A probe runs only if Nmap already identified the
   matching service **and** product on that port. A port number alone never
-  triggers a probe. Service probes never sweep; the HTTP path sweep is opt-in
-  with `sweep=1`.
+  triggers a probe. Service probes never sweep; the HTTP tiered sweep is
+  opt-in with `sweep=1` (`sweep=2` for the full catalogue).
 - **Only when needed.** A probe never runs if Nmap already reported a precise
   version.
 - **Read-only.** No credentials, no writes, no exploit payloads.
@@ -683,8 +687,20 @@ UPnP, **and** whose detected service can actually speak HTTP.
   `ssh`, `mysql` or `microsoft-ds` never enter the HTTP engine, even when they
   use TLS. Before this rule an RDP port could keep the scan busy
   indefinitely.
-- **Sweep is opt-in.** The catalogue path sweep runs only with `sweep=1`
-  because it is slow. Targeted probes run by default.
+- **Sweep is opt-in and tiered.** `sweep=1` runs in tiers (T0 to T3):
+  - T0: `/` plus one random missing path (soft-404 probe).
+  - T1: at most 16 core paths (`robots.txt`, `login`, `admin/`, `api`,
+    `version`, `healthz`...).
+  - T2: families with evidence from the responses or Nmap (`wordpress`,
+    `php`, `aspnet`, `java`, `cgi`, `coldfusion`, `domino`), plus paths
+    linked from the responses received.
+  - Total capped at `sweep_budget` requests per port (default `50`).
+  - Soft-404: when the random path returns 2xx, responses with an identical
+    body are discarded, and families are only activated by strong evidence.
+  - `sweep=2` adds T3, every remaining catalogue path (unlimited unless
+    `sweep_budget` is set). This is the previous behaviour.
+  - The core list is not yet validated against MS2/MS3 (F0 pending).
+  Targeted probes run by default.
 - **Abort on silence.** If a port stops answering HTTP, the sweep gives up when
   a whole request batch returns no response, instead of trying every path.
 
@@ -792,18 +808,20 @@ The NSE modules form layers. Each layer number is listed below.
 | `version` | L1 | Version parsing and comparison. |
 | `match_table` | L2 | Records detected versions and prunes series entries. |
 | `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
+| `catalog.tiers` | L2 | Route classifier into core, family and tail tiers for the sweep. |
 | `reference_files` | L2 | Loads and validates the reference data files. |
 | `db` | L2 | SQLite access. |
 | `log` | L2 | Log file helpers. |
 | `json_report` | L2 | JSON report helpers. |
 | `catalog.store` | L3 | Vulners catalogue loading from `data/` and the local catalogue overlay. |
 | `fingerprint_match` | L3 | Fingerprint matching against catalogue rules and response text. |
+| `sweep_evidence` | L3 | Family and linked-prefix evidence from HTTP responses. |
 | `os_context` | L3 | Operating system context from Nmap and catalogue data. |
 | `probes.smb` | L3 | SMB version and OS probes. |
 | `probes.irc` | L3 | UnrealIRCd version probe. |
 | `probes.ntp` | L3 | ntpd version probe (readvar). |
 | `probes.upnp` | L3 | miniupnpd version probe (SSDP). |
-| `http_fingerprint` | L4 | HTTP fingerprint engine: targeted probes and opt-in catalogue sweep. |
+| `http_fingerprint` | L4 | HTTP fingerprint engine: targeted probes and tiered catalogue sweep. |
 | `probes.cups` | L4 | CUPS version probe from the GET / page title. |
 | `probes.init` | L5 | Probe list, selection and dispatch with a per-key cache. |
 | `version_scope` | L5 | Scope matching of NVD rows against the observed version. |

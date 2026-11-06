@@ -17,6 +17,7 @@ local modules = {
   stdnse = {
     get_script_args = function(name)
       if name == 'maxredirect' then return redirect_limit end
+      if name == 'sweep' then return '2' end
       return nil
     end,
     verbose = no_op,

@@ -57,8 +57,12 @@ CVEs information gathered from nvd.nist.gov.
 --       Default: 10
 -- @args cvescannerv2.maxredirect Maximum number of redirections followed.
 --       Default: 1
--- @args cvescannerv2.sweep Request every catalogue path on HTTP ports
---       (slow). Default: 0. Values: 0, 1
+-- @args cvescannerv2.sweep Tiered catalogue sweep on HTTP ports.
+--       Default: 0. Values: 0 (off), 1 (tiers: '/', soft-404 probe,
+--       ≤16 core paths, families with evidence, linked paths; capped by
+--       sweep_budget), 2 (tiers + every remaining catalogue path).
+-- @args cvescannerv2.sweep_budget Maximum requests per HTTP port with
+--       sweep=1. Default: 50. sweep=2 is unlimited unless set explicitly.
 -- @args cvescannerv2.log Output .log file location.
 --       Default: cvescannerv2.log. Header with version and args, one block
 --       per service (cpe, counts, warnings), one line per visible CVE with
