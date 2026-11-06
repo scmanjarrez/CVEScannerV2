@@ -31,15 +31,6 @@ The database follows the CVEScannerV2 v4 schema (`conditions` table,
 `cves.cvss_v4` column and checkpoint tables). For the old v3 NSE scripts, use
 the `v3-final` tag.
 
-## Notes
-
-GitHub disables scheduled workflows after 60 days without activity in
-CVEScannerV2. To re-enable them, run:
-
-```sh
-gh workflow enable database.yaml
-```
-
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).
