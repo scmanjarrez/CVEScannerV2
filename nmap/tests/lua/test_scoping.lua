@@ -724,5 +724,30 @@ db_case('version found by Nmap keeps the parse_cpe_version source', function()
   t.eq(analysis_source('nmap', cpe, '5.5'), expected)
 end)
 
+db_case('port analysis output is stable across origin insertion orders', function()
+  local cpe = 'cpe:/a:apache:tomcat:5.5'
+  local origins = { 'http', 'nmap', 'zzz' }
+  local baseline
+  for run = 1, 20 do
+    local sc = platform_scanner({ children = false, affected = rows }, {})
+    sc.modules.state.service_cache = {}
+    local matches = { data = {}, size = 0 }
+    for i = 0, #origins - 1 do
+      local origin = origins[(i + run) % #origins + 1]
+      matches.data[origin] = {}
+      sc.modules.match_table.add_cpe_version(cpe, '5.5', matches, origin)
+    end
+    local host = { ip = '10.0.0.1' }
+    local port = { number = 80, protocol = 'tcp', service = 'http' }
+    local structured, lines = sc.modules.port_analysis.analyze_port(host, port,
+      matches, { os = {} })
+    if baseline == nil then
+      baseline = { structured = structured, lines = lines }
+    end
+    t.eq(structured, baseline.structured, 'structured rows, run ' .. run)
+    t.eq(lines, baseline.lines, 'lines, run ' .. run)
+  end
+end)
+
 -- Remove the temporary databases created by the database cases.
 for _, path in ipairs(PATHS) do os.remove(path) end

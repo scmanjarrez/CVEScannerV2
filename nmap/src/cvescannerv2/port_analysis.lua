@@ -172,6 +172,21 @@ local function analyze_match(host, port, scan_ctx, origin, cpe, version_str,
 end
 
 
+-- Keys of t sorted alphabetically, with first (when present) placed first.
+---@param t table<string, any>
+---@param first string?
+---@return string[]
+local function sorted_keys(t, first)
+  local keys = {}
+  for k in pairs(t) do keys[#keys + 1] = k end
+  table.sort(keys, function(a, b)
+    if a == first or b == first then return a == first and b ~= first end
+    return a < b
+  end)
+  return keys
+end
+
+
 --- Return the structured rows and the Nmap lines of a port's matches.
 -- scan_ctx has the OS and distro data. Returns two lists. The dedupe state
 -- (out.logged) is local to this call, so each port starts empty.
@@ -182,9 +197,12 @@ local function analyze_port(host, port, matches, scan_ctx)
     minconf = config.minconf,
     json = config.json,
   }
-  for origin, data in pairs(matches['data']) do
-    for cpe, versions in pairs(data) do
-      for version_str, _ in pairs(versions) do
+  local data = matches['data']
+  for _, origin in ipairs(sorted_keys(data, 'nmap')) do
+    local cpes = data[origin]
+    for _, cpe in ipairs(sorted_keys(cpes)) do
+      local versions = cpes[cpe]
+      for _, version_str in ipairs(sorted_keys(versions)) do
         analyze_match(host, port, scan_ctx, origin, cpe, version_str, out,
           cfg)
       end
