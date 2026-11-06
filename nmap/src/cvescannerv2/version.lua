@@ -204,24 +204,54 @@ local function split_version(str)
 end
 
 
+-- Memoized parses of version strings, reset when they grow too large.
+local PARSED = {}
+local parsed_count = 0
+
+
+--- Return the parse of a version, cached by its string form.
+-- The parse has the numeric prefix or false, the numeric parts and the
+-- lower-case suffix without build tags.
+local function parse_version(value)
+  local text = tostring(value)
+  local cached = PARSED[text]
+  if cached then return cached end
+  local numeric = text:match('^[%d%.]+')
+  if not numeric or not numeric:find('%d') then numeric = false end
+  local parsed = { numeric = numeric, nums = {}, suffix = '' }
+  if numeric then
+    for i, part in ipairs(split_version(numeric)) do
+      parsed.nums[i] = tonumber(part) or 0
+    end
+    parsed.suffix = strip_build_suffix(text:sub(#numeric + 1):lower())
+  end
+  if parsed_count > 20000 then
+    PARSED = {}
+    parsed_count = 0
+  end
+  PARSED[text] = parsed
+  parsed_count = parsed_count + 1
+  return parsed
+end
+
+
 --- Return -1, 0 or 1 comparing two versions, or nil when not comparable.
 local function compare_version(version1, version2)
   if version1 == nil or version2 == nil then return nil end
   if version1 == version2 and (version1 == '-' or version1 == '*') then
     return 0
   end
-  local numeric1 = tostring(version1):match('^[%d%.]+')
-  local numeric2 = tostring(version2):match('^[%d%.]+')
-  if not numeric1 or not numeric1:find('%d')
-      or not numeric2 or not numeric2:find('%d') then
+  local parsed1 = parse_version(version1)
+  local parsed2 = parse_version(version2)
+  if not parsed1.numeric or not parsed2.numeric then
     return nil
   end
-  local parts1 = split_version(numeric1)
-  local parts2 = split_version(numeric2)
-  local max_len = math.max(#parts1, #parts2)
+  local nums1 = parsed1.nums
+  local nums2 = parsed2.nums
+  local max_len = math.max(#nums1, #nums2)
   for i = 1, max_len do
-    local num1 = tonumber(parts1[i]) or 0
-    local num2 = tonumber(parts2[i]) or 0
+    local num1 = nums1[i] or 0
+    local num2 = nums2[i] or 0
     if num1 < num2 then
       return -1
     elseif num1 > num2 then
@@ -229,10 +259,8 @@ local function compare_version(version1, version2)
     end
   end
 
-  local suffix1 = strip_build_suffix(
-    tostring(version1):sub(#numeric1 + 1):lower())
-  local suffix2 = strip_build_suffix(
-    tostring(version2):sub(#numeric2 + 1):lower())
+  local suffix1 = parsed1.suffix
+  local suffix2 = parsed2.suffix
   if suffix1 == suffix2 then return 0 end
 
   local function prerelease(suffix)

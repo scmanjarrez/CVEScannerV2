@@ -294,3 +294,61 @@ t.case('distro backport detects distro package suffixes', function()
   t.eq(t.load_scanner().modules.os_context.distro_backport(
     { version = { version = '2.2.8' } }), false)
 end)
+
+t.suite('compare_version cache')
+
+local cache_pairs = {
+  { '1.2.3', '1.2.3', 0 },
+  { '1.2', '1.2.0', 0 },
+  { '1.0', '1.0.0', 0 },
+  { '1.0.1', '1.0.1a', -1 },
+  { '1.0.1e', '1.0.1g', -1 },
+  { '1.10', '1.9', 1 },
+  { '2.2.8', '2.2.10', -1 },
+  { '2.4.7', '2.4.10', -1 },
+  { '4.7p1', '4.7p2', -1 },
+  { '4.7p1', '4.7', 1 },
+  { '7.4p10', '7.4p9', 1 },
+  { '5.2.4-2ubuntu5.10', '5.2.4', 0 },
+  { '5.5.20-log', '5.5.20', 0 },
+  { '1.0rc1', '1.0', -1 },
+  { '1.0', '1.0rc1', 1 },
+  { '1.0rc1', '1.0rc2', -1 },
+  { '1.0beta2', '1.0', -1 },
+  { '0.9.8a', '0.9.8b', -1 },
+  { '-', '-', 0 },
+  { '*', '*', 0 },
+  { 'abc', '1.0', nil },
+  { '1.0', 'abc', nil },
+  { '-', '1.0', nil },
+  { nil, '1.0', nil },
+  { '1.0', nil, nil },
+}
+
+local function mismatches(compare)
+  local bad = {}
+  for _, row in ipairs(cache_pairs) do
+    local got = compare(row[1], row[2])
+    if got ~= row[3] then
+      table.insert(bad, string.format('%s vs %s: got %s',
+        tostring(row[1]), tostring(row[2]), tostring(got)))
+    end
+  end
+  return bad
+end
+
+t.case('cold and warm cache give the same results', function()
+  local compare = s.modules.version.compare_version
+  t.eq(mismatches(compare), {})
+  t.eq(mismatches(compare), {})
+end)
+
+t.case('results stay correct after the cache is reset', function()
+  local compare = s.modules.version.compare_version
+  t.eq(mismatches(compare), {})
+  for i = 1, 25000 do
+    compare('9.' .. i, '9.' .. i + 1)
+  end
+  t.eq(mismatches(compare), {})
+  t.eq(compare('2.2.8', '2.2.10'), -1)
+end)
