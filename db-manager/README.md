@@ -87,14 +87,14 @@ full update.
 
 ## Performance
 
-Importing raw pages (`--nvd-raw`) into an empty database (188 CPE pages and
-209 CVE pages, 1.86 M CPEs and 416 k CVEs) takes 157-176 s instead of 228 s
-on the reference machine (between 23 % and 31 % faster; timings vary
-between runs). The schema and the stored data are unchanged.
+Importing raw pages (`--nvd-raw`) into an empty database (187 CPE pages and
+209 CVE pages, 1.86 M CPEs and 416 k CVEs) with `--skip-scrape` took 3 min 36 s
+in total, including the Metasploit download, on the development machine
+(measured once on 2026-11-17; timings vary between runs and machines).
 
 - CPE names are split with a fast path when they contain no backslash escapes;
-  criteria strings from CVE configurations are also cached, since about 87 %
-  repeat.
+  criteria strings from CVE configurations are also cached. Parsing the 209
+  CVE pages gave a cache hit ratio of 89 %.
 - Page records are turned into commands as plain lists, without a temporary
   queue.
 - The writer waits for the flush event instead of polling.
@@ -102,10 +102,6 @@ between runs). The schema and the stored data are unchanged.
   connection sets `synchronous=NORMAL`, a 256 MiB page cache, and in-memory
   temporary storage. The journal mode is not changed, so the database file
   stays readable in read-only mode by the scanner.
-
-Overlapping page parsing with writes in a thread was tried and discarded: the
-Python parsing holds the GIL, so it gave no measurable speedup and used more memory.
-Further gains would need parsing in separate processes.
 
 ## Querying the database
 
@@ -186,8 +182,10 @@ once. Do not delete the database to enable resumption.
 ## Store raw NVD pages
 `db-manager` can keep the unmodified NVD API responses on disk so later
 rebuilds and experiments do not need to call the API again. Pages are saved
-under `data/nvd-raw/<endpoint>/<window>/page-<offset>.json`, next to a
-`complete.json` marker for each finished window.
+under `data/nvd-raw/<endpoint>/<window>/page-<offset>.json` (the offset has
+eight digits, for example `page-00002000.json`), next to a `complete.json`
+marker for each finished window. The window is `full` for a snapshot, or
+`modified-<start>-<end>` for a `--since` download.
 
 ```bash
 uv run --project db-manager python -m db_manager.cli.nvd_raw

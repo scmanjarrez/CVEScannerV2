@@ -1,7 +1,7 @@
 name: Release tarballs
 
 # Builds two self-contained tarballs (with and without the CVE database) that
-# only need a local Nmap with lsqlite3 support. Both include the NSE script,
+# only need a local Nmap with the luasql.sqlite3 Lua module. Both include the NSE script,
 # its Lua modules and every JSON file the scanner reads, so nothing has to be
 # downloaded at scan time.
 
@@ -111,7 +111,7 @@ jobs:
               cd $NAME
               nmap -sV --script ./cvescannerv2.nse <target>
 
-          Requires Nmap with Lua sqlite3 (lsqlite3) support.
+          Requires Nmap and the Lua module luasql.sqlite3 (lua-sql-sqlite3 on Ubuntu, lua5.4-sql-sqlite3 on Alpine).
           Documentation: https://github.com/scmanjarrez/CVEScannerV2
           EOF
             sed -i 's/^          //' "$DIR/README.txt"

@@ -41,6 +41,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import ConnectionPoolEntry
 from sqlalchemy.schema import CreateIndex
 
+from db_manager.constants import EXPLOITDB_GENERIC_TITLES
 from db_manager.domain.models import CpeIdentity, NvdSyncState, VersionBounds
 
 ProductKey = tuple[str, str, str, str]
@@ -1097,10 +1098,32 @@ class Database:
                 delete(CveModel).where(CveModel.cve_id.in_(chunk))
             )
 
-    async def clean(self: Self) -> None:
-        """Remove Exploit-DB records marked as broken links.
+    async def remove_exploits(
+        self: Self,
+        exploit_ids: Sequence[int],
+    ) -> None:
+        """Remove Exploit-DB records and their CVE references.
 
-        Delete their CVE references before deleting the broken records.
+        Args:
+            exploit_ids: Exploit identifiers to remove.
+        """
+        for start in range(0, len(exploit_ids), 500):
+            chunk = exploit_ids[start : start + 500]
+            _ = await self.session.execute(
+                delete(ReferencedExploitModel).where(
+                    ReferencedExploitModel.exploit_id.in_(chunk)
+                )
+            )
+            _ = await self.session.execute(
+                delete(ExploitModel).where(ExploitModel.exploit_id.in_(chunk))
+            )
+
+    async def clean(self: Self) -> None:
+        """Remove broken Exploit-DB records and reset generic titles.
+
+        Remove Exploit-DB records marked as broken links and reset generic
+        titles so they are fetched again. Delete their CVE references before
+        deleting the broken records.
         """
         broken_ids = select(ExploitModel.exploit_id).where(
             ExploitModel.name.like("404 Page %")
@@ -1112,6 +1135,11 @@ class Database:
         )
         await self.session.execute(
             delete(ExploitModel).where(ExploitModel.name.like("404 Page %"))
+        )
+        _ = await self.session.execute(
+            update(ExploitModel)
+            .where(ExploitModel.name.in_(EXPLOITDB_GENERIC_TITLES))
+            .values(name=None)
         )
 
 

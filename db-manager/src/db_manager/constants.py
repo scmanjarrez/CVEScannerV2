@@ -62,6 +62,16 @@ EXPLOITDB_TITLE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"""content=(?P<quotex>['"])(.*?)(?P=quotex)""",
     re.IGNORECASE | re.DOTALL,
 )
+# Site-wide og:title that Exploit-DB serves when a page has no title of
+# its own (404 pages, among others). It is never a real exploit title.
+EXPLOITDB_GENERIC_TITLES: Final[frozenset[str]] = frozenset(
+    {
+        "OffSec\u2019s Exploit Database Archive",
+        "OffSec's Exploit Database Archive",
+        "Offensive Security\u2019s Exploit Database Archive",
+        "Offensive Security's Exploit Database Archive",
+    }
+)
 
 # Maximum number of typed commands grouped into one database transaction.
 DATABASE_WRITE_BATCH: Final[int] = 10_000

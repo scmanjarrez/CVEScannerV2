@@ -14,7 +14,8 @@ match** through a confidence level and the reasons behind it.
 - Local NVD database with Metasploit and Exploit-DB references: no API calls
   during a scan.
 - Version evidence beyond `nmap -sV`: HTTP fingerprints and read-only service
-  probes (Samba, UnrealIRCd) that replace empty, generic or range versions.
+  probes (Samba, UnrealIRCd, ntpd, miniupnpd, CUPS) that replace empty,
+  generic or range versions.
 - Platform awareness: CVEs that only apply to Windows, Linux or a specific
   distribution are checked against the detected operating system.
 - Every CVE carries a `confidence` (`high`, `medium`, `low`) and a list of
@@ -203,8 +204,8 @@ the `nodb` target omits it. Both contain only Nmap, its runtime dependencies,
 the NSE script and the data files the scanner needs. The `database.yaml`
 workflow publishes the dump and then rebuilds the `:db` image.
 
-- Database embedded: `scmanjarrez/cvescanner:db` or
-  `scmanjarrez/cvescanner:latest`
+- Database embedded: `scmanjarrez/cvescanner:db`, or
+  `scmanjarrez/cvescanner:latest` (updated only when a release is published)
 - No database: `scmanjarrez/cvescanner:nodb`
 
 On a release, the workflow also publishes the Git tag for the database image
@@ -285,7 +286,7 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 
 > **Changes in v4**: the arguments `smb`, `http`, `catalog_url`, `path` and
 > `regex` were removed. They are ignored silently, so an old command line still
-> runs, but it no longer has any effect. The download the catalogue, 
+> runs, but it no longer has any effect. To download the catalogue,
 > use `scripts/download-catalog.sh`. To keep the old
 > `http=0` behaviour (no HTTP requests from the script), use `catalog=none`
 > together with a `probes` list without `cups`. The full catalogue sweep of
@@ -780,17 +781,17 @@ ln -s /usr/lib/lua /usr/local/lib/lua
 
 # Query database
 
-The `db-query` command opens an interactive Textual interface when run without
-`--product`. It suggests product names from the selected database and displays
-exact-version and version-range matches in separate tables. Press the right
-arrow to accept a suggestion, then press Enter or select Search.
+Run without arguments, `db-query` prints its help. With `--interactive` (`-i`)
+it opens a Textual interface that suggests product names from the selected
+database and displays exact-version and version-range matches in separate
+tables. Press the right arrow to accept a suggestion, then press Enter or select
+Search.
 
 Exact versions are compared by their dotted components. Range results respect
 NVD's inclusive and exclusive bounds. Use `--raw` to include unfiltered
 database rows alongside the filtered matches.
 
 ```bash
-uv run --project db-manager db-query
 uv run --project db-manager db-query --interactive
 ```
 
@@ -816,15 +817,17 @@ European Structural Funds (ESF and FEDER).**
   script.
 - Common server regexes and paths from
   [vulnersCom/nmap-vulners](https://github.com/vulnersCom/nmap-vulners).
-- Modules cache generated from
-  [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework)
-  (found in `~/.msf4/store/modules_metadata.json` after running `msfconsole`).
+- Metasploit module names and CVE references from `modules_metadata_base.json`
+  of [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework),
+  downloaded by `db-manager`.
 - CVE information gathered from [nvd.nist.gov](https://nvd.nist.gov).
 
 # License
 
-    CVEScannerV2  Copyright (C) 2021-2025 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
-    Universidad Carlos III de Madrid.
+    CVEScannerV2  Copyright (C) 2021-2023 Sergio Chica Manjarrez @ pervasive.it.uc3m.es.
+    Universidad Carlos III de Madrid (UC3M).
+    Copyright (C) 2026 Sergio Chica Manjarrez @ csic.es.
+    Consejo Superior de Investigaciones Científicas (CSIC).
     This program comes with ABSOLUTELY NO WARRANTY; for details check below.
     This is free software, and you are welcome to redistribute it
     under certain conditions; check below for details.

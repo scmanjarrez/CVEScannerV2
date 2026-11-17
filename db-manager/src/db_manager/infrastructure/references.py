@@ -8,6 +8,8 @@ Fetch module references and optionally refresh Exploit-DB titles.
 import asyncio
 import html
 from collections.abc import Iterator
+from http import HTTPStatus
+from typing import NamedTuple
 
 import httpx2
 from fake_useragent import UserAgent
@@ -24,6 +26,7 @@ from rich.progress import (
 
 from db_manager.constants import (
     EXPLOITDB_BATCH_SIZE,
+    EXPLOITDB_GENERIC_TITLES,
     EXPLOITDB_MAX_CONCURRENT_REQUESTS,
     EXPLOITDB_TITLE_PATTERN,
     EXPLOITDB_URL,
@@ -43,6 +46,20 @@ from .storage import Database
 
 console = Console()
 user_agent = UserAgent()
+
+
+class ScrapedTitle(NamedTuple):
+    """Result of one Exploit-DB title request.
+
+    Attributes:
+        exploit_id: Exploit-DB numeric identifier.
+        title: Usable title, or None when missing or generic.
+        gone: Whether Exploit-DB answered 404 for the exploit.
+    """
+
+    exploit_id: int
+    title: str | None
+    gone: bool
 
 
 async def update_metasploit(
@@ -104,8 +121,11 @@ async def scrape_title(
     client: httpx2.AsyncClient,
     rate_limiter: AsyncRateLimiter,
     semaphore: asyncio.Semaphore,
-) -> tuple[str | None, int]:
+) -> ScrapedTitle:
     """Fetch an Exploit-DB title asynchronously.
+
+    A 404 response marks the exploit as gone. Generic site titles are
+    returned as None so they are not stored as exploit names.
 
     Args:
         exploit: Exploit-DB numeric identifier.
@@ -114,10 +134,10 @@ async def scrape_title(
         semaphore: Maximum number of active Exploit-DB requests.
 
     Returns:
-        The extracted title, if present, and its exploit identifier.
+        The scraped result with the usable title and the gone flag.
 
     Raises:
-        RuntimeError: If the Exploit-DB request fails.
+        RuntimeError: If the Exploit-DB request fails with another error.
     """
     try:
         async with semaphore:
@@ -127,14 +147,18 @@ async def scrape_title(
                 rate_limiter,
                 headers={"User-Agent": user_agent.random},
             )
+            if page.status_code == HTTPStatus.NOT_FOUND:
+                return ScrapedTitle(exploit, None, gone=True)
             page.raise_for_status()
             decoded = html.unescape(page.text)
             title_match = EXPLOITDB_TITLE_PATTERN.search(decoded)
             title = title_match.group(3) if title_match is not None else None
+            if title in EXPLOITDB_GENERIC_TITLES:
+                title = None
     except httpx2.HTTPError as error:
         message = f"Exploit-DB request failed for exploit {exploit}"
         raise RuntimeError(message) from error
-    return title, exploit
+    return ScrapedTitle(exploit, title, gone=False)
 
 
 def exploit_batch(exploits: list[int]) -> Iterator[list[int]]:
@@ -181,6 +205,7 @@ async def update_exploitdb(
         return
 
     semaphore = asyncio.Semaphore(EXPLOITDB_MAX_CONCURRENT_REQUESTS)
+    removed_total = 0
     total_batches = (
         len(exploits) + EXPLOITDB_BATCH_SIZE - 1
     ) // EXPLOITDB_BATCH_SIZE
@@ -205,7 +230,20 @@ async def update_exploitdb(
                     for exploit_id in batch
                 )
             )
-            updates = [(exploit_id, title) for title, exploit_id in results]
+            gone_ids = [result.exploit_id for result in results if result.gone]
+            updates = [
+                (result.exploit_id, result.title)
+                for result in results
+                if result.title is not None
+            ]
             async with Database(args.database) as database:
+                await database.remove_exploits(gone_ids)
                 await database.update_exploits(updates)
+            removed_total += len(gone_ids)
             progress.update(task_id, advance=1)
+    if removed_total > 0:
+        console.print(
+            f"Removed {removed_total} Exploit-DB records",
+            "that no longer exist.",
+            style="yellow",
+        )

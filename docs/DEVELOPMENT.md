@@ -8,6 +8,7 @@ This guide is for contributors. User documentation is in [`../README.md`](../REA
   and reads CVE data from SQLite. Its logic lives in the Lua modules under
   `nmap/src/cvescannerv2/`.
 - `db-manager/` is a Python package that updates and queries that database.
+- [`DATABASE.md`](DATABASE.md) describes the `cve.db` schema, the NVD mapping and the update lifecycle.
 
 ## Scanner modules and layers
 
@@ -98,7 +99,7 @@ the measurement on a target that responds differently to the intensity first.
 
 **Pending candidates.** One per route. No dates are promised.
 
-- **P1 (V1):** `mcafee-epo-agent`, mapped to `mcafee:agent` (7 CVEs). The
+- **P1 (V1):** `mcafee-epo-agent`, mapped to `mcafee:agent` (25 CVEs in the database built on 2026-11-17). The
   script identifies the agent, not the server, so
   `mcafee:epolicy_orchestrator` is not used. It is the only P1 candidate.
   `ntp-info` was first listed as V3 but already runs the same mode 6
@@ -111,8 +112,9 @@ the measurement on a target that responds differently to the intensity first.
     - `iax2-version`: no product or version; IAX2 is not Asterisk.
     - `ovs-agent-version`: agent version, not server.
     - `skypev2-version`: no version published.
-    - `teamspeak2-version`: the DB only has `2.0.32` in
-      `teamspeak:teamspeak`; the script publishes `2.0.32.60`.
+    - `teamspeak2-version`: the only 2.x version the DB
+      has in `teamspeak:teamspeak` is `2.0.32`; the script publishes
+      `2.0.32.60`.
     - `rpcinfo`: RPC program version, no product.
     - `quake1-info`: version is a state, not numeric.
     - `s7-info`: no CPE with CVEs; no version published.
@@ -123,7 +125,7 @@ the measurement on a target that responds differently to the intensity first.
 - **V2 (check before acting):** `redis-info` (redis 46 CVEs; standard port
   6379 is in the `ports` of `redis-server`, rarity 8), `drda-info` (ibm:db2
   351 CVEs; ports 50000 and 60000 are in the `ibm-db2` probe), `quake3-info`
-  (27960-27969 are in the `Quake3_getstatus` probe ports) and `fox-info`
+  (27960-27964 are in the `Quake3_getstatus` probe ports) and `fox-info`
   (port 1911 is in the `niagara-fox` probe ports, rarity 9). These may already
   be resolved at intensity 7 on those ports.
 - **V3 `SERVICE_PROBES`:** `couchdb-databases`, `couchdb-stats`,
@@ -143,8 +145,7 @@ only raises the runlevel: `cvescannerv2` runs in runlevel 2. It does not
 select which scripts run. With `-sV` every `version` script runs in runlevel
 1, before `cvescannerv2`, so `port.version` is set whether or not a script is
 listed. Verified: `rpcinfo` (not listed) runs in runlevel 1 and
-`cvescannerv2` sees its result. Not verified: adding `rpcinfo` to
-`dependencies`. The `version` scripts only run with `-sV`.
+`cvescannerv2` sees its result. The `version` scripts only run with `-sV`.
 
 ## Discarded probe candidates
 
@@ -160,9 +161,9 @@ Run these checks from the repository root. They use temporary SQLite databases
 and mocked external services; the scanner tests do not need Nmap.
 
 ```bash
-# Database package
-PYTHONPATH=db-manager/src uv run --project db-manager \
-  python -m unittest discover -s db-manager/tests -v
+# Database package (run inside db-manager/, as the CI does: the tests import
+# the `tests` package)
+(cd db-manager && uv run python -m unittest discover -s tests -v)
 
 # Scanner (requires lua5.4; the SQLite suite also needs luasql.sqlite3 and is
 # skipped when it is missing)
