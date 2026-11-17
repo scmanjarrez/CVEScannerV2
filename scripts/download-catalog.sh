@@ -11,6 +11,8 @@
 #   -h           Show this help.
 #
 # Files are written only when all of them download and parse correctly.
+# Each file is saved as vulnerscom-<name>.json (prefix marks its origin:
+# nmap-vulners catalogue).
 
 set -euo pipefail
 
@@ -29,6 +31,8 @@ Usage: download-catalog.sh [-b BASE_URL] [-d DEST_DIR]
   -b BASE_URL  Catalogue base URL (env: CATALOG_BASE).
   -d DEST_DIR  Destination directory (default: data in the repo root).
   -h           Show this help.
+
+Files are saved as vulnerscom-<name>.json (prefix marks the nmap-vulners origin).
 EOF
 }
 
@@ -85,7 +89,7 @@ done
 
 mkdir -p -- "$DEST_DIR"
 for name in "${NAMES[@]}"; do
-    mv -f -- "$TMP_DIR/$name.json" "$DEST_DIR/$name.json"
+    mv -f -- "$TMP_DIR/$name.json" "$DEST_DIR/vulnerscom-$name.json"
 done
 
 echo "Catalogue saved to $DEST_DIR"

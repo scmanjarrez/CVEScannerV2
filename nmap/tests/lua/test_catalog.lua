@@ -1839,10 +1839,10 @@ t.suite('catalogue tiers')
 
 -- Catalogue files served from memory for data/ reads; other paths are real.
 local TIER_FILES = {
-  ['data/index.json'] = 'index',
-  ['data/fingerprints.json'] = 'fingerprints',
-  ['data/paths.json'] = 'paths',
-  ['data/probes.json'] = 'probes',
+  ['data/vulnerscom-index.json'] = 'index',
+  ['data/vulnerscom-fingerprints.json'] = 'fingerprints',
+  ['data/vulnerscom-paths.json'] = 'paths',
+  ['data/vulnerscom-probes.json'] = 'probes',
 }
 
 local TIER_JSON = {
@@ -1891,6 +1891,32 @@ t.case('load_catalog builds the sweep tiers', function()
   t.eq(type(sweep.core), 'table')
   t.eq(type(sweep.families), 'table')
   t.eq(type(sweep.tail), 'table')
+end)
+
+t.case('load_catalog requires the vulnerscom- prefix', function()
+  local scanner = overlay_scanner(TIER_JSON)
+  local store = package.loaded['cvescannerv2.catalog.store']
+  local original_open = io.open
+  local unprefixed = {
+    ['data/index.json'] = 'index',
+    ['data/fingerprints.json'] = 'fingerprints',
+    ['data/paths.json'] = 'paths',
+    ['data/probes.json'] = 'probes',
+  }
+  io.open = function(name, mode)
+    local body = unprefixed[name]
+    if body == nil then return original_open(name, mode) end
+    return { read = function() return body end, close = function() end }
+  end
+  local ok, loaded = pcall(store.load_catalog)
+  io.open = original_open
+  t.truthy(ok, loaded)
+  t.eq(loaded, false)
+  t.eq(scanner.modules.state.catalog_loaded, false)
+  with_data_files(function()
+    t.eq(store.load_catalog(), true)
+  end)
+  t.eq(scanner.modules.state.catalog_loaded, true)
 end)
 
 t.case('local overlay path is appended to the php family', function()

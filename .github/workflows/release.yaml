@@ -3,7 +3,8 @@ name: Release tarballs
 # Builds two self-contained tarballs (with and without the CVE database) that
 # only need a local Nmap with the luasql.sqlite3 Lua module. Both include the NSE script,
 # its Lua modules and every JSON file the scanner reads, so nothing has to be
-# downloaded at scan time.
+# downloaded at scan time. The data/ folder includes the nmap-vulners catalogue
+# saved with the vulnerscom- prefix (vulnerscom-index.json, etc.).
 
 on:
   release:
@@ -55,7 +56,7 @@ jobs:
           set -eu
           scripts/download-catalog.sh -d "$RUNNER_TEMP/catalog"
           for name in index fingerprints paths probes; do
-            test -s "$RUNNER_TEMP/catalog/$name.json"
+            test -s "$RUNNER_TEMP/catalog/vulnerscom-$name.json"
           done
 
       - name: Build database from CVEScannerV2DB
@@ -134,8 +135,9 @@ jobs:
             for f in cvescannerv2.nse cvescannerv2/config.lua LICENSE README.txt \
                      data/product-aliases.json data/vendor-aliases.json \
                      data/platform-families.json data/local-catalog.json \
-                     data/product-cpe.json data/index.json \
-                     data/fingerprints.json data/paths.json data/probes.json; do
+                     data/product-cpe.json data/vulnerscom-index.json \
+                     data/vulnerscom-fingerprints.json data/vulnerscom-paths.json \
+                     data/vulnerscom-probes.json; do
               test -s "$ROOT/$f" || { echo "::error::$variant: missing $f"; exit 1; }
             done
             for j in "$ROOT"/data/*.json; do jq -e . "$j" >/dev/null; done

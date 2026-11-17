@@ -145,13 +145,13 @@ modules.json.parse = function(body)
   return true, parsed[body]
 end
 
-files['data/index.json'] = '{}'
+files['data/vulnerscom-index.json'] = '{}'
 parsed['{}'] = {}
-assert(type(store.read_catalog_json('index.json')) == 'table',
+assert(type(store.read_catalog_json('vulnerscom-index.json')) == 'table',
   'Read a cached catalogue')
 assert(closed, 'Close the cache file')
-files['data/index.json'] = string.rep('x', MAX_BYTES + 1)
-assert(store.read_catalog_json('index.json') == nil,
+files['data/vulnerscom-index.json'] = string.rep('x', MAX_BYTES + 1)
+assert(store.read_catalog_json('vulnerscom-index.json') == nil,
   'Reject an oversized catalogue')
 files['data/bad.json'] = 'not json'
 assert(store.read_catalog_json('bad.json') == nil,
@@ -196,10 +196,10 @@ parsed[rules_body] = {
 parsed[paths_body] = { paths = { '/' } }
 parsed[probes_body] = { schema = 1, probes = {} }
 files = {
-  ['data/index.json'] = index_body,
-  ['data/fingerprints.json'] = rules_body,
-  ['data/paths.json'] = paths_body,
-  ['data/probes.json'] = probes_body
+  ['data/vulnerscom-index.json'] = index_body,
+  ['data/vulnerscom-fingerprints.json'] = rules_body,
+  ['data/vulnerscom-paths.json'] = paths_body,
+  ['data/vulnerscom-probes.json'] = probes_body
 }
 closed = false
 assert(store.load_catalog() == true, 'Load the minimal catalogue')

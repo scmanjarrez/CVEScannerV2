@@ -165,8 +165,9 @@ cd CVEScannerV2DB && sh build.sh
 
 ## Getting the HTTP catalogue
 
-The HTTP fingerprint catalogue (`index.json`, `fingerprints.json`, `paths.json`
-and `probes.json`) comes from
+The HTTP fingerprint catalogue (`vulnerscom-index.json`,
+`vulnerscom-fingerprints.json`, `vulnerscom-paths.json` and
+`vulnerscom-probes.json`) comes from
 [nmap-vulners](https://github.com/vulnersCom/nmap-vulners). Download it into
 `data/` with:
 
@@ -176,9 +177,11 @@ scripts/download-catalog.sh [-b BASE_URL] [-d DEST_DIR]
 
 `-b` (or the `CATALOG_BASE` environment variable) selects a mirror and `-d`
 a different destination. Files are written only when all four download and
-parse correctly. Without the catalogue the script still uses Nmap CPEs and
-service probes (see [HTTP fingerprinting](#http-fingerprinting)). The Docker
-image already includes it.
+parse correctly. The files keep their upstream content and are saved with the
+`vulnerscom-` prefix so their origin is always clear. Without the catalogue
+the script still uses Nmap CPEs and service probes (see
+[HTTP fingerprinting](#http-fingerprinting)). The Docker image already
+includes it.
 
 # Installation
 
@@ -280,7 +283,7 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 | `sweep_budget` | `50` | Maximum requests per HTTP port with `sweep=1`. `sweep=2` ignores it unless set explicitly. |
 | `log` | `cvescannerv2.log` | Log file (includes every exploit and Metasploit module found). |
 | `json` | `cvescannerv2.json` | JSON report. |
-| `catalog` | `auto` | Vulners catalogue read from `data/` (`index.json`, `fingerprints.json`, `paths.json`, `probes.json`). The script never downloads it (see [Getting the HTTP catalogue](#getting-the-http-catalogue)). `none` disables HTTP fingerprinting and its HTTP probes. |
+| `catalog` | `auto` | Vulners catalogue read from `data/` (`vulnerscom-index.json`, `vulnerscom-fingerprints.json`, `vulnerscom-paths.json`, `vulnerscom-probes.json`). The script never downloads it (see [Getting the HTTP catalogue](#getting-the-http-catalogue)). `none` disables HTTP fingerprinting and its HTTP probes. |
 | `local_catalog` | `data/local-catalog.json` | Local catalogue merged on top of the Vulners one. `none` disables it. |
 | `aliases`, `vendor_aliases` | `data/product-aliases.json`, `data/vendor-aliases.json` | Product and vendor alias files. |
 | `product_cpe` | `data/product-cpe.json` | Product to CPE overrides for Nmap products. `none` disables it. |
@@ -595,8 +598,9 @@ Used only on ports that Nmap's `shortport` library classifies as HTTP, SSL or
 UPnP, **and** whose detected service can actually speak HTTP.
 
 - The script reads the [nmap-vulners](https://github.com/vulnersCom/nmap-vulners)
-  catalogue (`index.json`, `fingerprints.json`, `paths.json` and `probes.json`)
-  from `data/`. It never downloads it; fetch it with
+  catalogue (`vulnerscom-index.json`, `vulnerscom-fingerprints.json`,
+  `vulnerscom-paths.json` and `vulnerscom-probes.json`) from `data/`. It
+  never downloads it; fetch it with
   [`scripts/download-catalog.sh`](#getting-the-http-catalogue). If the files are
   missing, the script logs that the catalogue was not found and continues with
   Nmap CPEs and service probes only.

@@ -71,8 +71,9 @@ CVEs information gathered from nvd.nist.gov.
 --       Default: cvescannerv2.json. JSON Lines: one record per run
 --       (schema_version 2) with only the services that have CVEs, one
 --       entry per service and port.
--- @args cvescannerv2.catalog Vulners catalogue read from data/ (index.json,
---       fingerprints.json, paths.json, probes.json). Default: auto. Set to
+-- @args cvescannerv2.catalog Vulners catalogue read from data/
+--       (vulnerscom-index.json, vulnerscom-fingerprints.json,
+--       vulnerscom-paths.json, vulnerscom-probes.json). Default: auto. Set to
 --       none to disable HTTP fingerprinting. The catalogue can be downloaded
 --       by running scripts/download-catalog.sh.
 -- @args cvescannerv2.local_catalog Local catalogue merged on top of the

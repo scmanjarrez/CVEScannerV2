@@ -2,7 +2,8 @@
 -- Upstream and local catalogue loading from the data/ dir.  (Layer L3)
 --
 -- Reads the Vulners catalogue files that scripts/download-catalog.sh stores
--- in data/, validates them and stores the result in the shared state. Local
+-- in data/ as vulnerscom-<name>.json, validates them and stores the result in
+-- the shared state. Local
 -- overlays are merged into the loaded catalogue. Only this module reads the
 -- catalogue files. I/O: read-only access to files under data/ and to the
 -- local overlay file. Reads config.catalog; writes state.catalog,
@@ -49,10 +50,20 @@ end
 --- Return the parsed JSON of a cache file, or nil.
 M.read_catalog_json = read_catalog_json
 
--- Load index.json and its catalogue files from data/ into the state.
+-- The four upstream nmap-vulners files are stored in data/ with this prefix
+-- so their origin is visible. Their content keeps the upstream names (e.g.
+-- index.json still lists "fingerprints.json"), so only this loader adds it.
+local VULNERSCOM_PREFIX = 'vulnerscom-'
+
+-- Read an upstream catalogue file by its upstream name, e.g. 'index.json'.
+local function read_vulnerscom_json(upstream_name)
+  return read_catalog_json(VULNERSCOM_PREFIX .. upstream_name)
+end
+
+-- Load vulnerscom-index.json and its catalogue files from data/ into the state.
 local function load_catalog_files()
-  local index = read_catalog_json('index.json')
-  local loaded = build_catalog(index, read_catalog_json)
+  local index = read_vulnerscom_json('index.json')
+  local loaded = build_catalog(index, read_vulnerscom_json)
   if not loaded then return false end
   state.catalog = loaded
   state.catalog.sweep = tiers.build(state.catalog.paths)

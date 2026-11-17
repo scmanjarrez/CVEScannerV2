@@ -112,8 +112,8 @@ export_image "$NODB" "$EXP_NODB" "$TMP/nodb.list" \
 export_image "$DB" "$EXP_DB" "$TMP/db.list" \
   && report 'export db image' ok || report 'export db image' fail
 
-for name in index.json fingerprints.json paths.json probes.json \
-    local-catalog.json product-aliases.json \
+for name in vulnerscom-index.json vulnerscom-fingerprints.json \
+    vulnerscom-paths.json vulnerscom-probes.json local-catalog.json product-aliases.json \
     vendor-aliases.json platform-families.json product-cpe.json; do
   check "nodb has data/$name" in_list "$TMP/nodb.list" "$name"
   check "db has data/$name" in_list "$TMP/db.list" "$name"
