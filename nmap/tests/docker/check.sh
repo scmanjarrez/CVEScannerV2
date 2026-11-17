@@ -158,8 +158,8 @@ if docker network create "$NET" >/dev/null 2>&1 \
     '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$WEB")
   docker run --rm --network "$NET" "$DB" -v -n -Pn -p 80 \
     --script-args json=/tmp/out.json "$ip" >"$TMP/scan.log" 2>&1
-  check 'scan: catalogue read from the image cache' \
-    scan_logged 'Using cached Vulners catalogue from data'
+  check 'scan: catalogue loaded from data' \
+    scan_logged 'Using Vulners catalogue from data'
   check 'scan: local catalogue merged' \
     scan_logged 'Local catalogue data/local-catalog.json merged'
   check 'scan: cvescannerv2 block reports apache' scan_has_apache

@@ -366,6 +366,8 @@ local FAMILIES = {
   canonical = 'linux',
   redhat = 'linux',
   microsoft = 'windows',
+  freebsd = 'bsd',
+  openbsd = 'bsd',
 }
 
 -- Fresh scanner with platform families, a fake database and a log list.
@@ -443,6 +445,31 @@ end)
 t.case('application-only configuration requires a component', function()
   local sc = platform_scanner({})
   t.eq(sc.modules.platform_match.evaluate_platform({ plat(0, 'a', 'apache') },
+    { family = 'linux' }), 'requires_component')
+end)
+
+t.case('sole vendor of its family needs no distro (microsoft on windows)', function()
+  local sc = platform_scanner({})
+  t.eq(sc.modules.platform_match.evaluate_platform({ plat(0, 'o', 'microsoft') },
+    { family = 'windows' }), nil)
+end)
+
+t.case('linux distro vendor without distro needs the platform', function()
+  local sc = platform_scanner({})
+  t.eq(sc.modules.platform_match.evaluate_platform({ plat(0, 'o', 'suse') },
+    { family = 'linux' }), 'requires_platform')
+end)
+
+t.case('bsd vendor without distro needs the platform (several vendors)', function()
+  local sc = platform_scanner({})
+  t.eq(sc.modules.platform_match.evaluate_platform({ plat(0, 'o', 'freebsd') },
+    { family = 'bsd' }), 'requires_platform')
+end)
+
+t.case('OS row AND application row on compatible host requires component', function()
+  local sc = platform_scanner({})
+  local platform_rows = { plat(0, 'o', 'linux'), plat(0, 'a', 'otra') }
+  t.eq(sc.modules.platform_match.evaluate_platform(platform_rows,
     { family = 'linux' }), 'requires_component')
 end)
 

@@ -50,7 +50,10 @@ end
 local function cpe_has_precise_version(matches, cpe_str)
   for _, source in pairs(matches.data) do
     for ver in pairs(source[cpe_str] or {}) do
-      if is_precise_version(ver) then return true end
+      if ver ~= '*' and ver ~= '-' and ver ~= ''
+          and is_precise_version(ver) then
+        return true
+      end
     end
   end
   return false

@@ -361,6 +361,64 @@ t.case('cold and warm cache give the same results', function()
   t.eq(mismatches(compare), {})
 end)
 
+t.suite('version_scope reason strength')
+
+-- Scope one NVD row against a range, adding into an existing result.
+local function scope_range(row, from, to, result)
+  s.modules.version_scope.scoped_multi_versions({ row }, from, to, result,
+    false)
+end
+
+-- Scope one NVD row as an exact version, adding into an existing result.
+local function scope_exact(row, version, result)
+  s.modules.version_scope.scoped_versions({ row }, version, version, '*',
+    result)
+end
+
+t.case('strongest range reason wins regardless of row order', function()
+  local row = { id = 'C1', StartInc = '1.0', EndExc = '2.0' }
+  local overlap = { '1.5', '3.0' }
+  local contains = { '1.5', '1.8' }
+
+  local a = {}
+  scope_range(row, overlap[1], overlap[2], a)
+  scope_range(row, contains[1], contains[2], a)
+
+  local b = {}
+  scope_range(row, contains[1], contains[2], b)
+  scope_range(row, overlap[1], overlap[2], b)
+
+  t.eq(a.C1.reasons, { 'range_contains' })
+  t.eq(b.C1.reasons, { 'range_contains' })
+end)
+
+t.case('exact version beats unbounded range in either order', function()
+  local row = { id = 'C2', version = '1.0' }
+
+  local a = {}
+  s.modules.version_scope.scoped_multi_versions({ { id = 'C2' } }, '1.0',
+    '1.0', a, true)
+  scope_exact(row, '1.0', a)
+
+  local b = {}
+  scope_exact(row, '1.0', b)
+  s.modules.version_scope.scoped_multi_versions({ { id = 'C2' } }, '1.0',
+    '1.0', b, true)
+
+  t.eq(a.C2.reasons, { 'exact_version' })
+  t.eq(b.C2.reasons, { 'exact_version' })
+end)
+
+t.case('tie keeps the existing reason', function()
+  local row = { id = 'C3', StartInc = '1.0', EndExc = '2.0' }
+  local result = {}
+  scope_range(row, '1.5', '3.0', result)
+  scope_range(row, '1.2', '3.0', result)
+  t.eq(result.C3.reasons, { 'range_overlap' })
+end)
+
+t.suite('compare_version cache')
+
 t.case('results stay correct after the cache is reset', function()
   local compare = s.modules.version.compare_version
   t.eq(mismatches(compare), {})

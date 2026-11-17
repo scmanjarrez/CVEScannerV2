@@ -8,6 +8,22 @@ local t = require 'harness'
 
 t.suite('portaction against SQLite fixture')
 
+t.load_scanner()
+local match_table = require 'cvescannerv2.match_table'
+
+t.case('wildcard-only version is not a precise version', function()
+  local matches = { data = { nmap = {} }, size = 0 }
+  match_table.add_cpe_version('cpe:/a:x:y', '*', matches, 'nmap')
+  t.eq(match_table.cpe_has_precise_version(matches, 'cpe:/a:x:y'), false)
+end)
+
+t.case('wildcard plus precise version counts as precise', function()
+  local matches = { data = { nmap = {} }, size = 0 }
+  match_table.add_cpe_version('cpe:/a:x:y', '*', matches, 'nmap')
+  match_table.add_cpe_version('cpe:/a:x:y', '2.4.1', matches, 'nmap')
+  t.eq(match_table.cpe_has_precise_version(matches, 'cpe:/a:x:y'), true)
+end)
+
 -- Earlier suites install a stub under this name; load the real module.
 package.loaded['luasql.sqlite3'] = nil
 local ok, sqlite = pcall(require, 'luasql.sqlite3')

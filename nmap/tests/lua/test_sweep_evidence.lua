@@ -198,5 +198,3 @@ end)
 t.case('path_linked ignores case', function()
   t.eq(path_linked('/NACOS/v1', { ['/nacos'] = true }), true)
 end)
-
-os.exit(t.summary() and 0 or 1)
