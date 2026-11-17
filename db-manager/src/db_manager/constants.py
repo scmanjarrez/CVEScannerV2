@@ -84,8 +84,7 @@ EXACT_HEADERS: Final[tuple[str, ...]] = (
     "Product",
     "Version",
     "V.Update",
-    "EDB",
-    "MSF",
+    "EXPLOITS",
 )
 RANGE_HEADERS: Final[tuple[str, ...]] = (
     "CVE",
@@ -96,8 +95,7 @@ RANGE_HEADERS: Final[tuple[str, ...]] = (
     "StartExclude",
     "EndInclude",
     "EndExclude",
-    "EDB",
-    "MSF",
+    "EXPLOITS",
 )
 
 # Legal notice printed when the database updater starts.

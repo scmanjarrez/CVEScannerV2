@@ -7,6 +7,7 @@ Select interactive or one-off query behavior from the supplied options.
 
 import argparse
 import asyncio
+import sys
 from pathlib import Path
 
 from rich_argparse import RichHelpFormatter
@@ -66,7 +67,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Search CVEs in the local CVE database",
         epilog=(
-            "Omit --product to open the interactive Textual interface. "
+            "Use --interactive to open the interactive Textual interface. "
             "Product completion uses names stored in the selected database."
         ),
         formatter_class=RichHelpFormatter,
@@ -81,7 +82,7 @@ def main() -> None:
     parser.add_argument(
         "-p",
         "--product",
-        help="Product name for a one-off query; omit for interactive mode",
+        help="Product name for a one-off query",
     )
     parser.add_argument(
         "-i",
@@ -104,10 +105,15 @@ def main() -> None:
         help="Log version comparison details",
     )
     namespace = QueryNamespace()
+    if len(sys.argv) == 1:
+        parser.print_help()
+        return
     parser.parse_args(namespace=namespace)
-    if namespace.interactive or namespace.product is None:
+    if namespace.interactive:
         DatabaseQueryApp(namespace.cve, namespace.product).run()
         return
+    if namespace.product is None:
+        parser.error("--product is required unless --interactive is used")
 
     arguments = QueryArguments(
         cve=namespace.cve,

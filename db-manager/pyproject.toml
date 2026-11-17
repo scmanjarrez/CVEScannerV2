@@ -29,7 +29,6 @@ venv = ".venv"
 [tool.ruff]
 line-length = 79
 cache-dir = "/tmp/.ruff_cache"
-extend-exclude = ["services/service-profiler/scripts"]
 
 [tool.ruff.lint]
 select = ["ALL"]

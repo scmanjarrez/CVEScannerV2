@@ -79,20 +79,24 @@ def clean(data: Sequence[Sequence[object]]) -> list[list[str]]:
         data: Rows returned by the asynchronous SQLAlchemy queries.
 
     Returns:
-        String rows with nulls and reference flags formatted for display.
+        String rows; the last cell is 'EDB MSF', 'EDB', 'MSF' or '-'.
     """
     final: list[list[str]] = []
     for row in data:
         cleaned: list[str] = []
-        for index, value in enumerate(row):
+        for value in row[:-2]:
             if value is None:
                 cleaned.append("")
-            elif index >= len(row) - 2 and isinstance(value, bool):
-                cleaned.append("Yes" if value else "No")
             elif value == "-":
                 cleaned.append("*")
             else:
                 cleaned.append(str(value))
+        flags = [
+            name
+            for name, present in zip(("EDB", "MSF"), row[-2:], strict=True)
+            if present
+        ]
+        cleaned.append(" ".join(flags) or "-")
         final.append(cleaned)
     return final
 

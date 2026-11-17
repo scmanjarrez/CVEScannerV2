@@ -11,6 +11,7 @@ from typing import ClassVar, Self
 from rich.text import Text
 from sqlalchemy.exc import SQLAlchemyError
 from textual.app import App, ComposeResult
+from textual.binding import Binding, BindingType
 from textual.containers import Horizontal
 from textual.suggester import Suggester
 from textual.widgets import (
@@ -32,6 +33,31 @@ from db_manager.application.query import (
     suggest_product,
 )
 from db_manager.constants import EXACT_HEADERS, RANGE_HEADERS
+
+FORM_FIELDS = ("product", "version", "update")
+
+
+class ResultTable(DataTable[Text]):
+    """Result table with Vim and Emacs style cursor navigation."""
+
+    BINDINGS: ClassVar[list[BindingType]] = [
+        Binding("j,ctrl+n", "cursor_down", "Down", show=False),
+        Binding("k,ctrl+p", "cursor_up", "Up", show=False),
+        Binding("h,ctrl+b", "cursor_left", "Left", show=False),
+        Binding("l,ctrl+f", "cursor_right", "Right", show=False),
+        Binding("g,alt+less_than_sign", "first_row", "First", show=False),
+        Binding("G,alt+greater_than_sign", "last_row", "Last", show=False),
+        Binding("ctrl+d,ctrl+v", "page_down", "Page down", show=False),
+        Binding("ctrl+u,alt+v", "page_up", "Page up", show=False),
+    ]
+
+    def action_first_row(self: Self) -> None:
+        """Move the cursor to the first row."""
+        self.move_cursor(row=0)
+
+    def action_last_row(self: Self) -> None:
+        """Move the cursor to the last row."""
+        self.move_cursor(row=self.row_count - 1)
 
 
 class ProductSuggester(Suggester):
@@ -113,10 +139,28 @@ class DatabaseQueryApp(App[None]):
         height: 1fr;
         margin: 1 1;
     }
-    DataTable {
+    ResultTable {
         height: 1fr;
     }
     """
+
+    ENABLE_COMMAND_PALETTE: ClassVar[bool] = False
+    BINDINGS: ClassVar[list[BindingType]] = [
+        Binding("ctrl+e", "show_exact", "Exact versions", priority=True),
+        Binding("ctrl+r", "show_ranges", "Ranges", priority=True),
+        Binding("ctrl+s", "search", "Search", priority=True),
+        Binding("ctrl+l", "clear", "Clear", priority=True),
+        Binding("ctrl+t", "focus_results", "Results", priority=True),
+        Binding("ctrl+q", "quit", "Quit", priority=True),
+        Binding("tab", "next_field", "Next field", show=False, priority=True),
+        Binding(
+            "shift+tab",
+            "previous_field",
+            "Previous field",
+            show=False,
+            priority=True,
+        ),
+    ]
 
     database_path: Path
     initial_product: str | None
@@ -162,9 +206,9 @@ class DatabaseQueryApp(App[None]):
         yield ProgressBar(total=None, show_eta=False, id="progress")
         with TabbedContent(id="results"):
             with TabPane("Exact versions", id="exact-pane"):
-                yield DataTable[Text](id="exact-results", zebra_stripes=True)
+                yield ResultTable(id="exact-results", zebra_stripes=True)
             with TabPane("Version ranges", id="range-pane"):
-                yield DataTable[Text](id="range-results", zebra_stripes=True)
+                yield ResultTable(id="range-results", zebra_stripes=True)
         yield Footer()
 
     def on_mount(self: Self) -> None:
@@ -172,10 +216,10 @@ class DatabaseQueryApp(App[None]):
 
         Disable search and display an error when the database is missing.
         """
-        self.query_one("#exact-results", DataTable[Text]).add_columns(
+        self.query_one("#exact-results", ResultTable).add_columns(
             *EXACT_HEADERS
         )
-        self.query_one("#range-results", DataTable[Text]).add_columns(
+        self.query_one("#range-results", ResultTable).add_columns(
             *RANGE_HEADERS
         )
         if not self.database_path.is_file():
@@ -217,6 +261,52 @@ class DatabaseQueryApp(App[None]):
         """
         if event.input.id in {"product", "version", "update"}:
             await self._search()
+
+    def action_show_exact(self: Self) -> None:
+        """Switch to the exact-version results tab."""
+        self.query_one("#results", TabbedContent).active = "exact-pane"
+
+    def action_show_ranges(self: Self) -> None:
+        """Switch to the version-range results tab."""
+        self.query_one("#results", TabbedContent).active = "range-pane"
+
+    def _cycle_field(self: Self, step: int) -> None:
+        """Move focus through the form inputs, wrapping around.
+
+        Args:
+            step: Offset to apply: 1 for next, -1 for previous.
+        """
+        fields = [self.query_one(f"#{name}", Input) for name in FORM_FIELDS]
+        current = self.focused
+        if isinstance(current, Input) and current in fields:
+            index = (fields.index(current) + step) % len(fields)
+        else:
+            index = 0 if step > 0 else len(fields) - 1
+        fields[index].focus()
+
+    def action_next_field(self: Self) -> None:
+        """Focus the next form input."""
+        self._cycle_field(1)
+
+    def action_previous_field(self: Self) -> None:
+        """Focus the previous form input."""
+        self._cycle_field(-1)
+
+    def action_focus_results(self: Self) -> None:
+        """Focus the table of the active results tab."""
+        active = self.query_one("#results", TabbedContent).active
+        table_id = (
+            "#exact-results" if active == "exact-pane" else "#range-results"
+        )
+        self.query_one(table_id, ResultTable).focus()
+
+    async def action_search(self: Self) -> None:
+        """Run the query from the keyboard."""
+        await self._search()
+
+    def action_clear(self: Self) -> None:
+        """Clear the form and results from the keyboard."""
+        self._clear()
 
     async def _search(self: Self) -> None:
         """Fetch matching records and update both result tables.
@@ -271,10 +361,10 @@ class DatabaseQueryApp(App[None]):
         Args:
             results: Filtered exact-version and version-range rows.
         """
-        self.query_one("#exact-results", DataTable[Text]).add_rows(
+        self.query_one("#exact-results", ResultTable).add_rows(
             [[Text(cell) for cell in row] for row in results.exact]
         )
-        self.query_one("#range-results", DataTable[Text]).add_rows(
+        self.query_one("#range-results", ResultTable).add_rows(
             [[Text(cell) for cell in row] for row in results.ranges]
         )
         self._set_status(
@@ -299,8 +389,8 @@ class DatabaseQueryApp(App[None]):
 
         Clear both tables without changing their configured headers.
         """
-        self.query_one("#exact-results", DataTable[Text]).clear()
-        self.query_one("#range-results", DataTable[Text]).clear()
+        self.query_one("#exact-results", ResultTable).clear()
+        self.query_one("#range-results", ResultTable).clear()
 
     def _set_status(self: Self, message: str) -> None:
         """Display plain status text without interpreting Rich markup.
