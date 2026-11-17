@@ -150,7 +150,7 @@ class OfflineImportTests(unittest.IsolatedAsyncioTestCase):
         console = Console(file=io.StringIO())
         args = DatabaseArguments(
             database=self.path,
-            noscrape=True,
+            skip_scrape=True,
             nvd_raw=self.raw_dir,
         )
         with (

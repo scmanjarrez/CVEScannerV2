@@ -21,12 +21,12 @@ class DatabaseNamespace(argparse.Namespace):
 
     Attributes:
         database: SQLite database file path.
-        noscrape: Whether to skip Exploit-DB title scraping.
+        skip_scrape: Whether to skip Exploit-DB title scraping.
         nvd_raw: Directory with raw NVD pages to import, or None.
     """
 
     database: Path
-    noscrape: bool
+    skip_scrape: bool
     nvd_raw: Path | None
 
 
@@ -47,10 +47,10 @@ def main() -> None:
         help="Database file path",
     )
     parser.add_argument(
-        "-ns",
-        "--noscrape",
+        "-sk",
+        "--skip-scrape",
         action="store_true",
-        help="Disable exploit-db name scraping",
+        help="Skip Exploit-DB title scraping",
     )
     parser.add_argument(
         "-r",
@@ -68,7 +68,7 @@ def main() -> None:
         run_database(
             DatabaseArguments(
                 database=namespace.database,
-                noscrape=namespace.noscrape,
+                skip_scrape=namespace.skip_scrape,
                 nvd_raw=namespace.nvd_raw,
             )
         )

@@ -39,9 +39,9 @@ function M.load()
   M.probes = (stdnse.get_script_args('probes') or 'all'):lower()
   M.probes_set = {}
   for name in M.probes:gmatch('[^,%s]+') do M.probes_set[name] = true end
-  M.minconf_raw = (stdnse.get_script_args('minconf') or 'low'):lower()
+  M.minconf_raw = (stdnse.get_script_args('minconf') or 'medium'):lower()
   M.minconf_valid = MINCONF_LEVELS[M.minconf_raw] == true
-  M.minconf = M.minconf_valid and M.minconf_raw or 'low'
+  M.minconf = M.minconf_valid and M.minconf_raw or 'medium'
   M.product_cpe = stdnse.get_script_args('product_cpe')
       or 'data/product-cpe.json'
   M.local_catalog = stdnse.get_script_args('local_catalog')

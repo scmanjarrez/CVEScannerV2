@@ -113,7 +113,7 @@ function M.preaction(script_version)
   }))
   log.log_run_header(script_version)
   if not config.minconf_valid then
-    log.write("warning: minconf '%s' is invalid, using low",
+    log.write("warning: minconf '%s' is invalid, using medium",
       config.minconf_raw)
   end
 end

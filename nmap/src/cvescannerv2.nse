@@ -99,8 +99,8 @@ CVEs information gathered from nvd.nist.gov.
 --         upnp   exact miniupnpd version via unicast SSDP (requires -sU)
 --         cups   CUPS version from the GET / page title
 -- @args cvescannerv2.minconf Minimum confidence of the CVEs shown in the
---       table and the log: low, medium or high. Default: low. Invalid
---       values use low. The JSON report always keeps every CVE.
+--       table and the log: low, medium or high. Default: medium. Invalid
+--       values use medium. The JSON report always keeps every CVE.
 ---
 
 categories = { "safe" }

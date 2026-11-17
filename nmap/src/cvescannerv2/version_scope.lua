@@ -161,6 +161,18 @@ local function merge_series(found, vulns)
 end
 
 
+-- Add CVEs found under a renamed product that are not already in vulns.
+-- The reasons of the match are kept and alias_product is appended.
+local function merge_alias(found, vulns)
+  for id, rec in pairs(found) do
+    if vulns[id] == nil then
+      table.insert(rec.reasons, 'alias_product')
+      vulns[id] = rec
+    end
+  end
+end
+
+
 --- Return true when the NVD row interval contains the observed one.
 M.range_contains = range_contains
 --- Add the range-based NVD rows that overlap the observed range.
@@ -169,6 +181,8 @@ M.scoped_multi_versions = scoped_multi_versions
 M.scoped_versions = scoped_versions
 --- Merge series-expanded CVEs into vulns, skipping known IDs.
 M.merge_series = merge_series
+--- Merge CVEs found under renamed products, skipping known IDs.
+M.merge_alias = merge_alias
 
 
 return M

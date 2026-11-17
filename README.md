@@ -37,12 +37,10 @@ match** through a confidence level and the reasons behind it.
   - [Operating system context](#operating-system-context)
   - [Version matching](#version-matching)
   - [Confidence levels](#confidence-levels)
-- [Project architecture](#project-architecture)
-- [Measured impact](#measured-impact)
 - [Limitations](#limitations)
 - [Troubleshooting](#troubleshooting)
 - [Query database](#query-database)
-- [Tests](#tests)
+- [Documentation](#documentation)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 
@@ -156,7 +154,7 @@ cd CVEScannerV2DB && sh build.sh
   product associations travel through a typed queue to a batched SQLite
   writer. On incremental updates each changed CVE is removed and rebuilt. The
   updater then refreshes Metasploit references and optionally scrapes
-  Exploit-DB titles (`--noscrape` skips the title requests).
+  Exploit-DB titles (`--skip-scrape` or `-sk` skips the title requests).
 - Rate limits: NVD request starts are at least 0.75 s apart with at most four
   in flight; Metasploit requests are one second apart; Exploit-DB scraping is
   two seconds apart with at most three in flight. HTTP 429 and selected server
@@ -283,7 +281,7 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 | `service` | `all` | Restrict the scan to one product (for example `http_server`). |
 | `version` | `all` | Restrict the scan to one version. |
 | `probes` | `all` | Service probes to run: `all`, `none` or a comma-separated list (`smb`, `smb_os`, `irc`, `ntp`, `upnp`, `cups`). |
-| `minconf` | `low` | Minimum confidence shown in the table and the log (`low`, `medium`, `high`). The JSON report always keeps every CVE. |
+| `minconf` | `medium` | Minimum confidence shown in the table and the log (`low`, `medium`, `high`). The JSON report always keeps every CVE. |
 
 > **Changes in v4**: the arguments `smb`, `http`, `catalog_url`, `path` and
 > `regex` were removed. They are ignored silently, so an old command line still
@@ -303,8 +301,8 @@ nmap -sV --script cvescannerv2 --script-args log=scan2023.log,json=scan2023.json
 # Only one product and version
 nmap -sV --script cvescannerv2 --script-args service=http_server,version=2.4.57 <TARGET>
 
-# Show only medium and high confidence results in the table and the log
-nmap -sV --script cvescannerv2 --script-args minconf=medium <TARGET>
+# Show every confidence level (low, medium and high) in the table and the log
+nmap -sV --script cvescannerv2 --script-args minconf=low <TARGET>
 
 # Pure Nmap evidence: no service probes
 nmap -sV --script cvescannerv2 --script-args probes=none <TARGET>
@@ -530,83 +528,6 @@ origin of that version in `version_source`:
 When a probe returns a precise version for the port's product it **replaces**
 the Nmap version; it is not added as a second candidate.
 
-## Version evidence sources
-
-Nmap sources were classified by how the version is obtained. Each row is a
-route; a script or probe belongs to exactly one.
-
-| Route | Meaning |
-|---|---|
-| V0 | Already covered: `-sV` gives the version, or the script is in `dependencies` or `SERVICE_PROBES`. No action. |
-| V1 | A Nmap `version` script publishes a product without a usable CPE. Map it in `data/product-cpe.json` only if the product, CPE and version are right; otherwise discard (V5). Adding it to `dependencies` is not needed: with `-sV` every `version` script runs in runlevel 1. |
-| V2 | The version comes only from a `rarity` 8-9 probe that is not in the default set. Usage advice; the NSE cannot change it. |
-| V3 | A non-`version` script whose logic yields a version that nothing publishes. Needs its own `SERVICE_PROBES` entry. |
-| V4 | The version is in HTTP headers or HTML. Needs a `data/local-catalog.json` entry. |
-| V5 | Discarded: no CVEs in the database, only `o:`/`h:` CPEs, not `safe`, needs credentials, or no lab target. |
-
-**Inventory.** The Nmap 7.993 service probe file has 188 probes, 49 of them
-with rarity 7 or lower, and 48 scripts in the `version` category. The
-script depends on 10 of them through `dependencies`.
-
-**Version intensity.** `--version-intensity` is a command-line flag only:
-
-- A script cannot set it. `nmap.version_intensity(n)` does not change the
-  probes sent by `-sV`, and its getter always returns 9.
-- Intensity 7 sends 30 probes on a port that no probe lists; 9 sends 104. The
-  extra 74 have rarity 8-9. A rarity 8-9 probe whose `ports` or `sslports`
-  list the port is still sent at intensity 7 (verified in the lab with the
-  rarity 9 `OfficeScan` probe on a non-standard redis port).
-- Measured on MS2 (10 services), on a lab with redis 3.2 and mongodb 3.6, and
-  on MS3 (192.168.251.132, 25 open ports): intensity 9 gave no extra version
-  and no change in CVEs or confidence. On MS3 the only change was port 3389,
-  where `ms-wbt-server` became `ssl`. MS3 reported 553 CVEs and 72
-  high/critical with both intensities. MS3 took 203.5 s with intensity 7 and
-  581.6 s with intensity 9 (about 2.9 times slower). On MS2 and the lab,
-  intensity 9 was faster. Each time was measured once. The MS3 JSON carries a
-  product for only 4 of 25 open ports, so its CVE total is undercounted.
-
-**Recommendation.** Do not set `--version-intensity 9` by default. On MS3 it
-cost about 2.9 times the scan time with no gain in versions or CVEs. Repeat
-the measurement on a target that responds differently to the intensity first.
-
-**Pending candidates.** One per route. No dates are promised.
-
-- **P1 (V1):** `mcafee-epo-agent`, mapped to `mcafee:agent` (7 CVEs). The
-  script identifies the agent, not the server, so
-  `mcafee:epolicy_orchestrator` is not used. It is the only P1 candidate.
-  `ntp-info` was first listed as V3 but already runs the same mode 6
-  `readvar` through `probes/ntp.lua`, so it is V0.
-- **V1 outcome (14 scripts):**
-  - Mapped in `data/product-cpe.json`: `mcafee-epo-agent`
-    (`mcafee:agent`), `ventrilo-info` (`flagship_industries:ventrilo`).
-  - Discarded (V5):
-    - `snmp-info`: composite, variable product.
-    - `iax2-version`: no product or version; IAX2 is not Asterisk.
-    - `ovs-agent-version`: agent version, not server.
-    - `skypev2-version`: no version published.
-    - `teamspeak2-version`: the DB only has `2.0.32` in
-      `teamspeak:teamspeak`; the script publishes `2.0.32.60`.
-    - `rpcinfo`: RPC program version, no product.
-    - `quake1-info`: version is a state, not numeric.
-    - `s7-info`: no CPE with CVEs; no version published.
-    - `http-trane-info`: variable product and version.
-    - `mikrotik-routeros-version`: WinBox to RouterOS; version not set.
-    - `netbus-version`: honeypot, no version.
-    - `tftp-version`: variable product.
-- **V2 (check before acting):** `redis-info` (redis 46 CVEs; standard port
-  6379 is in the `ports` of `redis-server`, rarity 8), `drda-info` (ibm:db2
-  351 CVEs; ports 50000 and 60000 are in the `ibm-db2` probe), `quake3-info`
-  (27960-27969 are in the `Quake3_getstatus` probe ports) and `fox-info`
-  (port 1911 is in the `niagara-fox` probe ports, rarity 9). These may already
-  be resolved at intensity 7 on those ports.
-- **V3 `SERVICE_PROBES`:** `couchdb-databases`, `couchdb-stats`,
-  `uptime-agent-info`, `http-mcmp`, `irc-info` (may overlap the existing `irc`
-  probe) and `versant-info`.
-- **V4 HTTP catalogue:** `hadoop-namenode-info`, `hadoop-datanode-info`,
-  `hadoop-jobtracker-info`, `hadoop-secondary-namenode-info`,
-  `hadoop-tasktracker-info`, `hbase-master-info`, `hbase-region-info`,
-  `flume-master-info` and `http-server-header`.
-
 ## Service probes
 
 When Nmap cannot give a precise version (empty, a `x.y` series or a range such
@@ -636,15 +557,7 @@ be cheap and safe:
 
 Select them with `probes=none`, `probes=all` or `probes=<csv>`.
 
-**Version scripts.** The `dependencies` list (`weblogic-t3-info`,
-`oracle-tns-version`, `docker-version`, `jdwp-version`, `vmware-version`,
-`db2-das-info`, `ike-version`, `mqtt-subscribe`, `amqp-info`, `xmpp-info`)
-only raises the runlevel: `cvescannerv2` runs in runlevel 2. It does not
-select which scripts run. With `-sV` every `version` script runs in runlevel
-1, before `cvescannerv2`, so `port.version` is set whether or not a script is
-listed. Verified: `rpcinfo` (not listed) runs in runlevel 1 and
-`cvescannerv2` sees its result. Not verified: adding `rpcinfo` to
-`dependencies`. The `version` scripts only run with `-sV`.
+Extending probes and the evidence routes: see the [development guide](docs/DEVELOPMENT.md).
 
 **Product to CPE overrides.** `data/product-cpe.json` (arg `product_cpe`,
 `none` disables it) maps an exact Nmap product string to the right CPE and
@@ -669,11 +582,6 @@ proxies cannot be attributed to the wrong service.
 **Limits.** Versions hidden on purpose (Apache `ServerTokens Prod`, OpenSSL,
 Dovecot, Postfix) have no network method. Scan by IP (`-n`) when the target
 rejects unknown `Host` names, as CUPS does.
-
-Candidates that were evaluated against lab targets and **discarded** because
-`nmap -sV` already gives the same information, or because no target exposed
-them: `ftp-syst`, `ajp-headers`, NTLM probes (`rdp-ntlm-info`,
-`http-ntlm-info`), `snmp-sysdescr` and `mysql-info`.
 
 ## HTTP fingerprinting
 
@@ -788,6 +696,7 @@ Each CVE receives the **lowest** level among the reasons that produced it.
 | `range_contains` | high | The detected version lies inside the affected range. |
 | `range_overlap` | medium | The detected version range overlaps the affected range. |
 | `series_expanded` | medium | The version was expanded to its release series. |
+| `alias_product` | medium | The CVE is filed under another name of a renamed product (see below). |
 | `update_unknown` | medium | The update level is unknown. |
 | `requires_platform` | medium | The CVE applies only on a specific platform that could not be verified. |
 | `requires_component` | medium | The CVE needs another component that was not detected. |
@@ -795,84 +704,15 @@ Each CVE receives the **lowest** level among the reasons that produced it.
 | `observed_range` | low | Nmap reported a broad version range (for example `3.X - 4.X`). |
 | `platform_mismatch:<family or distro>` | low | The detected platform differs from the one the CVE requires. |
 
-Use `minconf=medium` or `minconf=high` to focus the table and the log on the
-most reliable results.
+NVD renames vendors and products over time. When the database has the
+`product_aliases` view (built from the deprecations of the NVD CPE catalog),
+the script also searches the names that replaced the detected product, and the
+name it replaced. Those CVEs carry `alias_product`, so they never rank above
+`medium`; a CVE found under the detected name keeps its own confidence. A
+database without the view works as before.
 
-# Project architecture
-
-The repository has two runtime components:
-
-- `nmap/src/cvescannerv2.nse` is the entrypoint. It scans discovered services
-  and reads CVE data from SQLite. Its logic lives in the Lua modules under
-  `nmap/src/cvescannerv2/`.
-- `db-manager/` is a Python package that updates and queries that database.
-
-The NSE modules form layers. Each layer number is listed below.
-
-| Module | Layer | Responsibility |
-|--------|-------|----------------|
-| `util` | L0 | Pure string and file helpers. |
-| `state` | L0 | Shared state, the only place where data is shared between threads. |
-| `config` | L0 | Reads and normalizes every script argument. |
-| `cpe` | L0 | Pure CPE 2.2 and 2.3 string parser. |
-| `version` | L1 | Version parsing and comparison. |
-| `match_table` | L2 | Records detected versions and prunes series entries. |
-| `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
-| `catalog.tiers` | L2 | Route classifier into core, family and tail tiers for the sweep. |
-| `reference_files` | L2 | Loads and validates the reference data files. |
-| `db` | L2 | SQLite access. |
-| `log` | L2 | Log file helpers. |
-| `json_report` | L2 | JSON report helpers. |
-| `catalog.store` | L3 | Vulners catalogue loading from `data/` and the local catalogue overlay. |
-| `fingerprint_match` | L3 | Fingerprint matching against catalogue rules and response text. |
-| `sweep_evidence` | L3 | Family and linked-prefix evidence from HTTP responses. |
-| `os_context` | L3 | Operating system context from Nmap and catalogue data. |
-| `probes.smb` | L3 | SMB version and OS probes. |
-| `probes.irc` | L3 | UnrealIRCd version probe. |
-| `probes.ntp` | L3 | ntpd version probe (readvar). |
-| `probes.upnp` | L3 | miniupnpd version probe (SSDP). |
-| `http_fingerprint` | L4 | HTTP fingerprint engine: targeted probes and tiered catalogue sweep. |
-| `probes.cups` | L4 | CUPS version probe from the GET / page title. |
-| `probes.init` | L5 | Probe list, selection and dispatch with a per-key cache. |
-| `version_scope` | L5 | Scope matching of NVD rows against the observed version. |
-| `platform_match` | L5 | OS platform compatibility of CVE configurations. |
-| `confidence` | L5 | Confidence levels and ordering of CVE rows. |
-| `port_matches` | L6 | Match collection for one port. |
-| `text_output` | L6 | Text output lines for one service. |
-| `service_cves` | L7 | Vulnerability lookup for one service and JSON report entries. |
-| `port_analysis` | L8 | Analysis of the matches of one port. |
-| `lifecycle` | L9 | Rules that decide whether the script runs and the Nmap script actions. |
-
-A module only imports modules from strictly lower layers. The rule is checked by
-`nmap/tests/lua/test_architecture.lua`.
-
-To add a service probe, create a new file under `nmap/src/cvescannerv2/probes/`
-that returns a probe table, then register it in `probes/init`: add a `require`
-line and an entry in the `SERVICE_PROBES` list.
-
-The database package separates command-line and Textual interfaces,
-application workflows, domain data and CPE parsing, and infrastructure
-adapters for NVD, Metasploit, Exploit-DB, HTTP and SQLite. See the
-[`db-manager` guide](db-manager/README.md) for its architecture and workflows.
-
-# Measured impact
-
-Measured on the Metasploitable lab targets with `probes=none` (Nmap evidence
-only) against `probes=all`, validating every product–CVE pair independently
-against the raw NVD data and the real service versions. These are lab figures;
-they show what the heuristics do, not a guarantee for other networks.
-
-| Target | Service | Without probes | With probes |
-|---|---|---|---|
-| Metasploitable 2 | Samba | `3.X - 4.X`: 195 CVEs, 131 false positives, all `low` | `3.0.20` (`version_source: smb`): 64 CVEs, 63 `high`, no false positives |
-| Metasploitable 2 | UnrealIRCd | No version: 0 CVEs, misses the backdoor CVE-2010-2075 | `3.2.8.1` (`version_source: irc`): 3 CVEs, all `high`, including CVE-2010-2075 |
-| Metasploitable 3 (Ubuntu) | Samba | `3.X - 4.X`: 195 CVEs, all `low` | `4.3.11`: 77 CVEs, 76 `high` |
-| Metasploitable 2 (all ports) | `high` confidence CVEs | 615 CVEs, 90.9 % confirmed | 681 CVEs, 91.8 % confirmed, no new false positives |
-
-Cost: scan time grew about 4 % on Metasploitable 2 (17.1 s → 17.7 s for the
-service scripts) and was unchanged on Metasploitable 3. On Metasploitable 3
-(Windows) no CVE of the detected services needed a platform check, so the OS
-probe correctly never ran.
+The default is `minconf=medium`. Use `minconf=low` to see everything, and
+`minconf=high` to focus the table and the log on the most reliable results.
 
 # Limitations
 
@@ -961,30 +801,10 @@ uv run --project db-manager db-query --help
 uv run --project db-manager db-query -p "gibbon" -v "25.0.0"
 ```
 
-# Tests
+# Documentation
 
-Run these checks from the repository root. They use temporary SQLite databases
-and mocked external services; the scanner tests do not need Nmap.
-
-```bash
-# Database package
-PYTHONPATH=db-manager/src uv run --project db-manager \
-  python -m unittest discover -s db-manager/tests -v
-
-# Scanner (requires lua5.4; the SQLite suite also needs luasql.sqlite3 and is
-# skipped when it is missing)
-sh nmap/tests/run.sh
-
-# Scanner suites run directly
-lua5.4 nmap/tests/lua/run.lua
-lua5.4 nmap/tests/test_scanner.lua
-```
-
-`nmap/tests/run.sh` runs the HTTP and catalogue-cache tests plus the Lua suites for
-version matching, scoping and platform checks, the catalogue, service probes
-and the SQLite integration. Probe tests use stubbed sockets and Nmap libraries,
-so they never touch the network. See [`nmap/tests/README.md`](nmap/tests/README.md) for
-the containerised runner.
+- [Design decisions](docs/DESIGN.md): why the script behaves this way, and the measured impact.
+- [Development guide](docs/DEVELOPMENT.md): module architecture, adding probes, tests.
 
 # Acknowledgements
 

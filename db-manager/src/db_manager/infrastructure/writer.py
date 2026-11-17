@@ -13,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db_manager.constants import DATABASE_WRITE_BATCH
 from db_manager.domain.models import (
     AffectedRecord,
+    AliasRecord,
     ConditionRecord,
     CveRecord,
     DatabaseCommand,
@@ -98,6 +99,18 @@ async def flush_database_commands(
         for command in commands
         if isinstance(command, ConditionRecord)
     ]
+    aliases = [
+        (
+            command.old_vendor,
+            command.old_product,
+            command.old_version,
+            command.old_update,
+            command.new_vendor,
+            command.new_product,
+        )
+        for command in commands
+        if isinstance(command, AliasRecord)
+    ]
     referenced_exploits = [
         (command.cve_id, command.exploit_id)
         for command in commands
@@ -116,6 +129,7 @@ async def flush_database_commands(
     await database.insert_affected(affected)
     await database.insert_multiaffected(multiaffected)
     await database.insert_conditions(conditions)
+    await database.insert_aliases(aliases)
     await database.insert_referenced_exploits(referenced_exploits)
     await database.insert_referenced_metasploits(referenced_metasploit)
     if page is not None:

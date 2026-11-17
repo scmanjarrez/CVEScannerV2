@@ -37,7 +37,7 @@ local SCHEMA = {
 }
 
 local CVES = {
-  { 'CVE-2010-0425',    '10.0', nil },  -- apache 2.2.8 exact
+  { 'CVE-2010-0425',    '10.0', nil },   -- apache 2.2.8 exact
   { 'CVE-2017-1000118', '5.0',  '7.5' }, -- akka http_server (other vendor)
   { 'CVE-2999-0001',    '5.0',  '9.8' }, -- apache, all versions
   { 'CVE-2999-0002',    '4.3',  '6.1' }, -- apache [2.4.0, 2.4.50)
@@ -48,9 +48,9 @@ local CVES = {
   { 'CVE-2999-0005',    '7.5',  '9.8' }, -- openssh 4.7 p2
   { 'CVE-2999-0006',    '5.0',  '5.3' }, -- openssh < 7.4
   { 'CVE-2011-2523',    '10.0', '9.8' }, -- vsftpd 2.3.4 backdoor (beasts)
-  { 'CVE-2012-0075',    '1.7',  nil },  -- mysql 5.5.20
-  { 'CVE-2999-0007',    '5.0',  nil },  -- product name with a quote
-  { 'CVE-2999-0008',    '5.0',  nil },  -- iis 7.5 through alias
+  { 'CVE-2012-0075',    '1.7',  nil },   -- mysql 5.5.20
+  { 'CVE-2999-0007',    '5.0',  nil },   -- product name with a quote
+  { 'CVE-2999-0008',    '5.0',  nil },   -- iis 7.5 through alias
 }
 
 -- id, vendor, product, version, update
@@ -222,7 +222,8 @@ t.case('same product name from another vendor is not reported', function()
 end)
 
 t.case('output lists product, counts and CVEs sorted by confidence', function()
-  local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8')
+  local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
+    { args = { minconf = 'low' } })
   assert(output, 'no Nmap output for apache 2.2.8')
   t.truthy(output[1]:find('apache http_server 2.2.8', 1, true), 'product')
   t.truthy(output[1]:find('source: nmap_cpe', 1, true), 'version source')
@@ -248,12 +249,12 @@ t.case('minconf=medium hides low CVEs from the table, not the JSON', function()
   t.eq(cve_of(product, 'CVE-2010-0425').confidence, 'high')
 end)
 
-t.case('invalid minconf falls back to low', function()
+t.case('invalid minconf falls back to medium', function()
   local output = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
     { args = { minconf = 'bogus' } })
   assert(output, 'no Nmap output for minconf=bogus')
-  t.eq(output[2], 'CVEs: 2  high: 1  medium: 0  low: 1')
-  t.eq(has_line(output, 'below minconf'), false)
+  t.truthy(has_line(output, '1 below minconf=medium'), 'hidden count line')
+  t.eq(has_line(output, 'CVE-2999-0001'), false)
 end)
 
 t.case('JSON output carries Exploit-DB and Metasploit details', function()
@@ -392,7 +393,7 @@ end)
 
 t.case('maxcve limits printed rows but not JSON', function()
   local output, cves = scan('cpe:/a:apache:http_server:2.2.8', '2.2.8',
-    { args = { maxcve = '1' } })
+    { args = { maxcve = '1', minconf = 'low' } })
   t.eq(#output, 5)
   t.truthy(has_line(output, 'CVE-2010-0425'), 'first row printed')
   t.eq(has_line(output, 'CVE-2999-0001'), false)

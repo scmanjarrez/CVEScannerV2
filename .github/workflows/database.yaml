@@ -83,7 +83,7 @@ jobs:
           set -eu
           if [ "$MODE" = "full" ]; then
             mv cve.db prev.db
-            uv run --project db-manager db-manager -d cve.db --noscrape
+            uv run --project db-manager db-manager -d cve.db --skip-scrape
             sqlite3 cve.db "ATTACH 'prev.db' AS p; UPDATE exploits SET name = (SELECT e.name FROM p.exploits e WHERE e.exploit_id = exploits.exploit_id) WHERE name IS NULL;"
           else
             cp cve.db prev.db

@@ -4,7 +4,7 @@
 -- Opens and closes the luasql connection and runs the catalogue queries.
 -- Its only I/O is the SQLite file. It reads state.vendor_aliases and
 -- writes state.db_env, state.db_conn, state.has_conditions and
--- state.has_cvss_v4.
+-- state.has_aliases and state.has_cvss_v4.
 -- The connection lives in the state module and is read on every call, so
 -- tests can replace state.db_conn with a fake connection.
 
@@ -108,6 +108,24 @@ local function sql_template(name)
              INNER JOIN products ON conditions.product_id = products.product_id
              WHERE products.vendor IN (${v}) AND products.product = '${p}'
              ]]
+  elseif name == 'product_aliases' then
+    -- Names that replaced the product (followed through every rename) plus
+    -- the names the product replaced (one step back).
+    return [[
+             WITH RECURSIVE forward(vendor, product) AS (
+               SELECT new_vendor, new_product FROM product_aliases
+               WHERE old_vendor IN (${v}) AND old_product = '${p}'
+               UNION
+               SELECT next.new_vendor, next.new_product
+               FROM product_aliases AS next
+               INNER JOIN forward ON next.old_vendor = forward.vendor
+                 AND next.old_product = forward.product
+             )
+             SELECT vendor, product FROM forward
+             UNION
+             SELECT old_vendor, old_product FROM product_aliases
+             WHERE new_vendor IN (${v}) AND new_product = '${p}'
+             ]]
   elseif name == 'exact_affected' then
     return [[
              SELECT affected.cve_id, cves.cvss_v2, cves.cvss_v3, ${c4},
@@ -181,6 +199,20 @@ local function has_conditions()
     cur:close()
   end
   return state.has_conditions
+end
+
+
+-- Return true when the database has the product_aliases view. Checked once.
+-- Databases built before product aliases lack it. Nothing is logged here.
+local function has_aliases()
+  if state.has_aliases == nil then
+    local cur = state.db_conn:execute(
+      "SELECT name FROM sqlite_master "
+      .. "WHERE type IN ('table', 'view') AND name = 'product_aliases'")
+    state.has_aliases = cur:fetch() ~= nil
+    cur:close()
+  end
+  return state.has_aliases
 end
 
 
@@ -316,6 +348,29 @@ local function platform_condition_rows(vendors, product)
 end
 
 
+-- Return the other vendor and product names of a renamed product as a list
+-- of {vendor, product} tables. The list is empty when the database has no
+-- product_aliases view or the product was never renamed.
+local function alias_names(vendors, product)
+  local names = {}
+  if not has_aliases() then return names end
+  local own = {}
+  for _, vendor in ipairs(vendors) do own[vendor] = true end
+  local cur = state.db_conn:execute(
+    format_sql_named(sql_template('product_aliases'),
+      { v = vendors, p = product }))
+  local vendor, name = cur:fetch()
+  while vendor do
+    if not (own[vendor] and name == product) then
+      names[#names + 1] = { vendor = vendor, product = name }
+    end
+    vendor, name = cur:fetch()
+  end
+  cur:close()
+  return names
+end
+
+
 --- Open the database file at path and keep the connection in the state.
 function M.open(path)
   state.db_env = sql.sqlite3()
@@ -335,6 +390,8 @@ M.sql_template = sql_template
 M.vendor_scope = vendor_scope
 M.series_has_children = series_has_children
 M.has_conditions = has_conditions
+M.has_aliases = has_aliases
+M.alias_names = alias_names
 M.has_cvss_v4 = has_cvss_v4
 M.exploitdb_refs = exploitdb_refs
 M.metasploit_refs = metasploit_refs

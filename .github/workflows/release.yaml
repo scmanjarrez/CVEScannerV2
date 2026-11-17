@@ -1,0 +1,164 @@
+name: Release tarballs
+
+# Builds two self-contained tarballs (with and without the CVE database) that
+# only need a local Nmap with lsqlite3 support. Both include the NSE script,
+# its Lua modules and every JSON file the scanner reads, so nothing has to be
+# downloaded at scan time.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the tarballs to (empty: only keep workflow artifacts)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package tarballs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        shell: bash
+        run: |
+          set -eu
+          if ! command -v sqlite3 >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y sqlite3 jq
+          fi
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          set -eu
+          VERSION="${RELEASE_TAG:-${GITHUB_SHA::7}}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Version: $VERSION"
+
+      - name: Download HTTP catalogue
+        shell: bash
+        run: |
+          set -eu
+          scripts/download-catalog.sh -d "$RUNNER_TEMP/catalog"
+          for name in index fingerprints paths probes; do
+            test -s "$RUNNER_TEMP/catalog/$name.json"
+          done
+
+      - name: Build database from CVEScannerV2DB
+        shell: bash
+        run: |
+          set -eu
+          git clone --depth 1 --branch master \
+            https://github.com/scmanjarrez/CVEScannerV2DB.git "$RUNNER_TEMP/dbrepo"
+          (cd "$RUNNER_TEMP/dbrepo" && sh build.sh -o "$RUNNER_TEMP/cve.db")
+          test -s "$RUNNER_TEMP/cve.db"
+          INTEGRITY=$(sqlite3 "$RUNNER_TEMP/cve.db" "PRAGMA quick_check")
+          if [ "$INTEGRITY" != "ok" ]; then
+            echo "::error::quick_check failed: $INTEGRITY"
+            exit 1
+          fi
+          HAS_CONDITIONS=$(sqlite3 "$RUNNER_TEMP/cve.db" "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='conditions'")
+          HAS_CVSS_V4=$(sqlite3 "$RUNNER_TEMP/cve.db" "SELECT count(*) FROM pragma_table_info('cves') WHERE name='cvss_v4'")
+          if [ "$HAS_CONDITIONS" != "1" ] || [ "$HAS_CVSS_V4" != "1" ]; then
+            echo "::error::CVEScannerV2DB does not hold a v4 database; run the 'Update database' workflow first"
+            exit 1
+          fi
+
+      - name: Assemble tarballs
+        shell: bash
+        run: |
+          set -eu
+          BASE="cvescannerv2-${VERSION}"
+          mkdir dist
+          for variant in nodb db; do
+            NAME="${BASE}-${variant}"
+            DIR="dist/$NAME"
+            mkdir -p "$DIR/data"
+            cp nmap/src/cvescannerv2.nse "$DIR/"
+            cp -r nmap/src/cvescannerv2 "$DIR/"
+            cp LICENSE "$DIR/"
+            cp data/product-aliases.json data/vendor-aliases.json \
+               data/platform-families.json data/local-catalog.json \
+               data/product-cpe.json "$DIR/data/"
+            cp "$RUNNER_TEMP"/catalog/*.json "$DIR/data/"
+            if [ "$variant" = "db" ]; then
+              cp "$RUNNER_TEMP/cve.db" "$DIR/data/cve.db"
+              DBNOTE="The CVE database is included at data/cve.db."
+            else
+              DBNOTE="No database included: pass your own with --script-args db=/path/to/cve.db (see https://github.com/scmanjarrez/CVEScannerV2DB)."
+            fi
+            cat > "$DIR/README.txt" <<EOF
+          CVEScannerV2 ${VERSION} (${variant})
+
+          $DBNOTE
+
+          Usage (run from this directory; data paths are relative to it):
+
+              cd $NAME
+              nmap -sV --script ./cvescannerv2.nse <target>
+
+          Requires Nmap with Lua sqlite3 (lsqlite3) support.
+          Documentation: https://github.com/scmanjarrez/CVEScannerV2
+          EOF
+            sed -i 's/^          //' "$DIR/README.txt"
+            tar -C dist --owner=0 --group=0 -czf "dist/$NAME.tar.gz" "$NAME"
+            rm -rf "$DIR"
+          done
+          (cd dist && sha256sum ./*.tar.gz | sed 's# \./# #' > SHA256SUMS)
+          ls -lh dist
+
+      - name: Verify tarballs
+        shell: bash
+        run: |
+          set -eu
+          BASE="cvescannerv2-${VERSION}"
+          for variant in nodb db; do
+            CHECK="$RUNNER_TEMP/check-$variant"
+            mkdir -p "$CHECK"
+            tar -C "$CHECK" -xzf "dist/${BASE}-${variant}.tar.gz"
+            ROOT="$CHECK/${BASE}-${variant}"
+            for f in cvescannerv2.nse cvescannerv2/config.lua LICENSE README.txt \
+                     data/product-aliases.json data/vendor-aliases.json \
+                     data/platform-families.json data/local-catalog.json \
+                     data/product-cpe.json data/index.json \
+                     data/fingerprints.json data/paths.json data/probes.json; do
+              test -s "$ROOT/$f" || { echo "::error::$variant: missing $f"; exit 1; }
+            done
+            for j in "$ROOT"/data/*.json; do jq -e . "$j" >/dev/null; done
+            if [ "$variant" = "db" ]; then
+              test "$(sqlite3 "$ROOT/data/cve.db" 'PRAGMA quick_check')" = "ok"
+            else
+              test ! -e "$ROOT/data/cve.db"
+            fi
+          done
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarballs
+          path: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          retention-days: 15
+
+      - name: Attach to release
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        run: |
+          set -eu
+          gh release upload "$RELEASE_TAG" dist/*.tar.gz dist/SHA256SUMS \
+            --clobber --repo "$GITHUB_REPOSITORY"

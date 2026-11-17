@@ -5,7 +5,8 @@
 -- them by confidence and the exploit references, and returns the result
 -- table that text_output and json_report render. I/O: SQL reads through
 -- db and warnings through log; no report or output writes, no network or
--- files. Reads state.has_conditions, state.has_cvss_v4, config.minconf.
+-- files. Reads state.has_conditions, state.has_aliases, state.has_cvss_v4,
+-- config.minconf.
 
 local util = require 'cvescannerv2.util'
 local config = require 'cvescannerv2.config'
@@ -21,12 +22,14 @@ local is_blank, fmt = util.is_blank, util.fmt
 local vendor_scope = db.vendor_scope
 local series_has_children = db.series_has_children
 local has_conditions = db.has_conditions
+local alias_names = db.alias_names
 local display_version = version.display_version
 local series_prefix = version.series_prefix
 local spans_series = version.spans_series
 local scoped_multi_versions = scope.scoped_multi_versions
 local scoped_versions = scope.scoped_versions
 local merge_series = scope.merge_series
+local merge_alias = scope.merge_alias
 local platform_probe_needed = platform.platform_probe_needed
 local strip_platform_reasons = platform.strip_platform_reasons
 local confidence_comparator = confidence.confidence_comparator
@@ -88,6 +91,16 @@ local function cve_entry(id, rec)
 end
 
 
+-- True when the record was found through another name of a renamed product.
+local function found_by_alias(rec)
+  if rec == nil then return false end
+  for _, reason in ipairs(rec.reasons or {}) do
+    if reason == 'alias_product' then return true end
+  end
+  return false
+end
+
+
 -- Append the platform reasons of the CVEs in vulns to rec.reasons.
 -- No CVE is removed; the visible output does not change.
 local function add_platform_reasons(vulns, vendors, product, os_ctx)
@@ -100,6 +113,16 @@ local function add_platform_reasons(vulns, vendors, product, os_ctx)
   end
   if present then
     rows_by_cve = db.platform_condition_rows(vendors, product)
+    -- The conditions of a renamed product apply only to the CVEs found
+    -- through that name, not to the ones the detected name already found.
+    for _, alias in ipairs(alias_names(vendors, product)) do
+      local rows = db.platform_condition_rows({ alias.vendor }, alias.product)
+      for cve, cve_rows in pairs(rows) do
+        if rows_by_cve[cve] == nil and found_by_alias(vulns[cve]) then
+          rows_by_cve[cve] = cve_rows
+        end
+      end
+    end
   end
   platform.add_platform_reasons(vulns, rows_by_cve, os_ctx)
 end
@@ -167,6 +190,20 @@ local function collect_exact(vendors, product, bounds, series, expand, vulns)
 end
 
 
+-- Add to vulns the CVEs filed under the other names of a renamed product.
+local function collect_alias(vendors, product, info, bounds, series, vulns)
+  for _, alias in ipairs(alias_names(vendors, product)) do
+    local names = { alias.vendor }
+    local found, expand = collect_multi(names, alias.product, info, bounds,
+      series)
+    if not info.matches_any then
+      collect_exact(names, alias.product, bounds, series, expand, found)
+    end
+    merge_alias(found, vulns)
+  end
+end
+
+
 -- Return the CVEs that affect the service, with their scope reasons.
 local function find_cves(vendors, product, info, bounds)
   local series = series_prefix(info)
@@ -174,6 +211,7 @@ local function find_cves(vendors, product, info, bounds)
   if not info.matches_any then
     collect_exact(vendors, product, bounds, series, expand, vulns)
   end
+  collect_alias(vendors, product, info, bounds, series, vulns)
   if info.is_range and spans_series(info.from, info.to) then
     add_reason(vulns, 'observed_range')
   end

@@ -39,7 +39,9 @@ from db_manager.constants import (
 from db_manager.domain.cpe import parse_conditions, parse_node, split
 from db_manager.domain.models import (
     AffectedRecord,
+    AliasRecord,
     ConditionRecord,
+    CpeIdentity,
     CveRecord,
     DatabaseArguments,
     DatabaseCommand,
@@ -48,6 +50,7 @@ from db_manager.domain.models import (
     ImmutableModel,
     MultiAffectedRecord,
     NvdConfiguration,
+    NvdCpe,
     NvdCpeResponse,
     NvdCve,
     NvdCveResponse,
@@ -226,7 +229,42 @@ def now() -> str:
     )
 
 
-def _cpe_commands(
+def _alias_commands(
+    identity: CpeIdentity,
+    cpe: NvdCpe,
+) -> list[DatabaseCommand]:
+    """Build the rename records of one deprecated application CPE.
+
+    Args:
+        identity: Identity of the CPE catalog entry.
+        cpe: Validated CPE catalog entry with its replacing names.
+
+    Returns:
+        One record per replacing application product whose vendor or
+        product differs from the deprecated one.
+
+    Raises:
+        ValueError: If a replacing CPE name is unsupported or incomplete.
+    """
+    if not cpe.deprecated:
+        return []
+    aliases: dict[tuple[str, str], DatabaseCommand] = {}
+    for replacement in cpe.deprecated_by:
+        new = split(replacement.cpe_name)
+        if new[0] != "a" or new[1:3] == identity[1:3]:
+            continue
+        aliases[(new[1], new[2])] = AliasRecord(
+            old_vendor=identity[1],
+            old_product=identity[2],
+            old_version=identity[3],
+            old_update=identity[4],
+            new_vendor=new[1],
+            new_product=new[2],
+        )
+    return list(aliases.values())
+
+
+def cpe_commands(
     content: bytes,
     url: str,
 ) -> tuple[int, list[DatabaseCommand]]:
@@ -255,6 +293,7 @@ def _cpe_commands(
         identity = split(product_record.cpe.cpe_name)
         if identity[0] == "a":
             commands.append(ProductRecord(identity=identity))
+            commands.extend(_alias_commands(identity, product_record.cpe))
     return len(cpe_data.products), commands
 
 
@@ -528,7 +567,7 @@ async def _query_api(
                 raise RuntimeError(message)
             # Hand the writer a complete page, never half a CVE replacement.
             if request.endpoint == "cpes":
-                count, commands = _cpe_commands(
+                count, commands = cpe_commands(
                     response.content,
                     request.url,
                 )
@@ -1017,7 +1056,7 @@ def _raw_page_commands(
         ValueError: If a CPE criteria string is unsupported or incomplete.
     """
     if job.endpoint == "cpes":
-        count, commands = _cpe_commands(content, url)
+        count, commands = cpe_commands(content, url)
     else:
         count, commands = _cve_commands(
             content,

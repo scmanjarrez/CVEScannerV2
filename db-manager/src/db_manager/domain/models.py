@@ -206,16 +206,40 @@ class NvdVulnerability(ExternalDataModel):
     cve: NvdCve = Field(description="CVE fields used by the importer.")
 
 
+class NvdCpeDeprecation(ExternalDataModel):
+    """Represent the CPE name that replaces a deprecated one.
+
+    Attributes:
+        cpe_name: Formatted name of the replacing CPE.
+    """
+
+    cpe_name: str = Field(
+        alias="cpeName",
+        description="Formatted name of the replacing CPE.",
+    )
+
+
 class NvdCpe(ExternalDataModel):
     """Represent a CPE name in the NVD catalog.
 
     Attributes:
         cpe_name: Formatted CPE name.
+        deprecated: Whether NVD replaced this CPE name.
+        deprecated_by: CPE names that replace this one.
     """
 
     cpe_name: str = Field(
         alias="cpeName",
         description="Formatted CPE name.",
+    )
+    deprecated: bool = Field(
+        default=False,
+        description="Whether NVD replaced this CPE name.",
+    )
+    deprecated_by: list[NvdCpeDeprecation] = Field(
+        default_factory=list,
+        alias="deprecatedBy",
+        description="CPE names that replace this one.",
     )
 
 
@@ -307,13 +331,13 @@ class DatabaseArguments(ImmutableModel):
 
     Attributes:
         database: Path to the SQLite database.
-        noscrape: Whether to skip Exploit-DB title scraping.
+        skip_scrape: Whether to skip Exploit-DB title scraping.
         nvd_raw: Directory with raw NVD pages to import instead of querying
             NVD.
     """
 
     database: Path = Field(description="Path to the SQLite database.")
-    noscrape: bool = Field(
+    skip_scrape: bool = Field(
         default=False,
         description="Whether to skip Exploit-DB title scraping.",
     )
@@ -468,6 +492,26 @@ class ConditionRecord(ImmutableModel):
     )
 
 
+class AliasRecord(ImmutableModel):
+    """Queue one deprecated application CPE and its replacing product.
+
+    Attributes:
+        old_vendor: Vendor of the deprecated CPE.
+        old_product: Product of the deprecated CPE.
+        old_version: Version of the deprecated CPE.
+        old_update: Update of the deprecated CPE.
+        new_vendor: Vendor of the replacing CPE.
+        new_product: Product of the replacing CPE.
+    """
+
+    old_vendor: str = Field(description="Vendor of the deprecated CPE.")
+    old_product: str = Field(description="Product of the deprecated CPE.")
+    old_version: str = Field(description="Version of the deprecated CPE.")
+    old_update: str = Field(description="Update of the deprecated CPE.")
+    new_vendor: str = Field(description="Vendor of the replacing CPE.")
+    new_product: str = Field(description="Product of the replacing CPE.")
+
+
 class FlushMarker(BaseModel):
     """Mark the point where queued writes must finish.
 
@@ -498,6 +542,7 @@ DatabaseCommand = (
     | ReferencedExploitRecord
     | ReferencedMetasploitRecord
     | ConditionRecord
+    | AliasRecord
 )
 
 

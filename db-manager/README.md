@@ -48,7 +48,7 @@ by a single batched writer. For each changed CVE, old rows are removed before
 the current record and references are rebuilt.
 
 After NVD processing, the updater refreshes Metasploit module references and
-optionally fetches Exploit-DB titles. Use `--noscrape` to skip title requests.
+optionally fetches Exploit-DB titles. Use `--skip-scrape` (alias `-sk`) to skip title requests.
 The NVD sync timestamp is saved after the update stages complete. HTTP 429 and
 selected server errors are retried up to three times, honoring `Retry-After`.
 
@@ -65,6 +65,25 @@ database is updated and the records are re-imported.
 `query` shows one `CVSS` column with the available scores, newest first
 (`v4:9.3 v3:9.8 v2:7.5`); a CVE without scores shows `-`. The table no longer
 has separate CVSSv2 and CVSSv3 columns.
+
+## Renamed products
+
+NVD renames vendors and products over the years, and the same CVE can be filed
+under an old name in one place and a new one in another. The CPE catalog marks
+each replaced entry as `deprecated` with the entries that replace it
+(`deprecatedBy`). The updater stores one row per deprecated application entry
+in the `aliases` table when it imports the CPE catalog, and `setup()` creates
+the `product_aliases` view on top of it.
+
+The view lists `old vendor/product -> new vendor/product` pairs and keeps a
+pair only when at least half of the catalog entries of the old product were
+replaced by the new one. That drops partial deprecations of products that are
+still current (`firefox` to `firefox_mobile`, `acrobat` to `acrobat_dc`) and
+keeps real renames (`firefox_esr` to `firefox`, `misp` to `misp-project/misp`).
+The scanner reads only this view. An existing database gets the table and the
+view on the next run, but the rows arrive only when the CPE catalog is
+imported again, for example with `db-manager --nvd-raw data/nvd-raw` or in a
+full update.
 
 ## Performance
 
@@ -88,6 +107,8 @@ Overlapping page parsing with writes in a thread was tried and discarded: the
 Python parsing holds the GIL, so it gave no measurable speedup and used more memory.
 Further gains would need parsing in separate processes.
 
+## Querying the database
+
 Without arguments, `db-query` prints its help; `-i` opens the Textual
 interface and suggests product names from the database. Search results separate
 exact-version matches from version ranges, apply inclusive or exclusive NVD
@@ -106,6 +127,8 @@ uv run --project db-manager db-query -p "gibbon" -v "25.0.0"
 uv run --project db-manager db-query -p "gibbon" --raw --debug
 ```
 
+## Usage
+
 From the repository root, install the package dependencies with:
 
 ```bash
@@ -117,7 +140,7 @@ Then run either command from the repository root:
 ```bash
 uv run --project db-manager db-manager --help
 uv run --project db-manager db-manager
-uv run --project db-manager db-manager --database data/cve.db --noscrape
+uv run --project db-manager db-manager --database data/cve.db --skip-scrape
 uv run --project db-manager db-manager --nvd-raw data/nvd-raw
 uv run --project db-manager db-query --help
 uv run --project db-manager db-query -i
@@ -128,7 +151,7 @@ When working from this directory, the shorter commands are available:
 
 ```bash
 uv run db-manager --help
-uv run db-manager --noscrape
+uv run db-manager --skip-scrape
 uv run db-query --help
 uv run db-query -i
 ```
@@ -145,7 +168,7 @@ uv run db-manager --nvd-raw data/nvd-raw
 ```
 
 No NVD API key is required in this mode, and NVD is not contacted for CVE or
-CPE data. Metasploit and Exploit-DB remain online sources, so `--noscrape`
+CPE data. Metasploit and Exploit-DB remain online sources, so `--skip-scrape`
 still applies to the Exploit-DB title requests.
 
 Restart the same command with the same database to resume an interrupted
@@ -170,6 +193,7 @@ under `data/nvd-raw/<endpoint>/<window>/page-<offset>.json`, next to a
 uv run --project db-manager python -m db_manager.cli.nvd_raw
 uv run --project db-manager python -m db_manager.cli.nvd_raw --endpoint cves
 uv run --project db-manager python -m db_manager.cli.nvd_raw --since 2026-01-31
+uv run --project db-manager python -m db_manager.cli.nvd_raw --output data/nvd-raw
 ```
 
 Without `--since`, the script downloads a full snapshot in `full/`. With
@@ -179,3 +203,5 @@ so only new changes are requested. Completed windows and saved pages are
 skipped, so rerunning the command after an interruption resumes it. The NVD
 API key is optional here (it is read from `.api` or `NVD_KEY`), but without
 one requests are spaced six seconds apart.
+
+Use `-o`/`--output DIR` to change the directory that receives the pages (default `data/nvd-raw`).

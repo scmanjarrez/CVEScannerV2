@@ -168,13 +168,13 @@ async def update_exploitdb(
     """
     async with Database(args.database) as database:
         await database.clean()
-        if not args.noscrape:
+        if not args.skip_scrape:
             exploits = await database.cached_exploits()
         else:
             exploits = []
 
     if not exploits:
-        if args.noscrape:
+        if args.skip_scrape:
             console.print("[dim]Exploit-DB title scraping skipped.[/]")
         else:
             console.print("[dim]No Exploit-DB titles need refreshing.[/]")

@@ -28,6 +28,7 @@ local REASON_LEVEL = {
   range_contains = 'high',
   range_overlap = 'medium',
   series_expanded = 'medium',
+  alias_product = 'medium',
   update_unknown = 'medium',
   requires_platform = 'medium',
   requires_component = 'medium',

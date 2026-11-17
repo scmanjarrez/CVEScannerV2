@@ -6,8 +6,11 @@
 
 local M = {}
 
--- Table name, number of columns, and DDL. The conditions table exists only
--- when the spec has a 'conditions' list, which models a database that has it.
+-- Table name, number of columns, and DDL. The conditions and aliases tables
+-- exist only when the spec has a list for them, which models a database
+-- that has them.
+local OPTIONAL = { conditions = true, product_aliases = true }
+
 local SCHEMA = {
   {
     name = 'cves',
@@ -47,6 +50,13 @@ local SCHEMA = {
     cve_id TEXT, product_id INTEGER, config_idx INTEGER, part TEXT,
     vendor TEXT, product TEXT, PRIMARY KEY (cve_id, product_id, config_idx,
     part, vendor, product))]]
+  },
+  {
+    name = 'product_aliases',
+    width = 4,
+    ddl = [[CREATE TABLE product_aliases (
+    old_vendor TEXT, old_product TEXT, new_vendor TEXT, new_product TEXT,
+    PRIMARY KEY (old_vendor, old_product, new_vendor, new_product))]]
   },
   {
     name = 'exploits',
@@ -108,7 +118,7 @@ function M.create(spec, sqlite)
   local env = assert(sqlite.sqlite3())
   local conn = assert(env:connect(path))
   for _, def in ipairs(SCHEMA) do
-    if def.name ~= 'conditions' or spec.conditions ~= nil then
+    if not OPTIONAL[def.name] or spec[def.name] ~= nil then
       local ddl, width = def.ddl, def.width
       if def.legacy_ddl and spec.legacy_cves then
         ddl, width = def.legacy_ddl, def.legacy_width

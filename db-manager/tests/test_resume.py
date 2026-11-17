@@ -170,7 +170,7 @@ class ResumeTests(unittest.IsolatedAsyncioTestCase):
             tempfile.TemporaryDirectory()
         )
         self.path = Path(self.directory.name) / "cve.db"
-        self.args = DatabaseArguments(database=self.path, noscrape=True)
+        self.args = DatabaseArguments(database=self.path, skip_scrape=True)
         async with Database(self.path) as database:
             await database.setup()
 
@@ -344,7 +344,7 @@ class ResumeTests(unittest.IsolatedAsyncioTestCase):
                 # incremental update of the first scenario's successful run.
                 self.path = Path(self.directory.name) / "second.db"
                 self.args = DatabaseArguments(
-                    database=self.path, noscrape=True
+                    database=self.path, skip_scrape=True
                 )
 
     async def test_invalid_pages_have_no_checkpoint(self: Self) -> None:

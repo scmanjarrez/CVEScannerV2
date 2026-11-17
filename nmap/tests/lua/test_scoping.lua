@@ -662,10 +662,11 @@ db_case('minconf=medium hides low rows; result keeps them', function()
   t.eq(result.counts.low, result.counts.total)
 end)
 
-db_case('invalid minconf value behaves as low', function()
+db_case('invalid minconf value behaves as medium', function()
   local result = scan_args({ minconf = 'bogus' },
     { children = false, affected = rows }, range_info)
-  t.eq(result.counts.shown, result.counts.total)
+  t.truthy(result.counts.total > 0)
+  t.eq(result.counts.shown, 0)
 end)
 
 db_case('rows sort by confidence before CVSS, with the label', function()
@@ -813,3 +814,147 @@ end)
 
 -- Remove the temporary databases created by the database cases.
 for _, path in ipairs(PATHS) do os.remove(path) end
+
+
+t.suite('product aliases (renamed products)')
+
+-- Database with Tomcat renamed from Catalina and a three-step chain.
+local ALIAS_PRODUCTS = {
+  { 1, 'apache', 'tomcat',   '5.5', '*' },
+  { 2, 'apache', 'catalina', '5.5', '*' },
+  { 3, 'apache', 'alpha',    '5.5', '*' },
+  { 4, 'apache', 'beta',     '5.5', '*' },
+  { 5, 'apache', 'gamma',    '5.5', '*' },
+}
+
+local function alias_spec(affected, aliases)
+  local cves = {}
+  local seen = {}
+  for _, row in ipairs(affected) do
+    if not seen[row[1]] then
+      seen[row[1]] = true
+      table.insert(cves, { row[1], '5.0', nil, 2000, nil })
+    end
+  end
+  return {
+    cves = cves,
+    products = ALIAS_PRODUCTS,
+    affected = affected,
+    product_aliases = aliases,
+  }
+end
+
+-- Scan product 5.5 against a fresh scanner and the given database spec.
+local function alias_scan(spec, product)
+  local sc = t.load_scanner({ sql = sqlite })
+  local path = fixture.create(spec, sqlite)
+  table.insert(PATHS, path)
+  local reg = sc.modules.state
+  reg.db_env, reg.db_conn = fixture.open(path, sqlite)
+  reg.log_file = { write = function() end }
+  return sc.modules.service_cves.find_service_cves({ ip = '10.0.0.1' },
+    { number = 80, protocol = 'tcp', service = 'http' },
+    'cpe:/a:apache:' .. product .. ':5.5', 'apache', product, info_of('5.5'),
+    nil)
+end
+
+local RENAME = { { 'apache', 'catalina', 'apache', 'tomcat' } }
+
+db_case('old product name finds the CVEs filed under the new name', function()
+  local result = alias_scan(alias_spec({
+    { 'CVE-OLD', 1 }, { 'CVE-NEW', 2 },
+  }, RENAME), 'tomcat')
+  -- High confidence first, then the alias match.
+  t.eq(ids_of(result), { 'CVE-OLD', 'CVE-NEW' })
+end)
+
+db_case('alias CVEs get alias_product and medium confidence', function()
+  local result = alias_scan(alias_spec({
+    { 'CVE-OWN', 1 }, { 'CVE-ALIAS', 2 },
+  }, RENAME), 'tomcat')
+  t.eq(entry_of(result, 'CVE-OWN').confidence, 'high')
+  local alias = entry_of(result, 'CVE-ALIAS')
+  assert(alias, 'CVE-ALIAS missing')
+  t.eq(alias.confidence, 'medium')
+  t.eq(alias.reasons, { 'exact_version', 'alias_product' })
+end)
+
+db_case('forward lookup: renamed name finds CVEs of the new name', function()
+  local result = alias_scan(alias_spec({
+    { 'CVE-OWN', 2 }, { 'CVE-NEW', 1 },
+  }, RENAME), 'catalina')
+  t.eq(entry_of(result, 'CVE-OWN').confidence, 'high')
+  t.eq(entry_of(result, 'CVE-NEW').confidence, 'medium')
+end)
+
+db_case('a CVE under both names keeps its own confidence', function()
+  local result = alias_scan(alias_spec({
+    { 'CVE-BOTH', 1 }, { 'CVE-BOTH', 2 },
+  }, RENAME), 'tomcat')
+  t.eq(result.counts.total, 1)
+  t.eq(entry_of(result, 'CVE-BOTH').reasons, { 'exact_version' })
+end)
+
+db_case('forward lookup follows a chain of renames', function()
+  local chain = {
+    { 'apache', 'alpha', 'apache', 'beta' },
+    { 'apache', 'beta',  'apache', 'gamma' },
+  }
+  local affected = { { 'CVE-A', 3 }, { 'CVE-B', 4 }, { 'CVE-C', 5 } }
+  t.eq(ids_of(alias_scan(alias_spec(affected, chain), 'alpha')),
+    { 'CVE-A', 'CVE-B', 'CVE-C' })
+  -- Backwards only the previous name is searched, not the whole chain.
+  t.eq(ids_of(alias_scan(alias_spec(affected, chain), 'gamma')),
+    { 'CVE-C', 'CVE-B' })
+end)
+
+db_case('a database without product_aliases behaves as before', function()
+  local result = alias_scan(alias_spec({
+    { 'CVE-OWN', 1 }, { 'CVE-OTHER', 2 },
+  }, nil), 'tomcat')
+  t.eq(ids_of(result), { 'CVE-OWN' })
+end)
+
+t.case('merge_alias appends the reason and keeps existing CVEs', function()
+  local vulns = { KEEP = { reasons = { 'exact_version' } } }
+  s.modules.version_scope.merge_alias({
+    KEEP = { reasons = { 'range_overlap' } },
+    NEW = { reasons = { 'range_contains' } },
+  }, vulns)
+  t.eq(vulns.KEEP.reasons, { 'exact_version' })
+  t.eq(vulns.NEW.reasons, { 'range_contains', 'alias_product' })
+end)
+
+t.case('alias_product lowers a high match to medium only', function()
+  local confidence_of = s.modules.confidence.confidence_of
+  t.eq(confidence_of({ 'exact_version', 'alias_product' }), 'medium')
+  t.eq(confidence_of({ 'nvd_unbounded', 'alias_product' }), 'low')
+end)
+
+db_case('alias conditions apply only to CVEs found through the alias', function()
+  local sc = t.load_scanner({ sql = sqlite })
+  local reg = sc.modules.state
+  reg.platform_families = FAMILIES
+  reg.log_file = { write = function() end }
+  local path = fixture.create({
+    cves = {},
+    products = ALIAS_PRODUCTS,
+    affected = {},
+    conditions = {
+      { 'CVE-OWN',   2, 0, 'o', 'microsoft', 'windows' },
+      { 'CVE-ALIAS', 2, 0, 'o', 'microsoft', 'windows' },
+    },
+    product_aliases = RENAME,
+  }, sqlite)
+  table.insert(PATHS, path)
+  reg.db_env, reg.db_conn = fixture.open(path, sqlite)
+  local vulns = {
+    ['CVE-OWN'] = { reasons = { 'exact_version' } },
+    ['CVE-ALIAS'] = { reasons = { 'exact_version', 'alias_product' } },
+  }
+  sc.modules.service_cves.add_platform_reasons(vulns, { 'apache' }, 'tomcat',
+    { family = 'linux' })
+  t.eq(vulns['CVE-OWN'].reasons, { 'exact_version' })
+  t.eq(vulns['CVE-ALIAS'].reasons,
+    { 'exact_version', 'alias_product', 'platform_mismatch:windows' })
+end)

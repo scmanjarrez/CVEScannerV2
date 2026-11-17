@@ -275,6 +275,28 @@ class ConditionModel(Base):
     product: Mapped[str] = mapped_column(String, primary_key=True)
 
 
+class AliasModel(Base):
+    """Record one deprecated application CPE and its replacing product.
+
+    Attributes:
+        old_vendor: Vendor of the deprecated CPE.
+        old_product: Product of the deprecated CPE.
+        old_version: Version of the deprecated CPE.
+        old_update: Update of the deprecated CPE.
+        new_vendor: Vendor of the replacing CPE.
+        new_product: Product of the replacing CPE.
+    """
+
+    __tablename__ = "aliases"
+
+    old_vendor: Mapped[str] = mapped_column(String, primary_key=True)
+    old_product: Mapped[str] = mapped_column(String, primary_key=True)
+    old_version: Mapped[str] = mapped_column(String, primary_key=True)
+    old_update: Mapped[str] = mapped_column(String, primary_key=True)
+    new_vendor: Mapped[str] = mapped_column(String, primary_key=True)
+    new_product: Mapped[str] = mapped_column(String, primary_key=True)
+
+
 class ReferencedExploitModel(Base):
     """Link CVEs to referenced Exploit-DB records.
 
@@ -309,6 +331,22 @@ class ReferencedMetasploitModel(Base):
     metasploit_id: Mapped[int] = mapped_column(
         ForeignKey("metasploits.metasploit_id"), primary_key=True
     )
+
+
+# Renamed products: an old name qualifies when at least half of its catalog
+# entries were replaced by the new one. This drops partial deprecations of
+# products that are still current, such as one platform of a product.
+PRODUCT_ALIASES_VIEW = """
+CREATE VIEW IF NOT EXISTS product_aliases AS
+SELECT old_vendor, old_product, new_vendor, new_product
+FROM aliases
+GROUP BY old_vendor, old_product, new_vendor, new_product
+HAVING COUNT(*) * 2 >= (
+    SELECT COUNT(*) FROM products
+    WHERE products.vendor = aliases.old_vendor
+      AND products.product = aliases.old_product
+)
+"""
 
 
 def _core_table(name: str) -> Table:
@@ -482,6 +520,7 @@ class Database:
                 CreateIndex(MULTIAFFECTED_BOUNDS_INDEX, if_not_exists=True)
             )
             await _add_missing_cvss_v4(connection)
+            await connection.execute(text(PRODUCT_ALIASES_VIEW))
 
     async def commit(self: Self) -> None:
         """Commit the active batch of database changes.
@@ -889,6 +928,41 @@ class Database:
         if values:
             statement = sqlite_insert(
                 _core_table("conditions")
+            ).on_conflict_do_nothing()
+            connection = await self.session.connection()
+            await connection.execute(statement, values)
+
+    async def insert_aliases(
+        self: Self,
+        aliases: Sequence[tuple[str, str, str, str, str, str]],
+    ) -> None:
+        """Insert deprecated application CPEs with their replacements.
+
+        Args:
+            aliases: Old vendor, product, version and update, followed by the
+                new vendor and product.
+        """
+        values = [
+            {
+                "old_vendor": old_vendor,
+                "old_product": old_product,
+                "old_version": old_version,
+                "old_update": old_update,
+                "new_vendor": new_vendor,
+                "new_product": new_product,
+            }
+            for (
+                old_vendor,
+                old_product,
+                old_version,
+                old_update,
+                new_vendor,
+                new_product,
+            ) in aliases
+        ]
+        if values:
+            statement = sqlite_insert(
+                _core_table("aliases")
             ).on_conflict_do_nothing()
             connection = await self.session.connection()
             await connection.execute(statement, values)
