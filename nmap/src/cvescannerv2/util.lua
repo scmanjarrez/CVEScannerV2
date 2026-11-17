@@ -1,0 +1,56 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
+-- Pure string and file helpers for the cvescannerv2 script.  (Layer L0)
+--
+-- Formats and escapes strings and checks that a file can be opened for
+-- reading (io.open). No network, database, state or config access.
+
+local M = {}
+
+
+--- Return whether a value is nil or the empty string.
+local function is_blank(str)
+  return str == nil or str == ''
+end
+M.is_blank = is_blank
+
+
+local function is_readable_file(file)
+  local f = io.open(file, 'r')
+  return f ~= nil and f:close()
+end
+M.is_readable_file = is_readable_file
+
+
+local function fmt(msg, ...)
+  return msg:format(...)
+end
+M.fmt = fmt
+
+local function sql_escape(value)
+  return (tostring(value):gsub("'", "''"))
+end
+
+-- Implementation of named parameters from RiciLake@lua-users. A table value
+-- becomes a comma-separated list of quoted literals, e.g. 'a', 'b'.
+local function format_sql_named(msg, tab)
+  return (msg:gsub(
+    '($%b{})',
+    function(nparam)
+      -- nparam -> ${var} => nparam:sub(3, -2) -> var
+      local value = tab[nparam:sub(3, -2)]
+      if value == nil then return "nil" end
+      if type(value) == 'table' then
+        local literals = {}
+        for i, item in ipairs(value) do
+          literals[i] = "'" .. sql_escape(item) .. "'"
+        end
+        return table.concat(literals, ', ')
+      end
+      return sql_escape(value)
+    end
+  ))
+end
+M.format_sql_named = format_sql_named
+
+
+return M

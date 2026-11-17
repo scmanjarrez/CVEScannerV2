@@ -1,0 +1,5 @@
+{
+  "Oracle GlassFish": "cpe:/a:oracle:glassfish_server",
+  "McAfee ePolicy Orchestrator Agent": "cpe:/a:mcafee:agent",
+  "Ventrilo": "cpe:/a:flagship_industries:ventrilo"
+}

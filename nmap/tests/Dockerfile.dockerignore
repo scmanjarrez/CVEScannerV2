@@ -1,0 +1,12 @@
+# Build context for nmap/tests/Dockerfile only (the root .dockerignore excludes
+# nmap/tests/ from the scanner image).
+**
+!nmap/
+!docker/Dockerfile
+!.dockerignore
+!data/product-aliases.json
+!data/vendor-aliases.json
+!data/platform-families.json
+!data/local-catalog.json
+!data/product-cpe.json
+!scripts/download-catalog.sh

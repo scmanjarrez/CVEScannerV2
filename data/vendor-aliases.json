@@ -1,0 +1,9 @@
+{
+  "igor_sysoev": ["nginx", "f5"],
+  "mysql": ["oracle"],
+  "vsftpd": ["beasts", "vsftpd_project"],
+  "beasts": ["vsftpd_project"],
+  "proftpd": ["proftpd_project"],
+  "elasticsearch": ["elastic"],
+  "mortbay": ["eclipse"]
+}
