@@ -10,19 +10,34 @@ local SRC = 'nmap/src/cvescannerv2'
 -- Layer of every module. A module may only require modules whose layer is
 -- strictly lower than its own.
 local LAYER = {
-  util = 0, state = 0, config = 0, cpe = 0,
+  util = 0,
+  state = 0,
+  config = 0,
+  cpe = 0,
   version = 1,
-  match_table = 2, ['catalog.validate'] = 2, reference_files = 2,
-  db = 2, log = 2, json_report = 2,
+  match_table = 2,
+  ['catalog.validate'] = 2,
+  reference_files = 2,
+  db = 2,
+  log = 2,
+  json_report = 2,
   ['catalog.tiers'] = 2,
   ['catalog.store'] = 3,
-  fingerprint_match = 3, os_context = 3, sweep_evidence = 3,
-  ['probes.smb'] = 3, ['probes.irc'] = 3, ['probes.ntp'] = 3,
+  fingerprint_match = 3,
+  os_context = 3,
+  sweep_evidence = 3,
+  ['probes.smb'] = 3,
+  ['probes.irc'] = 3,
+  ['probes.ntp'] = 3,
   ['probes.upnp'] = 3,
-  http_fingerprint = 4, ['probes.cups'] = 4,
-  ['probes.init'] = 5, version_scope = 5, platform_match = 5,
+  http_fingerprint = 4,
+  ['probes.cups'] = 4,
+  ['probes.init'] = 5,
+  version_scope = 5,
+  platform_match = 5,
   confidence = 5,
-  port_matches = 6, text_output = 6,
+  port_matches = 6,
+  text_output = 6,
   service_cves = 7,
   port_analysis = 8,
   lifecycle = 9,
@@ -34,13 +49,16 @@ local REQUIRE = [=[require%s*%(?%s*['"]cvescannerv2%.([%w%._]+)['"]]=]
 -- Nmap and I/O APIs and the only modules allowed to use them.
 local OWNERS = {
   { api = 'get_script_args', owners = { 'config' } },
-  { api = 'nmap.registry', owners = {} },
-  { api = 'SCRIPT_NAME', owners = {} },
-  { api = 'SCRIPT_PATH', owners = {} },
-  { api = 'SCRIPT_TYPE', owners = {} },
-  { api = 'luasql', owners = { 'db' } },
-  { api = 'io.open', owners = {
-    'util', 'catalog.store', 'reference_files', 'log', 'json_report' } },
+  { api = 'nmap.registry',   owners = {} },
+  { api = 'SCRIPT_NAME',     owners = {} },
+  { api = 'SCRIPT_PATH',     owners = {} },
+  { api = 'SCRIPT_TYPE',     owners = {} },
+  { api = 'luasql',          owners = { 'db' } },
+  {
+    api = 'io.open',
+    owners = {
+      'util', 'catalog.store', 'reference_files', 'log', 'json_report' }
+  },
 }
 
 local function fail(fmt, ...)
@@ -186,7 +204,7 @@ t.case('Nmap and I/O APIs are used only by their owner modules', function()
       if not allows(rule.owners, name)
           and MODULES[name].code:find(rule.api, 1, true) then
         local owners = #rule.owners == 0 and 'no module'
-          or table.concat(rule.owners, ', ')
+            or table.concat(rule.owners, ', ')
         fail('module %s uses %s; allowed only in: %s',
           name, rule.api, owners)
       end
@@ -198,7 +216,7 @@ t.case('modules declare no implicit globals', function()
   for _, name in ipairs(NAMES) do
     for number, line in ipairs(MODULES[name].lines) do
       local global = line:match('^([%a_][%w_]*)%s*=')
-        or line:match('^function%s+([%a_][%w_]*)%s*%(')
+          or line:match('^function%s+([%a_][%w_]*)%s*%(')
       if global then
         fail('module %s line %d: global definition of %s '
           .. '(declare it with local or use the module table)',

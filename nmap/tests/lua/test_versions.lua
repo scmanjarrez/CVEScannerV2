@@ -7,22 +7,22 @@ local s = t.load_scanner()
 t.suite('compare_version')
 
 local ordered = {
-  { '1.2.3', '1.2.3', 0 },
-  { '1.2', '1.2.0', 0 },
-  { '1.10', '1.9', 1 },
-  { '2.4.7', '2.4.10', -1 },
-  { '4.7p1', '4.7p2', -1 },
-  { '4.7p1', '4.7', 1 },
-  { '7.4p10', '7.4p9', 1 },
-  { '1.0rc1', '1.0', -1 },
-  { '1.0', '1.0rc1', 1 },
-  { '1.0rc1', '1.0rc2', -1 },
-  { '1.0beta2', '1.0', -1 },
-  { '1.0.1e', '1.0.1g', -1 },
-  { '1.0.1g', '1.0.1e', 1 },
-  { '5.5.20', '5.5.21', -1 },
-  { '-', '-', 0 },
-  { '*', '*', 0 },
+  { '1.2.3',    '1.2.3',  0 },
+  { '1.2',      '1.2.0',  0 },
+  { '1.10',     '1.9',    1 },
+  { '2.4.7',    '2.4.10', -1 },
+  { '4.7p1',    '4.7p2',  -1 },
+  { '4.7p1',    '4.7',    1 },
+  { '7.4p10',   '7.4p9',  1 },
+  { '1.0rc1',   '1.0',    -1 },
+  { '1.0',      '1.0rc1', 1 },
+  { '1.0rc1',   '1.0rc2', -1 },
+  { '1.0beta2', '1.0',    -1 },
+  { '1.0.1e',   '1.0.1g', -1 },
+  { '1.0.1g',   '1.0.1e', 1 },
+  { '5.5.20',   '5.5.21', -1 },
+  { '-',        '-',      0 },
+  { '*',        '*',      0 },
 }
 for _, row in ipairs(ordered) do
   t.case(string.format('%s vs %s = %d', row[1], row[2], row[3]), function()
@@ -59,8 +59,12 @@ local function parse(version, update)
 end
 
 t.case('plain version', function()
-  t.eq(parse('2.4.7'), { version = '2.4.7', update = '*', matches_any = false,
-    is_range = false })
+  t.eq(parse('2.4.7'), {
+    version = '2.4.7',
+    update = '*',
+    matches_any = false,
+    is_range = false
+  })
 end)
 
 t.case('update embedded in version', function()
@@ -132,7 +136,7 @@ end)
 
 t.case('escaped colon stays inside the field', function()
   local _, _, _, vendor, product =
-    s.modules.cpe.split_cpe('cpe:2.3:a:acme:a\\:b:1.0')
+      s.modules.cpe.split_cpe('cpe:2.3:a:acme:a\\:b:1.0')
   t.eq({ vendor, product }, { 'acme', 'a:b' })
 end)
 
@@ -150,13 +154,13 @@ end)
 
 t.case('Nmap version fills a CPE without version', function()
   local _, _, info = s.modules.version.parse_cpe_version('cpe:/a:apache:http_server',
-      '2.2.8')
+    '2.2.8')
   t.eq({ info.version, info.update, info.matches_any }, { '2.2.8', '*', false })
 end)
 
 t.case('CPE 2.3 update is used', function()
   local _, _, info =
-    s.modules.version.parse_cpe_version('cpe:2.3:a:openbsd:openssh:7.4:p1', '')
+      s.modules.version.parse_cpe_version('cpe:2.3:a:openbsd:openssh:7.4:p1', '')
   t.eq({ info.version, info.update }, { '7.4', 'p1' })
 end)
 
@@ -181,7 +185,7 @@ end)
 
 t.case('wildcard CPE version takes the Nmap version', function()
   local _, _, info, source = s.modules.version.parse_cpe_version('cpe:/a:x:y:*',
-      '1.0')
+    '1.0')
   t.eq({ info.version, source }, { '1.0', 'nmap_version' })
 end)
 
@@ -210,17 +214,23 @@ t.case('product aliases add an alternative CPE', function()
   scanner.modules.state.product_aliases = { iis = { 'internet_information_services' } }
   local matches = new_match_table()
   scanner.modules.match_table.add_cpe_aliases('cpe:/a:microsoft:iis:7.5', '7.5',
-      matches, 'nmap')
+    matches, 'nmap')
   t.truthy(matches.data.nmap[
-    'cpe:/a:microsoft:internet_information_services:7.5']['7.5'])
+  'cpe:/a:microsoft:internet_information_services:7.5']['7.5'])
 end)
 
 t.case('display_version renders ranges', function()
-  t.eq({ s.modules.version.display_version({ is_range = true, from = '1',
-      to = '2' }) },
+  t.eq({ s.modules.version.display_version({
+      is_range = true,
+      from = '1',
+      to = '2'
+    }) },
     { '1 - 2', '*' })
-  t.eq({ s.modules.version.display_version({ is_range = false, version = '1',
-      update = 'p1' }) },
+  t.eq({ s.modules.version.display_version({
+      is_range = false,
+      version = '1',
+      update = 'p1'
+    }) },
     { '1', 'p1' })
 end)
 
@@ -259,15 +269,18 @@ end)
 t.case('no OS data gives an empty context', function()
   local scanner = os_scanner()
   t.eq(scanner.modules.os_context.os_context({ ip = '10.0.0.4' },
-      { version = {} }), {})
+    { version = {} }), {})
   t.eq(scanner.modules.os_context.os_context({ ip = '10.0.0.4' }, {}), {})
 end)
 
 t.case('host.os first match gives the family and is cached per IP', function()
   local scanner = os_scanner()
-  local host = { ip = '10.0.0.5', os = {
-    { cpe = { 'cpe:/o:microsoft:windows_10' } },
-  } }
+  local host = {
+    ip = '10.0.0.5',
+    os = {
+      { cpe = { 'cpe:/o:microsoft:windows_10' } },
+    }
+  }
   t.eq(scanner.modules.os_context.os_context(host, { version = {} }),
     { family = 'windows', source = 'host_os' })
   t.eq(scanner.modules.state.host_os_family['10.0.0.5'], 'windows')
@@ -275,9 +288,14 @@ end)
 
 t.case('host.os classes give the family from osfamily and cpe', function()
   local scanner = os_scanner()
-  local host = { ip = '10.0.0.6', os = { { classes = {
-    { osfamily = 'Linux', cpe = { 'cpe:/o:linux:linux_kernel:2.6' } },
-  } } } }
+  local host = {
+    ip = '10.0.0.6',
+    os = { {
+      classes = {
+        { osfamily = 'Linux', cpe = { 'cpe:/o:linux:linux_kernel:2.6' } },
+      }
+    } }
+  }
   t.eq(scanner.modules.os_context.os_context(host, { version = {} }),
     { family = 'linux', source = 'host_os' })
 end)
@@ -298,31 +316,31 @@ end)
 t.suite('compare_version cache')
 
 local cache_pairs = {
-  { '1.2.3', '1.2.3', 0 },
-  { '1.2', '1.2.0', 0 },
-  { '1.0', '1.0.0', 0 },
-  { '1.0.1', '1.0.1a', -1 },
-  { '1.0.1e', '1.0.1g', -1 },
-  { '1.10', '1.9', 1 },
-  { '2.2.8', '2.2.10', -1 },
-  { '2.4.7', '2.4.10', -1 },
-  { '4.7p1', '4.7p2', -1 },
-  { '4.7p1', '4.7', 1 },
-  { '7.4p10', '7.4p9', 1 },
-  { '5.2.4-2ubuntu5.10', '5.2.4', 0 },
-  { '5.5.20-log', '5.5.20', 0 },
-  { '1.0rc1', '1.0', -1 },
-  { '1.0', '1.0rc1', 1 },
-  { '1.0rc1', '1.0rc2', -1 },
-  { '1.0beta2', '1.0', -1 },
-  { '0.9.8a', '0.9.8b', -1 },
-  { '-', '-', 0 },
-  { '*', '*', 0 },
-  { 'abc', '1.0', nil },
-  { '1.0', 'abc', nil },
-  { '-', '1.0', nil },
-  { nil, '1.0', nil },
-  { '1.0', nil, nil },
+  { '1.2.3',             '1.2.3',  0 },
+  { '1.2',               '1.2.0',  0 },
+  { '1.0',               '1.0.0',  0 },
+  { '1.0.1',             '1.0.1a', -1 },
+  { '1.0.1e',            '1.0.1g', -1 },
+  { '1.10',              '1.9',    1 },
+  { '2.2.8',             '2.2.10', -1 },
+  { '2.4.7',             '2.4.10', -1 },
+  { '4.7p1',             '4.7p2',  -1 },
+  { '4.7p1',             '4.7',    1 },
+  { '7.4p10',            '7.4p9',  1 },
+  { '5.2.4-2ubuntu5.10', '5.2.4',  0 },
+  { '5.5.20-log',        '5.5.20', 0 },
+  { '1.0rc1',            '1.0',    -1 },
+  { '1.0',               '1.0rc1', 1 },
+  { '1.0rc1',            '1.0rc2', -1 },
+  { '1.0beta2',          '1.0',    -1 },
+  { '0.9.8a',            '0.9.8b', -1 },
+  { '-',                 '-',      0 },
+  { '*',                 '*',      0 },
+  { 'abc',               '1.0',    nil },
+  { '1.0',               'abc',    nil },
+  { '-',                 '1.0',    nil },
+  { nil,                 '1.0',    nil },
+  { '1.0',               nil,      nil },
 }
 
 local function mismatches(compare)

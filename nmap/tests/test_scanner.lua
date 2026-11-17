@@ -55,22 +55,22 @@ local function run_case(limit, redirect_status, fail_redirect)
   nmap.registry = {}
   fresh_modules()
   assert(load(source))()
-  local httpscan = require 'cvescannerv2.http_fingerprint'
+  local http_fingerprint = require 'cvescannerv2.http_fingerprint'
   local registry = require 'cvescannerv2.state'
   local alias = 'cpe:/a:example:widget'
   registry.catalog_loaded = true
   registry.catalog = {
     -- The redirect is in the second batch to check response/path indexing.
-    paths = {'/1', '/2', '/3', '/4', '/5', '/redirect', '/plain'},
+    paths = { '/1', '/2', '/3', '/4', '/5', '/redirect', '/plain' },
     probes = {},
     fingerprints = {
-      body = {{alias = alias, regex = 'Widget ([%d%.]+)', anchor = 'Widget'}}
+      body = { { alias = alias, regex = 'Widget ([%d%.]+)', anchor = 'Widget' } }
     }
   }
   local gets = {}
   http.pipeline_add = function(path, options, requests)
     requests = requests or {}
-    table.insert(requests, {path = path, options = options})
+    table.insert(requests, { path = path, options = options })
     return requests
   end
   http.pipeline_go = function(_, _, requests)
@@ -79,7 +79,7 @@ local function run_case(limit, redirect_status, fail_redirect)
       local redirected = request.path == '/redirect'
       table.insert(responses, {
         status = redirected and redirect_status or 200,
-        header = redirected and {location = '/login'} or {},
+        header = redirected and { location = '/login' } or {},
         body = request.path == '/plain' and 'Widget 2.0' or ''
       })
     end
@@ -89,10 +89,10 @@ local function run_case(limit, redirect_status, fail_redirect)
     table.insert(gets, path)
     assert(options.redirect_ok == limit, 'Redirect limit must be preserved')
     if fail_redirect then return nil end
-    return {status = 200, header = {}, body = 'Widget 1.2.3'}
+    return { status = 200, header = {}, body = 'Widget 1.2.3' }
   end
-  local matches = {data = {http = {}, nmap = {}}, size = 0}
-  httpscan.sweep_catalog({ip = '127.0.0.1'}, {number = 80}, matches, {})
+  local matches = { data = { http = {}, nmap = {} }, size = 0 }
+  http_fingerprint.sweep_catalog({ ip = '127.0.0.1' }, { number = 80 }, matches, {})
   assert(matches.data.http[alias]['2.0'], 'Normal responses must still match')
   if limit > 0 and redirect_status ~= 200 then
     assert(#gets == 1 and gets[1] == '/redirect', 'Reissue the correct path')
@@ -103,7 +103,7 @@ local function run_case(limit, redirect_status, fail_redirect)
   end
 end
 
-for _, status in ipairs({301, 302, 303, 307, 308}) do
+for _, status in ipairs({ 301, 302, 303, 307, 308 }) do
   run_case(2, status, false)
 end
 run_case(0, 302, false)
@@ -129,7 +129,7 @@ local closed = false
 -- Deliberate mock: io.open is replaced on purpose to isolate the cache read.
 ---@diagnostic disable-next-line: duplicate-set-field
 io.open = function(path, mode)
-  table.insert(opened, {path = path, mode = mode})
+  table.insert(opened, { path = path, mode = mode })
   local body = files[path]
   if body == nil then return nil end
   return {
@@ -175,19 +175,26 @@ local index_body = 'index'
 local rules_body = 'fingerprints'
 local paths_body = 'paths'
 local probes_body = 'probes'
-parsed[index_body] = {schema = 1, catalogs = {
-  fingerprints = {file = 'fingerprints.json'},
-  paths = {file = 'paths.json'},
-  probes = {file = 'probes.json'}
-}}
-parsed[rules_body] = {rules = {widget = {
-  alias = 'cpe:/a:example:widget',
-  channel = 'body',
-  regex = 'Widget ([%d%.]+)',
-  anchor = 'Widget'
-}}}
-parsed[paths_body] = {paths = {'/'}}
-parsed[probes_body] = {schema = 1, probes = {}}
+parsed[index_body] = {
+  schema = 1,
+  catalogs = {
+    fingerprints = { file = 'fingerprints.json' },
+    paths = { file = 'paths.json' },
+    probes = { file = 'probes.json' }
+  }
+}
+parsed[rules_body] = {
+  rules = {
+    widget = {
+      alias = 'cpe:/a:example:widget',
+      channel = 'body',
+      regex = 'Widget ([%d%.]+)',
+      anchor = 'Widget'
+    }
+  }
+}
+parsed[paths_body] = { paths = { '/' } }
+parsed[probes_body] = { schema = 1, probes = {} }
 files = {
   ['data/index.json'] = index_body,
   ['data/fingerprints.json'] = rules_body,
@@ -211,16 +218,16 @@ modules.shortport.ssl = function() return false end
 state.catalog_loaded = false
 state.json_report = {}
 state.service_cache = {}
-state.log_file = {write = no_op}
+state.log_file = { write = no_op }
 state.db_conn = {
   execute = function()
-    return {fetch = function() return nil end, close = no_op}
+    return { fetch = function() return nil end, close = no_op }
   end
 }
-assert(port({ip = '127.0.0.1'}, {
+assert(port({ ip = '127.0.0.1' }, {
   number = 22,
   protocol = 'tcp',
   service = 'ssh',
-  version = {cpe = {'cpe:/a:example:widget:1.2.3'}, version = '1.2.3'}
+  version = { cpe = { 'cpe:/a:example:widget:1.2.3' }, version = '1.2.3' }
 }) == nil, 'Return no NSE output when a detected product has no matching CVEs')
 print('Empty vulnerability result: passed')

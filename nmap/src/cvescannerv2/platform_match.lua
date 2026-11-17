@@ -101,7 +101,7 @@ end
 -- True when a platform reason depends on the OS context of the host.
 local function is_platform_reason(reason)
   return reason == 'requires_platform' or reason == 'requires_component'
-    or reason:find('^platform_mismatch:') ~= nil
+      or reason:find('^platform_mismatch:') ~= nil
 end
 
 -- True when a CVE needs the OS and the context has no family and no probe.

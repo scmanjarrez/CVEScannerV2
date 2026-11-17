@@ -163,7 +163,7 @@ end)
 
 t.case('download script base equals Dockerfile CATALOG_BASE', function()
   local file = io.open(DOWNLOAD_SCRIPT, 'r')
-  t.truthy(file, DOWNLOAD_SCRIPT .. ' not found (created by TASK-16)')
+  t.truthy(file, DOWNLOAD_SCRIPT .. ' not found')
   local body = file and file:read('*all') or ''
   if file then file:close() end
   local script_base = body:match(

@@ -154,7 +154,7 @@ end)
 
 t.case('linked prefixes from https absolute src and action', function()
   local body = '<img src=\'https://ex.test/nifi-api/a.png\'>'
-    .. '<form action="/app?x=1"></form>'
+      .. '<form action="/app?x=1"></form>'
   t.keys_eq(linked({ body = { body } }), { '/nifi-api', '/app' })
 end)
 
@@ -164,9 +164,9 @@ end)
 
 t.case('linked prefixes skip unsupported links', function()
   local body = '<a href="//cdn.test/x">a</a><a href="#top">b</a>'
-    .. '<a href="https://ex.test">c</a><a href="/">d</a>'
-    .. '<a href="">e</a><div data-href="/hidden/x">f</div>'
-    .. '<a href="mailto:a@b.test">g</a>'
+      .. '<a href="https://ex.test">c</a><a href="/">d</a>'
+      .. '<a href="">e</a><div data-href="/hidden/x">f</div>'
+      .. '<a href="mailto:a@b.test">g</a>'
   t.keys_eq(linked({ body = { body } }), {})
 end)
 

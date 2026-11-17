@@ -85,7 +85,6 @@ local function add_reason(vulns, reason)
   end
 end
 
-M.primary_score = primary_score
 M.cvss_comparator = cvss_comparator
 M.LEVEL_RANK = LEVEL_RANK
 M.LEVEL_LABEL = LEVEL_LABEL

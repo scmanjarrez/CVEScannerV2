@@ -25,14 +25,14 @@ end
 --- Return whether the version is a series such as 2.4 or 2.x.
 local function is_series_version(version)
   return version:match('^%d+%.%d+$') ~= nil
-    or version:match('%.[xX]$') ~= nil
-    or version:match('%.%*$') ~= nil
+      or version:match('%.[xX]$') ~= nil
+      or version:match('%.%*$') ~= nil
 end
 
 --- Return whether the version is a single exact release.
 local function is_precise_version(version)
   return not is_series_version(version)
-    and version:find('%s+%-%s+') == nil
+      and version:find('%s+%-%s+') == nil
 end
 
 
@@ -156,8 +156,8 @@ local function parse_nmap_version(product, version, cpe_update)
     return product, any_info()
   end
   local info = range_info(version)
-    or wildcard_range(version)
-    or numeric_info(version, cpe_update)
+      or wildcard_range(version)
+      or numeric_info(version, cpe_update)
   return product, info or any_info()
 end
 

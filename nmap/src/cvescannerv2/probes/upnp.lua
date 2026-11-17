@@ -28,10 +28,10 @@ end
 local function upnp_probe(host, port)
   -- SSDP M-SEARCH sent unicast to the UPnP port of the host.
   local msearch = 'M-SEARCH * HTTP/1.1\r\n'
-    .. 'HOST: 239.255.255.250:1900\r\n'
-    .. 'MAN: "ssdp:discover"\r\n'
-    .. 'MX: 1\r\n'
-    .. 'ST: upnp:rootdevice\r\n\r\n'
+      .. 'HOST: 239.255.255.250:1900\r\n'
+      .. 'MAN: "ssdp:discover"\r\n'
+      .. 'MX: 1\r\n'
+      .. 'ST: upnp:rootdevice\r\n\r\n'
   local ok, status, response = pcall(comm.exchange, host, port,
     msearch, { proto = 'udp', timeout = 3000 })
   if not ok or not status or type(response) ~= 'string' then

@@ -21,7 +21,7 @@ end
 local function multi(rows, from, to, unknown)
   local result = {}
   s.modules.version_scope.scoped_multi_versions(rows, from, to or from, result,
-      unknown)
+    unknown)
   return result
 end
 
@@ -68,7 +68,7 @@ end)
 
 t.case('observed range overlaps the NVD interval', function()
   local rows = {
-    { id = 'IN', StartInc = '2.4.10', EndExc = '2.4.20' },
+    { id = 'IN',  StartInc = '2.4.10', EndExc = '2.4.20' },
     { id = 'OUT', EndExc = '2.2.0' },
   }
   t.keys_eq(multi(rows, '2.4.0', '2.4.9999999999'), { 'IN' })
@@ -102,8 +102,8 @@ end)
 
 t.case('update must match when both are known', function()
   local rows = {
-    { id = 'P1', version = '4.7', version_update = 'p1' },
-    { id = 'P2', version = '4.7', version_update = 'p2' },
+    { id = 'P1',  version = '4.7', version_update = 'p1' },
+    { id = 'P2',  version = '4.7', version_update = 'p2' },
     { id = 'ANY', version = '4.7', version_update = '*' },
   }
   t.keys_eq(exact(rows, '4.7', nil, 'p1'), { 'P1', 'ANY' })
@@ -116,7 +116,7 @@ end)
 
 t.case('update stored inside the NVD version field', function()
   local rows = {
-    { id = 'IN', version = '4.7p1', version_update = '*' },
+    { id = 'IN',  version = '4.7p1', version_update = '*' },
     { id = 'OUT', version = '4.7p2', version_update = '*' },
   }
   t.keys_eq(exact(rows, '4.7', nil, 'p1'), { 'IN' })
@@ -129,7 +129,7 @@ end)
 
 t.case('exact products inside an observed range', function()
   local rows = {
-    { id = 'IN', version = '2.4.7', version_update = '*' },
+    { id = 'IN',  version = '2.4.7', version_update = '*' },
     { id = 'OUT', version = '2.2.8', version_update = '*' },
   }
   t.keys_eq(exact(rows, '2.4.0', '2.4.9999999999'), { 'IN' })
@@ -175,7 +175,7 @@ t.suite('SQL formatting')
 
 t.case('format_sql_named escapes single quotes', function()
   t.eq((s.modules.util.format_sql_named("p = '${p}'", { p = "o'reilly" })),
-      "p = 'o''reilly'")
+    "p = 'o''reilly'")
 end)
 
 t.case('format_sql_named renders missing values as nil', function()
@@ -266,17 +266,26 @@ end
 
 -- Confidence counters of a result as a table.
 local function summary_of(result)
-  return { high = result.counts.high, medium = result.counts.medium,
-    low = result.counts.low }
+  return {
+    high = result.counts.high,
+    medium = result.counts.medium,
+    low = result.counts.low
+  }
 end
 
 local function info_of(ver)
-  return { version = ver, update = '*', from = nil, to = nil,
-    matches_any = false, is_range = false }
+  return {
+    version = ver,
+    update = '*',
+    from = nil,
+    to = nil,
+    matches_any = false,
+    is_range = false
+  }
 end
 
 local rows = {
-  { 'CVE-EXACT', '5.0', nil, '5.5', '*', 0, 0 },
+  { 'CVE-EXACT', '5.0', nil, '5.5',   '*', 0, 0 },
   { 'CVE-CHILD', '5.0', nil, '5.5.3', '*', 0, 0 },
   { 'CVE-LATER', '5.0', nil, '5.5.4', '*', 0, 0 },
 }
@@ -301,8 +310,14 @@ db_case('specific version 5.5.3 is not expanded', function()
 end)
 
 db_case('Nmap range is not changed by series expansion', function()
-  local info = { version = nil, update = nil, from = '5.5.0',
-    to = '5.5.9999999999', matches_any = false, is_range = true }
+  local info = {
+    version = nil,
+    update = nil,
+    from = '5.5.0',
+    to = '5.5.9999999999',
+    matches_any = false,
+    is_range = true
+  }
   local without = scan({ children = false, affected = rows }, info)
   local with = scan({ children = true, affected = rows }, info)
   t.eq(ids_of(with), ids_of(without))
@@ -311,10 +326,18 @@ end)
 t.case('series_prefix accepts only x.y without update', function()
   t.eq(s.modules.version.series_prefix(info_of('5.5')), '5.5')
   t.eq(s.modules.version.series_prefix(info_of('5.5.3')), nil)
-  t.eq(s.modules.version.series_prefix({ version = '5.5', update = 'sp1',
-    matches_any = false, is_range = false }), nil)
-  t.eq(s.modules.version.series_prefix({ version = nil, update = nil,
-    matches_any = false, is_range = true }), nil)
+  t.eq(s.modules.version.series_prefix({
+    version = '5.5',
+    update = 'sp1',
+    matches_any = false,
+    is_range = false
+  }), nil)
+  t.eq(s.modules.version.series_prefix({
+    version = nil,
+    update = nil,
+    matches_any = false,
+    is_range = true
+  }), nil)
 end)
 
 db_case('series_has_children reads the EXISTS result', function()
@@ -338,7 +361,10 @@ end)
 t.suite('platform conditions')
 
 local FAMILIES = {
-  linux = 'linux', suse = 'linux', canonical = 'linux', redhat = 'linux',
+  linux = 'linux',
+  suse = 'linux',
+  canonical = 'linux',
+  redhat = 'linux',
   microsoft = 'windows',
 }
 
@@ -356,8 +382,12 @@ end
 
 -- One platform row of a CVE configuration.
 local function plat(config_idx, part, vendor)
-  return { config_idx = config_idx, part = part, vendor = vendor,
-    product = 'x' }
+  return {
+    config_idx = config_idx,
+    part = part,
+    vendor = vendor,
+    product = 'x'
+  }
 end
 
 t.case('AND Windows CVE with linux context is a platform mismatch', function()
@@ -422,13 +452,16 @@ t.case('CVE without platform rows has no reason', function()
 end)
 
 db_case('add_platform_reasons stores reasons and keeps every CVE', function()
-  local sc = platform_scanner({ conditions_table = true, platform = {
-    { 'CVE-W', 0, 'o', 'microsoft', 'windows' },
-    { 'CVE-N', 0, 'o', 'linux', 'linux' },
-  } })
+  local sc = platform_scanner({
+    conditions_table = true,
+    platform = {
+      { 'CVE-W', 0, 'o', 'microsoft', 'windows' },
+      { 'CVE-N', 0, 'o', 'linux',     'linux' },
+    }
+  })
   local vulns = { ['CVE-W'] = {}, ['CVE-N'] = {}, ['CVE-U'] = {} }
   sc.modules.service_cves.add_platform_reasons(vulns, { 'apache' }, 'tomcat',
-      { family = 'linux' })
+    { family = 'linux' })
   t.keys_eq(vulns, { 'CVE-W', 'CVE-N', 'CVE-U' })
   t.eq(vulns['CVE-W'].reasons, { 'platform_mismatch:windows' })
   t.eq(vulns['CVE-N'].reasons, {})
@@ -438,8 +471,10 @@ end)
 db_case('database without conditions table gives no reasons, one warning',
   function()
     local exact_rows = { { 'CVE-EXACT', '5.0', nil, '5.5', '*', 0, 0 } }
-    local sc, logged = platform_scanner({ affected = exact_rows,
-      platform = { { 'CVE-EXACT', 0, 'o', 'microsoft', 'windows' } } })
+    local sc, logged = platform_scanner({
+      affected = exact_rows,
+      platform = { { 'CVE-EXACT', 0, 'o', 'microsoft', 'windows' } }
+    })
     local scan_ctx = { os = { family = 'linux' } }
     local host = { ip = '10.0.0.1' }
     local port = { number = 80, protocol = 'tcp', service = 'http' }
@@ -459,7 +494,7 @@ db_case('database without conditions table gives no reasons, one warning',
     t.eq(warnings, 1)
     local vulns = { ['CVE-EXACT'] = {} }
     sc.modules.service_cves.add_platform_reasons(vulns, { 'apache' }, 'tomcat',
-        { family = 'linux' })
+      { family = 'linux' })
     t.eq(vulns['CVE-EXACT'].reasons, {})
   end)
 
@@ -494,13 +529,19 @@ end)
 t.case('series_expanded replaces the reasons of merged CVEs', function()
   local vulns = {}
   s.modules.version_scope.merge_series({ NEW = { reasons = { 'range_contains' } } },
-      vulns)
+    vulns)
   t.eq(vulns.NEW.reasons, { 'series_expanded' })
 end)
 
 db_case('observed_range: a wide scan marks every CVE low', function()
-  local range = { version = nil, update = nil, from = '5.0.0',
-    to = '5.9.9999999999', matches_any = false, is_range = true }
+  local range = {
+    version = nil,
+    update = nil,
+    from = '5.0.0',
+    to = '5.9.9999999999',
+    matches_any = false,
+    is_range = true
+  }
   local result = scan({ children = false, affected = rows }, range)
   t.truthy(result.counts.total > 0, 'the range must match at least one CVE')
   t.eq(result.counts.low, result.counts.total)
@@ -508,24 +549,33 @@ db_case('observed_range: a wide scan marks every CVE low', function()
 end)
 
 db_case('observed_range: narrow range is not marked', function()
-  local range = { version = nil, update = nil, from = '5.5.0',
-    to = '5.5.9999999999', matches_any = false, is_range = true }
+  local range = {
+    version = nil,
+    update = nil,
+    from = '5.5.0',
+    to = '5.5.9999999999',
+    matches_any = false,
+    is_range = true
+  }
   local result = scan({ children = false, affected = rows }, range)
   t.truthy(result.counts.total > 0, 'the range must match at least one CVE')
   t.eq(result.counts.low, 0)
 end)
 
 db_case('platform reasons are appended to the existing reasons', function()
-  local sc, _ = platform_scanner({ conditions_table = true, platform = {
-    { 'CVE-W', 0, 'o', 'microsoft', 'windows' },
-    { 'CVE-U', 0, 'o', 'suse', 'suse' },
-  } })
+  local sc, _ = platform_scanner({
+    conditions_table = true,
+    platform = {
+      { 'CVE-W', 0, 'o', 'microsoft', 'windows' },
+      { 'CVE-U', 0, 'o', 'suse',      'suse' },
+    }
+  })
   local vulns = {
     ['CVE-W'] = { reasons = { 'range_overlap' } },
     ['CVE-U'] = { reasons = { 'exact_version' } },
   }
   sc.modules.service_cves.add_platform_reasons(vulns, { 'apache' }, 'tomcat',
-      { family = 'linux' })
+    { family = 'linux' })
   t.eq(vulns['CVE-W'].reasons,
     { 'range_overlap', 'platform_mismatch:windows' })
   t.eq(vulns['CVE-U'].reasons, { 'exact_version', 'requires_platform' })
@@ -534,17 +584,17 @@ end)
 t.case('confidence_of takes the lowest level of the reasons', function()
   t.eq(s.modules.confidence.confidence_of({}), 'high')
   t.eq(s.modules.confidence.confidence_of({ 'exact_version',
-      'range_contains' }), 'high')
+    'range_contains' }), 'high')
   t.eq(s.modules.confidence.confidence_of({ 'exact_version',
-      'requires_platform' }), 'medium')
+    'requires_platform' }), 'medium')
   t.eq(s.modules.confidence.confidence_of({ 'requires_component' }), 'medium')
   t.eq(s.modules.confidence.confidence_of({ 'update_unknown',
-      'observed_range' }), 'low')
+    'observed_range' }), 'low')
   t.eq(s.modules.confidence.confidence_of({ 'series_expanded' }), 'medium')
   t.eq(s.modules.confidence.confidence_of({ 'nvd_unbounded' }), 'low')
   t.eq(s.modules.confidence.confidence_of({ 'range_overlap' }), 'medium')
   t.eq(s.modules.confidence.confidence_of({ 'platform_mismatch:windows' }),
-      'low')
+    'low')
 end)
 
 t.case('range_overlap with platform_mismatch is low', function()
@@ -591,8 +641,14 @@ local function render(sc, result, cfg)
   return table.concat(sc.modules.text_output.nmap_lines(result, cfg), '\n')
 end
 
-local range_info = { version = nil, update = nil, from = '5.0.0',
-  to = '5.9.9999999999', matches_any = false, is_range = true }
+local range_info = {
+  version = nil,
+  update = nil,
+  from = '5.0.0',
+  to = '5.9.9999999999',
+  matches_any = false,
+  is_range = true
+}
 
 local ALL_LOW = { maxcve = 10, minconf = 'low', json = 'out.json' }
 
@@ -632,8 +688,11 @@ db_case('maxcve limits the printed rows, not the result', function()
   local result, sc = scan_args({}, { children = true, affected = rows },
     info_of('5.5'))
   t.eq(#result.cves, 3)
-  local text = render(sc, result, { maxcve = 1, minconf = 'low',
-    json = 'out.json' })
+  local text = render(sc, result, {
+    maxcve = 1,
+    minconf = 'low',
+    json = 'out.json'
+  })
   t.truthy(text:find('CVE-EXACT', 1, true), 'high row printed')
   t.eq(text:find('CVE-CHILD', 1, true), nil)
 end)
@@ -647,33 +706,36 @@ db_case('result carries version source and confidence counts', function()
 end)
 
 db_case('CVSSv4 9.3 alone ranks above CVSSv2 7.5 at equal confidence',
-    function()
-  local v4_rows = {
-    { 'CVE-V2', '7.5', nil, '5.5', '*', 0, 0 },
-    { 'CVE-V4', nil, nil, '5.5', '*', 0, 0, '9.3' },
-  }
-  local result = scan({ children = false, affected = v4_rows },
-    info_of('5.5'))
-  t.eq(ids_of(result), { 'CVE-V4', 'CVE-V2' })
-  t.eq(result.cves[1].cvss, { v4 = 9.3, v3 = nil, v2 = nil })
-  t.eq(result.cves[2].cvss.v2, 7.5)
-end)
+  function()
+    local v4_rows = {
+      { 'CVE-V2', '7.5', nil, '5.5', '*', 0, 0 },
+      { 'CVE-V4', nil,   nil, '5.5', '*', 0, 0, '9.3' },
+    }
+    local result = scan({ children = false, affected = v4_rows },
+      info_of('5.5'))
+    t.eq(ids_of(result), { 'CVE-V4', 'CVE-V2' })
+    t.eq(result.cves[1].cvss, { v4 = 9.3, v3 = nil, v2 = nil })
+    t.eq(result.cves[2].cvss.v2, 7.5)
+  end)
 
 t.case('parse_cpe_version returns where the version came from', function()
   local _, _, _, from_version = s.modules.version.parse_cpe_version(
     'cpe:/a:apache:tomcat:5.5', '5.5.20')
   t.eq(from_version, 'nmap_version')
   local _, _, _, from_cpe =
-    s.modules.version.parse_cpe_version('cpe:/a:apache:tomcat:5.5', nil)
+      s.modules.version.parse_cpe_version('cpe:/a:apache:tomcat:5.5', nil)
   t.eq(from_cpe, 'nmap_cpe')
 end)
 
 t.suite('legacy databases')
 
 db_case('database without cvss_v4 gives v4 nil and warns once', function()
-  local sc, logged = platform_scanner({ legacy_cves = true, affected = {
-    { 'CVE-LEG', '7.5', nil, '5.5', '*', 0, 0, '9.3' },
-  } })
+  local sc, logged = platform_scanner({
+    legacy_cves = true,
+    affected = {
+      { 'CVE-LEG', '7.5', nil, '5.5', '*', 0, 0, '9.3' },
+    }
+  })
   local host = { ip = '10.0.0.1' }
   local port = { number = 80, protocol = 'tcp', service = 'http' }
   local cpe = 'cpe:/a:apache:tomcat:5.5'

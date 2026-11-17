@@ -36,7 +36,7 @@ end
 -- Cache key of one service. Unknown OS also keys by host IP, so a probe
 -- result is never reused across hosts.
 local function service_cache_key(host, vendor, product, ver_text, update,
-    scan_ctx)
+                                 scan_ctx)
   local key = fmt('%s|%s|%s|%s|%s', vendor, product, ver_text, update,
     context_key(scan_ctx))
   if scan_ctx.os.family == nil then key = key .. '|' .. host.ip end
@@ -63,15 +63,17 @@ end
 -- Scans a service missing from the cache and stores the result when it has
 -- CVEs. Returns the result and the origin of the scan.
 local function scan_uncached_service(host, port, cpe, vendor, product,
-    ver_text, update, info, scan_ctx, cache_key)
+                                     ver_text, update, info, scan_ctx, cache_key)
   local result = find_service_cves(host, port, cpe, vendor, product, info,
     scan_ctx)
   if result.os_context.family ~= scan_ctx.os.family then
     -- An OS probe changed the context: key by the new one.
     cache_key = service_cache_key(host, vendor, product, ver_text, update,
-      { os = result.os_context,
+      {
+        os = result.os_context,
         backport = scan_ctx.backport,
-        version_source = scan_ctx.version_source })
+        version_source = scan_ctx.version_source
+      })
   end
   local origin = fmt('%s %s/%s', host.ip, port.number, port.protocol)
   if result.counts.total > 0 then
@@ -86,7 +88,7 @@ end
 -- Return the result of a service, from the cache when possible. The second
 -- value is the origin of the cached result, or nil when it was just scanned.
 local function service_result(host, port, cpe, vendor, product, ver_text,
-    update, info, scan_ctx)
+                              update, info, scan_ctx)
   local cache_key = service_cache_key(host, vendor, product, ver_text,
     update, scan_ctx)
   local cache = state.service_cache[cache_key]
@@ -142,7 +144,7 @@ end
 
 -- Handles one CPE and version pair of the matches of a port.
 local function analyze_match(host, port, scan_ctx, origin, cpe, version_str,
-    out, cfg)
+                             out, cfg)
   stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe, version_str))
   local vendor, product, info, source = parse_cpe_version(cpe, version_str)
   local version_source = source

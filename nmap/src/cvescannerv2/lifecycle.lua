@@ -79,12 +79,10 @@ function M.prerule()
   return state.enabled
 end
 
-
 --- Return whether the script runs against a host.
 function M.hostrule(_)
   return state.enabled
 end
-
 
 --- Return whether the script runs against a port.
 function M.portrule(_, port)
@@ -93,12 +91,10 @@ function M.portrule(_, port)
       port.service ~= 'unknown'
 end
 
-
 --- Return whether the script runs its post actions.
 function M.postrule()
   return state.enabled
 end
-
 
 --- Open the database and the log, and reset the per-run state.
 function M.preaction(script_version)
@@ -122,7 +118,6 @@ function M.preaction(script_version)
   end
 end
 
-
 --- Create the report entry for one host and count it.
 function M.hostaction(host)
   report.ensure_host(host.ip)
@@ -130,7 +125,6 @@ function M.hostaction(host)
     state.totals.hosts = state.totals.hosts + 1
   end
 end
-
 
 --- Collect and analyse the matches of one port. Return the structured rows
 -- and, when there is output, the Nmap text: a string that starts with a
@@ -154,7 +148,6 @@ function M.portaction(host, port)
   end
 end
 
-
 --- Write the log footer, close the database and the log, and write the
 -- JSON report.
 function M.postaction()
@@ -170,6 +163,5 @@ function M.postaction()
     maxcve = config.maxcve,
   })
 end
-
 
 return M

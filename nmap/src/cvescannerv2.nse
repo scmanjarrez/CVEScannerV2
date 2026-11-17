@@ -90,9 +90,14 @@ CVEs information gathered from nvd.nist.gov.
 -- @args cvescannerv2.version Restrict the search to a specific version.
 --       Default: all
 -- @args cvescannerv2.probes Service version probes to run: all, none or a
---       comma-separated list of probe names (e.g. smb, irc). Default: all.
---       The irc probe reads the exact UnrealIRCd version with a read-only
---       IRC VERSION request.
+--       comma-separated list of probe names (e.g. smb,irc). Default: all.
+--       Valid names:
+--         smb    exact Samba version (lanmanager field, ports 139/445)
+--         smb_os OS family on Windows SMB hosts (only when a CVE needs it)
+--         irc    exact UnrealIRCd version, read-only IRC VERSION request
+--         ntp    exact ntpd version via mode 6 readvar (requires -sU)
+--         upnp   exact miniupnpd version via unicast SSDP (requires -sU)
+--         cups   CUPS version from the GET / page title
 -- @args cvescannerv2.minconf Minimum confidence of the CVEs shown in the
 --       table and the log: low, medium or high. Default: low. Invalid
 --       values use low. The JSON report always keeps every CVE.

@@ -80,22 +80,22 @@ function M.families(subjects, port_version)
   push(product, pv.product)
   local checks = {
     wordpress = mentions(values(subjects, 'meta:generator'), { 'wordpress' })
-      or mentions(values(subjects, 'script'), WORDPRESS_PATHS)
-      or mentions(values(subjects, 'body'), WORDPRESS_PATHS)
-      or starts_with(cookies, { 'wordpress_' }),
+        or mentions(values(subjects, 'script'), WORDPRESS_PATHS)
+        or mentions(values(subjects, 'body'), WORDPRESS_PATHS)
+        or starts_with(cookies, { 'wordpress_' }),
     php = mentions(powered, { 'php' })
-      or starts_with(cookies, { 'phpsessid=' })
-      or mentions(product, { 'php' }),
+        or starts_with(cookies, { 'phpsessid=' })
+        or mentions(product, { 'php' }),
     aspnet = #values(subjects, 'hdr:x-aspnet-version') > 0
-      or mentions(powered, { 'asp.net' })
-      or starts_with(cookies, { 'asp.net_sessionid=' })
-      or mentions(servers, { 'iis', 'microsoft-httpapi' }),
+        or mentions(powered, { 'asp.net' })
+        or starts_with(cookies, { 'asp.net_sessionid=' })
+        or mentions(servers, { 'iis', 'microsoft-httpapi' }),
     java = starts_with(cookies, { 'jsessionid=' })
-      or mentions(servers, JAVA_SERVERS)
-      or mentions(cpes, { 'tomcat', 'jetty' }),
+        or mentions(servers, JAVA_SERVERS)
+        or mentions(cpes, { 'tomcat', 'jetty' }),
     cgi = mentions(servers, CGI_SERVERS),
     coldfusion = starts_with(cookies, { 'cfid=', 'cftoken=' })
-      or mentions(servers, { 'coldfusion' }),
+        or mentions(servers, { 'coldfusion' }),
     domino = mentions(servers, { 'domino' }),
   }
   local found = {}

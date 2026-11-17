@@ -142,7 +142,7 @@ local function collect_multi(vendors, product, info, bounds, series)
   scoped_multi_versions(cve_lines, bounds.multi_from, bounds.multi_to,
     vulns, info.matches_any)
   local expand = series ~= nil
-    and series_has_children(vendors, product, series)
+      and series_has_children(vendors, product, series)
   if expand then
     local found = {}
     scoped_multi_versions(cve_lines, series .. '.0',
@@ -241,7 +241,7 @@ end
 -- sorted by confidence and the counters. Always returns a table, also
 -- when no CVE affects the service.
 local function find_service_cves(host, _, cpe, vendor, product, info,
-    scan_ctx)
+                                 scan_ctx)
   warn_missing_cvss_v4()
   local vendors = vendor_scope(vendor, product)
   local bounds = version_bounds(info)

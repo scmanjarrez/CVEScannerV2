@@ -25,8 +25,8 @@ local function load_luasql()
   end
   local ver = _VERSION:match('%d+%.%d+') or '5.4'
   local libdirs = {}
-  for _, arch in ipairs({'x86_64-linux-gnu', 'aarch64-linux-gnu', 'arm-linux-gnueabihf', ''}) do
-    for _, prefix in ipairs({'/usr/local/lib', '/usr/lib', '/usr/lib64', '/usr/local/lib64'}) do
+  for _, arch in ipairs({ 'x86_64-linux-gnu', 'aarch64-linux-gnu', 'arm-linux-gnueabihf', '' }) do
+    for _, prefix in ipairs({ '/usr/local/lib', '/usr/lib', '/usr/lib64', '/usr/local/lib64' }) do
       libdirs[#libdirs + 1] = prefix .. (arch ~= '' and '/' .. arch or '') .. '/lua/' .. ver
     end
   end
@@ -243,7 +243,7 @@ local function range_affected_rows(vendors, product, matches_any)
       { v = vendors, p = product, c4 = cvss_v4_column() }))
   local rows = {}
   local vuln, cvssv2, cvssv3, cvssv4, st_in, st_ex, en_in, en_ex, exploitdb_flag,
-    metasploit_flag = cur:fetch()
+  metasploit_flag = cur:fetch()
   while vuln do
     rows[#rows + 1] = {
       id = vuln,
@@ -258,7 +258,7 @@ local function range_affected_rows(vendors, product, matches_any)
       Metasploit = metasploit_flag,
     }
     vuln, cvssv2, cvssv3, cvssv4, st_in, st_ex, en_in, en_ex,
-      exploitdb_flag, metasploit_flag = cur:fetch()
+    exploitdb_flag, metasploit_flag = cur:fetch()
   end
   cur:close()
   return rows
@@ -274,7 +274,7 @@ local function exact_affected_rows(vendors, product)
       { v = vendors, p = product, c4 = cvss_v4_column() }))
   local rows = {}
   local vuln, cvssv2, cvssv3, cvssv4, pr_v, row_update, exploitdb_flag,
-    metasploit_flag = cur:fetch()
+  metasploit_flag = cur:fetch()
   while vuln do
     rows[#rows + 1] = {
       id = vuln,
@@ -287,7 +287,7 @@ local function exact_affected_rows(vendors, product)
       Metasploit = metasploit_flag,
     }
     vuln, cvssv2, cvssv3, cvssv4, pr_v, row_update, exploitdb_flag,
-      metasploit_flag = cur:fetch()
+    metasploit_flag = cur:fetch()
   end
   cur:close()
   return rows
@@ -322,7 +322,6 @@ function M.open(path)
   state.db_conn = state.db_env:connect(path)
 end
 
-
 -- Close the shared connection and environment.
 -- Return closed, err: err holds the message when closing the connection
 -- failed. Nothing is logged here.
@@ -331,7 +330,6 @@ function M.close()
   state.db_env:close()
   return closed, err
 end
-
 
 M.sql_template = sql_template
 M.vendor_scope = vendor_scope

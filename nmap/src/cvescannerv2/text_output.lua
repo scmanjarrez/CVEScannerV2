@@ -37,7 +37,6 @@ function M.cvss_text(cvss)
   return table.concat(parts, ' ')
 end
 
-
 --- Return the exploit flags of a CVE entry: 'EDB MSF', 'EDB', 'MSF' or '-'.
 function M.exploit_text(cve)
   local parts = {}
@@ -46,7 +45,6 @@ function M.exploit_text(cve)
   if #parts == 0 then return '-' end
   return table.concat(parts, ' ')
 end
-
 
 -- Product text: 'product version', with the vendor when it differs from
 -- the product and the update when it is not '*'.
@@ -74,7 +72,7 @@ local function warning_lines(result, prefix)
   local lines = {}
   for _, warning in ipairs(result.warnings) do
     lines[#lines + 1] = prefix .. 'warning: '
-      .. (WARNING_TEXT[warning] or warning)
+        .. (WARNING_TEXT[warning] or warning)
   end
   return lines
 end
@@ -135,7 +133,6 @@ function M.nmap_lines(result, cfg)
   return lines
 end
 
-
 --- Return the structured table of one service result for XML output.
 -- Holds the visible CVEs up to cfg.maxcve; cvss keeps the versions present.
 function M.structured_output(result, cfg)
@@ -143,19 +140,25 @@ function M.structured_output(result, cfg)
   for _, cve in ipairs(visible_cves(result, cfg.maxcve)) do
     local cvss = {}
     for _, ver in ipairs(CVSS_VERSIONS) do cvss[ver] = cve.cvss[ver] end
-    cves[#cves + 1] = { id = cve.id, confidence = cve.confidence,
-      cvss = cvss }
+    cves[#cves + 1] = {
+      id = cve.id,
+      confidence = cve.confidence,
+      cvss = cvss
+    }
   end
   return {
     product = result.product,
     version = result.version,
     source = result.version_source,
-    counts = { total = result.counts.total, high = result.counts.high,
-      medium = result.counts.medium, low = result.counts.low },
+    counts = {
+      total = result.counts.total,
+      high = result.counts.high,
+      medium = result.counts.medium,
+      low = result.counts.low
+    },
     cves = cves,
   }
 end
-
 
 -- Text of the OS context: 'linux (nmap)' or '-'.
 local function os_text(os_context)
@@ -199,7 +202,7 @@ function M.log_lines(result, ctx)
   end
   for _, cve in ipairs(visible_cves(result)) do
     local reasons = #cve.reasons > 0 and table.concat(cve.reasons, ', ')
-      or '-'
+        or '-'
     lines[#lines + 1] = fmt('  %-15s %-5s %-20s %s', cve.id,
       LEVEL_LABEL[cve.confidence], M.cvss_text(cve.cvss), reasons)
     for _, line in ipairs(exploit_lines(cve)) do
@@ -208,7 +211,6 @@ function M.log_lines(result, ctx)
   end
   return lines
 end
-
 
 --- Return the log header lines. args holds minconf, maxcve and db.
 function M.log_header(script_version, timestamp, args)
@@ -220,19 +222,12 @@ function M.log_header(script_version, timestamp, args)
   }
 end
 
-
 --- Return the log footer line. totals holds hosts, services and cves.
 function M.log_footer(totals)
   return {
     fmt('=== end  hosts: %d  services: %d  CVEs: %d ===', totals.hosts,
       totals.services, totals.cves),
   }
-end
-
-
---- Return the text of a run warning, as written in the log.
-function M.warning_line(message)
-  return 'warning: ' .. message
 end
 
 return M

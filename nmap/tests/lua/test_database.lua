@@ -37,36 +37,36 @@ local SCHEMA = {
 }
 
 local CVES = {
-  { 'CVE-2010-0425', '10.0', nil },   -- apache 2.2.8 exact
-  { 'CVE-2017-1000118', '5.0', '7.5' }, -- akka http_server (other vendor)
-  { 'CVE-2999-0001', '5.0', '9.8' },  -- apache, all versions
-  { 'CVE-2999-0002', '4.3', '6.1' },  -- apache [2.4.0, 2.4.50)
-  { 'CVE-2014-0160', '5.0', '7.5' },  -- openssl [1.0.1, 1.0.1g)
-  { 'CVE-2013-0169', '2.6', '5.9' },  -- openssl [1.0.1, 1.0.1d]
-  { 'CVE-2999-0003', '5.0', '7.5' },  -- sfackler openssl crate
-  { 'CVE-2999-0004', '7.5', '9.8' },  -- openssh 4.7 p1
-  { 'CVE-2999-0005', '7.5', '9.8' },  -- openssh 4.7 p2
-  { 'CVE-2999-0006', '5.0', '5.3' },  -- openssh < 7.4
-  { 'CVE-2011-2523', '10.0', '9.8' }, -- vsftpd 2.3.4 backdoor (beasts)
-  { 'CVE-2012-0075', '1.7', nil },    -- mysql 5.5.20
-  { 'CVE-2999-0007', '5.0', nil },    -- product name with a quote
-  { 'CVE-2999-0008', '5.0', nil },    -- iis 7.5 through alias
+  { 'CVE-2010-0425',    '10.0', nil },  -- apache 2.2.8 exact
+  { 'CVE-2017-1000118', '5.0',  '7.5' }, -- akka http_server (other vendor)
+  { 'CVE-2999-0001',    '5.0',  '9.8' }, -- apache, all versions
+  { 'CVE-2999-0002',    '4.3',  '6.1' }, -- apache [2.4.0, 2.4.50)
+  { 'CVE-2014-0160',    '5.0',  '7.5' }, -- openssl [1.0.1, 1.0.1g)
+  { 'CVE-2013-0169',    '2.6',  '5.9' }, -- openssl [1.0.1, 1.0.1d]
+  { 'CVE-2999-0003',    '5.0',  '7.5' }, -- sfackler openssl crate
+  { 'CVE-2999-0004',    '7.5',  '9.8' }, -- openssh 4.7 p1
+  { 'CVE-2999-0005',    '7.5',  '9.8' }, -- openssh 4.7 p2
+  { 'CVE-2999-0006',    '5.0',  '5.3' }, -- openssh < 7.4
+  { 'CVE-2011-2523',    '10.0', '9.8' }, -- vsftpd 2.3.4 backdoor (beasts)
+  { 'CVE-2012-0075',    '1.7',  nil },  -- mysql 5.5.20
+  { 'CVE-2999-0007',    '5.0',  nil },  -- product name with a quote
+  { 'CVE-2999-0008',    '5.0',  nil },  -- iis 7.5 through alias
 }
 
 -- id, vendor, product, version, update
 local PRODUCTS = {
-  { 1, 'apache', 'http_server', '2.2.8', '*' },
-  { 2, 'akka', 'http_server', '2.2.8', '*' },
-  { 3, 'apache', 'http_server', '*', '*' },
-  { 4, 'openssl', 'openssl', '*', '*' },
-  { 5, 'openbsd', 'openssh', '4.7', 'p1' },
-  { 6, 'openbsd', 'openssh', '4.7', 'p2' },
-  { 7, 'openbsd', 'openssh', '*', '*' },
-  { 8, 'beasts', 'vsftpd', '2.3.4', '*' },
-  { 9, 'mysql', 'mysql', '5.5.20', '*' },
-  { 10, 'example', "o'prod", '1.0', '*' },
-  { 11, 'sfackler', 'openssl', '*', '*' },
-  { 12, 'microsoft', 'internet_information_services', '7.5', '*' },
+  { 1,  'apache',    'http_server',                   '2.2.8',  '*' },
+  { 2,  'akka',      'http_server',                   '2.2.8',  '*' },
+  { 3,  'apache',    'http_server',                   '*',      '*' },
+  { 4,  'openssl',   'openssl',                       '*',      '*' },
+  { 5,  'openbsd',   'openssh',                       '4.7',    'p1' },
+  { 6,  'openbsd',   'openssh',                       '4.7',    'p2' },
+  { 7,  'openbsd',   'openssh',                       '*',      '*' },
+  { 8,  'beasts',    'vsftpd',                        '2.3.4',  '*' },
+  { 9,  'mysql',     'mysql',                         '5.5.20', '*' },
+  { 10, 'example',   "o'prod",                        '1.0',    '*' },
+  { 11, 'sfackler',  'openssl',                       '*',      '*' },
+  { 12, 'microsoft', 'internet_information_services', '7.5',    '*' },
 }
 
 local AFFECTED = {
@@ -79,11 +79,11 @@ local AFFECTED = {
 -- cve, product, start incl, start excl, end incl, end excl
 local MULTI = {
   { 'CVE-2999-0001', 3 },
-  { 'CVE-2999-0002', 3, '2.4.0', nil, nil, '2.4.50' },
-  { 'CVE-2014-0160', 4, '1.0.1', nil, nil, '1.0.1g' },
+  { 'CVE-2999-0002', 3, '2.4.0', nil, nil,      '2.4.50' },
+  { 'CVE-2014-0160', 4, '1.0.1', nil, nil,      '1.0.1g' },
   { 'CVE-2013-0169', 4, '1.0.1', nil, '1.0.1d', nil },
   { 'CVE-2999-0003', 11 },
-  { 'CVE-2999-0006', 7, nil, nil, nil, '7.4' },
+  { 'CVE-2999-0006', 7, nil,     nil, nil,      '7.4' },
 }
 
 local function sql_value(value)
@@ -142,8 +142,12 @@ local function scanner_for(args, aliases, vendor_aliases)
 end
 
 local function port(number, cpe, version, service)
-  return { number = number, protocol = 'tcp', service = service or 'svc',
-    version = { cpe = { cpe }, version = version } }
+  return {
+    number = number,
+    protocol = 'tcp',
+    service = service or 'svc',
+    version = { cpe = { cpe }, version = version }
+  }
 end
 
 -- First product of a TCP port of ip in the JSON report hosts, or nil.
@@ -224,9 +228,9 @@ t.case('output lists product, counts and CVEs sorted by confidence', function()
   t.truthy(output[1]:find('source: nmap_cpe', 1, true), 'version source')
   t.eq(output[2], 'CVEs: 2  high: 1  medium: 0  low: 1')
   t.truthy(output[3]:find('CVE', 1, true) and output[3]:find('CONF', 1, true),
-      'table header')
+    'table header')
   t.truthy(output[4]:find('CVE-2010-0425', 1, true),
-      'highest confidence first')
+    'highest confidence first')
   t.truthy(output[4]:find('HIGH', 1, true), 'exact version is high')
   t.truthy(output[4]:find('EDB', 1, true), 'Exploit-DB flag')
   t.truthy(output[4]:find('v2:10.0', 1, true), 'CVSS column')

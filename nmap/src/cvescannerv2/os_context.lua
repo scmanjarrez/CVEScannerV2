@@ -26,11 +26,11 @@ local OS_NAME_FAMILIES = {
 }
 
 local DISTRO_NAMES = {
-  { 'ubuntu', 'ubuntu' },
-  { 'debian', 'debian' },
+  { 'ubuntu',  'ubuntu' },
+  { 'debian',  'debian' },
   { 'red hat', 'redhat' },
-  { 'centos', 'centos' },
-  { 'suse', 'suse' },
+  { 'centos',  'centos' },
+  { 'suse',    'suse' },
 }
 
 local BACKPORT_PATTERNS = {
@@ -78,7 +78,7 @@ local function first_host_os_family(host)
   local family = cpes_family(first.cpe)
   for _, class in ipairs(first.classes or first.osclass or {}) do
     family = family or cpes_family(class.cpe)
-      or name_family(class.osfamily) or vendor_family(class.vendor)
+        or name_family(class.osfamily) or vendor_family(class.vendor)
   end
   return family
 end

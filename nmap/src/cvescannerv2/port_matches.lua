@@ -4,11 +4,11 @@
 -- Gathers the matches of a port from the Nmap version, the version probes,
 -- the banner and the HTTP fingerprint engine. The analysis of the matches
 -- stays in the entrypoint. No direct I/O: the probes and HTTP requests live
--- in 'probes' and 'httpscan'. Reads 'state.product_cpe'.
+-- in 'probes' and 'http_fingerprint'. Reads 'state.product_cpe'.
 
 local cpe = require 'cvescannerv2.cpe'
 local fingerprint = require 'cvescannerv2.fingerprint_match'
-local httpscan = require 'cvescannerv2.http_fingerprint'
+local http_fingerprint = require 'cvescannerv2.http_fingerprint'
 local match_table = require 'cvescannerv2.match_table'
 local probes = require 'cvescannerv2.probes.init'
 local state = require 'cvescannerv2.state'
@@ -23,8 +23,8 @@ local add_cpe_version = match_table.add_cpe_version
 local add_cpe_aliases = match_table.add_cpe_aliases
 local split_cpe = cpe.split_cpe
 local match_banner = fingerprint.match_banner
-local match_http_fingerprints = httpscan.match_http_fingerprints
-local use_http_engine = httpscan.use_http_engine
+local match_http_fingerprints = http_fingerprint.match_http_fingerprints
+local use_http_engine = http_fingerprint.use_http_engine
 local version_probe_result = probes.version_probe_result
 
 
@@ -32,13 +32,16 @@ local version_probe_result = probes.version_probe_result
 function M.new_match_table()
   return {
     ['data'] = {
-      ['nmap'] = {}, ['http'] = {}, ['smb'] = {}, ['irc'] = {},
-      ['ntp'] = {}, ['upnp'] = {}
+      ['nmap'] = {},
+      ['http'] = {},
+      ['smb'] = {},
+      ['irc'] = {},
+      ['ntp'] = {},
+      ['upnp'] = {}
     },
     ['size'] = 0
   }
 end
-
 
 --- Add the version found by a version probe, or the CPE of a port.
 -- Without a Nmap CPE, only the 'no_cpe' version probes can add a match.
@@ -93,6 +96,5 @@ function M.collect_port_matches(host, port)
   end
   return matches
 end
-
 
 return M

@@ -49,7 +49,6 @@ function M.load()
   return M
 end
 
-
 --- Build the HTTP options shared by every request to a target.
 function M.options_for_target()
   return {
@@ -62,6 +61,5 @@ function M.options_for_target()
     no_cache_body = true
   }
 end
-
 
 return M

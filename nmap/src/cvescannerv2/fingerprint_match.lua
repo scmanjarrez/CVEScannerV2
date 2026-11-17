@@ -185,7 +185,7 @@ end
 
 --- Record rule matches and triggered probes for subjects.
 local function match_subjects(subjects, matches, location, triggered,
-    only_403)
+                              only_403)
   if not state.catalog_loaded then return end
   for channel, values in pairs(subjects) do
     local rules = state.catalog.fingerprints[channel] or {}

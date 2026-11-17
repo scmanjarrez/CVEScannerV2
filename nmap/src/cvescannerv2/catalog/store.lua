@@ -71,7 +71,6 @@ function M.load_catalog()
   return false
 end
 
-
 --- Return the platform families table, or an empty table.
 function M.load_platform_families()
   local families = read_catalog_json('platform-families.json')
@@ -81,7 +80,6 @@ function M.load_platform_families()
   end
   return families
 end
-
 
 -- Local catalogue overlay. Its sections are validated with the upstream
 -- validators and appended to the loaded upstream catalogue, so local entries

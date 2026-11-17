@@ -33,7 +33,6 @@ local SERVICE_PROBES = {
   upnp.UPNP_PROBE,
   cups.CUPS_PROBE,
 }
-M.SERVICE_PROBES = SERVICE_PROBES
 
 --- Return whether the probe 'name' is selected by the probes argument.
 -- The smb and smb_os probes also need smb.available.
@@ -56,7 +55,7 @@ local function probe_applies(probe, port, product)
     return false
   end
   return (probe.services ~= nil and probe.services[port.service] == true)
-    or (probe.ports ~= nil and probe.ports[port.number] == true)
+      or (probe.ports ~= nil and probe.ports[port.number] == true)
 end
 
 --- Run a version probe with a per-key cache and return its result.
@@ -137,7 +136,7 @@ local function version_probe_result(host, port, product, nmap_version)
       applies = probe_applies(probe, port, product)
     else
       applies = probe.no_cpe == true and probe.services ~= nil
-        and probe.services[port.service] == true
+          and probe.services[port.service] == true
     end
     if probe.kind == 'version' and applies then
       local result = run_version_probe(host, port, probe)

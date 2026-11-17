@@ -24,8 +24,14 @@ local filter = os.getenv('CVESCANNER_FILTER')
 local nse_path = os.getenv('CVESCANNER_NSE') or 'nmap/src/cvescannerv2.nse'
 
 M.results = {
-  passed = 0, failed = 0, xfail = 0, xpass = 0, skipped = 0,
-  failures = {}, xfailures = {}, xpasses = {}
+  passed = 0,
+  failed = 0,
+  xfail = 0,
+  xpass = 0,
+  skipped = 0,
+  failures = {},
+  xfailures = {},
+  xpasses = {}
 }
 
 local function read_source()

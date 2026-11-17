@@ -87,19 +87,27 @@ local function cve(id, cvss, confidence, opts)
   }
 end
 
-local EDB_1 = { id = '11650', name = 'Apache mod_isapi Dangling Pointer',
-  url = 'https://www.exploit-db.com/exploits/11650' }
+local EDB_1 = {
+  id = '11650',
+  name = 'Apache mod_isapi Dangling Pointer',
+  url = 'https://www.exploit-db.com/exploits/11650'
+}
 local EDB_2 = { id = '1', url = 'https://www.exploit-db.com/exploits/1' }
 
 -- Four CVEs, sorted by confidence: A EDB, C EDB MSF, B MSF, D none.
 local CVE_A = cve('CVE-2010-0425', { v2 = 10.0 }, 'high',
   { reasons = { 'exact_version' }, exploitdb = { EDB_1 } })
 local CVE_C = cve('CVE-2999-0003', { v4 = 9.3 }, 'high',
-  { reasons = { 'exact_version' }, exploitdb = { EDB_2 },
-    metasploit = { 'exploit/x/y' } })
+  {
+    reasons = { 'exact_version' },
+    exploitdb = { EDB_2 },
+    metasploit = { 'exploit/x/y' }
+  })
 local CVE_B = cve('CVE-2999-0002', { v3 = 9.8, v2 = 5.0 }, 'medium',
-  { reasons = { 'range_overlap', 'platform_mismatch:windows' },
-    metasploit = { 'auxiliary/x/z' } })
+  {
+    reasons = { 'range_overlap', 'platform_mismatch:windows' },
+    metasploit = { 'auxiliary/x/z' }
+  })
 local CVE_D = cve('CVE-2999-0001', { v3 = 5.0 }, 'low',
   { reasons = { 'nvd_unbounded' } })
 
@@ -120,7 +128,7 @@ end
 
 -- Golden lines of the Nmap table of the four-CVE result.
 local L1 = 'apache http_server 2.2.8 (cpe:/a:apache:http_server:2.2.8)'
-  .. '  source: nmap_cpe'
+    .. '  source: nmap_cpe'
 local COUNTS = 'CVEs: 4  high: 2  medium: 1  low: 1'
 local HEAD = '  CVE              CONF  EXPLOITS  CVSS'
 local ROW_A = '  CVE-2010-0425    HIGH  EDB       v2:10.0'
@@ -208,8 +216,12 @@ t.case('distro_backport warning sits before the table header', function()
 end)
 
 t.case('vendor shown only when it differs from the product', function()
-  local result = result_of({}, { vendor = 'nginx', product = 'nginx',
-    version = '1.18.0', cpe = 'cpe:/a:nginx:nginx:1.18.0' })
+  local result = result_of({}, {
+    vendor = 'nginx',
+    product = 'nginx',
+    version = '1.18.0',
+    cpe = 'cpe:/a:nginx:nginx:1.18.0'
+  })
   t.eq(nmap(result, cfg(10, 'low')), {
     'nginx 1.18.0 (cpe:/a:nginx:nginx:1.18.0)  source: nmap_cpe',
     'CVEs: 0  high: 0  medium: 0  low: 0',
@@ -217,8 +229,13 @@ t.case('vendor shown only when it differs from the product', function()
 end)
 
 t.case('update shown when it is not nil', function()
-  local result = result_of({}, { vendor = 'openbsd', product = 'openssh',
-    version = '4.7', update = 'p1', cpe = 'cpe:/a:openbsd:openssh:4.7' })
+  local result = result_of({}, {
+    vendor = 'openbsd',
+    product = 'openssh',
+    version = '4.7',
+    update = 'p1',
+    cpe = 'cpe:/a:openbsd:openssh:4.7'
+  })
   t.eq(nmap(result, cfg(10, 'low'))[1],
     'openbsd openssh 4.7 update p1 (cpe:/a:openbsd:openssh:4.7)'
     .. '  source: nmap_cpe')
@@ -234,11 +251,11 @@ t.case('normal service: header, scores, CVEs with reasons and exploits', functio
   t.eq(text.log_lines(result, CTX), {
     '[10.0.0.1 80/tcp http] apache http_server 2.2.8',
     '  cpe: cpe:/a:apache:http_server:2.2.8  source: nmap_cpe'
-      .. '  os: linux (probe:smb_os)',
+    .. '  os: linux (probe:smb_os)',
     '  ' .. COUNTS,
     '  CVE-2010-0425   HIGH  v2:10.0              exact_version',
     '      EDB  11650  https://www.exploit-db.com/exploits/11650'
-      .. '  Apache mod_isapi Dangling Pointer',
+    .. '  Apache mod_isapi Dangling Pointer',
     '  CVE-2999-0003   HIGH  v4:9.3               exact_version',
     '      MSF  exploit/x/y',
     '      EDB  1  https://www.exploit-db.com/exploits/1',
@@ -249,8 +266,12 @@ t.case('normal service: header, scores, CVEs with reasons and exploits', functio
 end)
 
 t.case('cached service: one line naming the first report', function()
-  local ctx = { ip = '10.0.0.1', port_proto = '80/tcp', service = 'http',
-    cached_from = '10.0.0.2 80/tcp' }
+  local ctx = {
+    ip = '10.0.0.1',
+    port_proto = '80/tcp',
+    service = 'http',
+    cached_from = '10.0.0.2 80/tcp'
+  }
   t.eq(text.log_lines(all_visible(), ctx), {
     '[10.0.0.1 80/tcp http] apache http_server 2.2.8',
     '  cached: same result as 10.0.0.2 80/tcp',

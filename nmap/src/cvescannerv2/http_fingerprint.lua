@@ -328,13 +328,30 @@ end
 -- Services that Nmap identifies but that do not speak HTTP, even when
 -- wrapped in TLS. The http engine must skip them.
 local NON_HTTP_SERVICES = {
-  ['ms-wbt-server'] = true, ['ms-sql-s'] = true, ['mysql'] = true,
-  ['postgresql'] = true, ['ssh'] = true, ['ftp'] = true, ['ftps'] = true,
-  ['smtp'] = true, ['smtps'] = true, ['imap'] = true, ['imaps'] = true,
-  ['pop3'] = true, ['pop3s'] = true, ['ldap'] = true, ['ldapssl'] = true,
-  ['ldaps'] = true, ['vnc'] = true, ['microsoft-ds'] = true,
-  ['netbios-ssn'] = true, ['msrpc'] = true, ['telnet'] = true,
-  ['domain'] = true, ['ntp'] = true, ['snmp'] = true,
+  ['ms-wbt-server'] = true,
+  ['ms-sql-s'] = true,
+  ['mysql'] = true,
+  ['postgresql'] = true,
+  ['ssh'] = true,
+  ['ftp'] = true,
+  ['ftps'] = true,
+  ['smtp'] = true,
+  ['smtps'] = true,
+  ['imap'] = true,
+  ['imaps'] = true,
+  ['pop3'] = true,
+  ['pop3s'] = true,
+  ['ldap'] = true,
+  ['ldapssl'] = true,
+  ['ldaps'] = true,
+  ['vnc'] = true,
+  ['microsoft-ds'] = true,
+  ['netbios-ssn'] = true,
+  ['msrpc'] = true,
+  ['telnet'] = true,
+  ['domain'] = true,
+  ['ntp'] = true,
+  ['snmp'] = true,
 }
 
 --- Return true when the http fingerprint engine applies to a port.

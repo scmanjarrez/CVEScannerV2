@@ -9,34 +9,71 @@ local M = {}
 -- Table name, number of columns, and DDL. The conditions table exists only
 -- when the spec has a 'conditions' list, which models a database that has it.
 local SCHEMA = {
-  { name = 'cves', width = 5, ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
+  {
+    name = 'cves',
+    width = 5,
+    ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
     cvss_v2 TEXT, cvss_v3 TEXT, published INTEGER, cvss_v4 TEXT)]],
     -- Databases built before CVSSv4 have no cvss_v4 column.
-    legacy_width = 4, legacy_ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
-    cvss_v2 TEXT, cvss_v3 TEXT, published INTEGER)]] },
-  { name = 'products', width = 5, ddl = [[CREATE TABLE products (
+    legacy_width = 4,
+    legacy_ddl = [[CREATE TABLE cves (cve_id TEXT PRIMARY KEY,
+    cvss_v2 TEXT, cvss_v3 TEXT, published INTEGER)]]
+  },
+  {
+    name = 'products',
+    width = 5,
+    ddl = [[CREATE TABLE products (
     product_id INTEGER PRIMARY KEY, vendor TEXT, product TEXT, version TEXT,
-    version_update TEXT, UNIQUE (vendor, product, version, version_update))]] },
-  { name = 'affected', width = 2, ddl = [[CREATE TABLE affected (
-    cve_id TEXT, product_id INTEGER, PRIMARY KEY (cve_id, product_id))]] },
-  { name = 'multiaffected', width = 6, ddl = [[CREATE TABLE multiaffected (
+    version_update TEXT, UNIQUE (vendor, product, version, version_update))]]
+  },
+  {
+    name = 'affected',
+    width = 2,
+    ddl = [[CREATE TABLE affected (
+    cve_id TEXT, product_id INTEGER, PRIMARY KEY (cve_id, product_id))]]
+  },
+  {
+    name = 'multiaffected',
+    width = 6,
+    ddl = [[CREATE TABLE multiaffected (
     cve_id TEXT, product_id INTEGER, versionStartIncluding TEXT,
     versionStartExcluding TEXT, versionEndIncluding TEXT,
-    versionEndExcluding TEXT)]] },
-  { name = 'conditions', width = 6, ddl = [[CREATE TABLE conditions (
+    versionEndExcluding TEXT)]]
+  },
+  {
+    name = 'conditions',
+    width = 6,
+    ddl = [[CREATE TABLE conditions (
     cve_id TEXT, product_id INTEGER, config_idx INTEGER, part TEXT,
     vendor TEXT, product TEXT, PRIMARY KEY (cve_id, product_id, config_idx,
-    part, vendor, product))]] },
-  { name = 'exploits', width = 2, ddl = [[CREATE TABLE exploits (
-    exploit_id INTEGER PRIMARY KEY, name TEXT)]] },
-  { name = 'metasploits', width = 2, ddl = [[CREATE TABLE metasploits (
-    metasploit_id INTEGER PRIMARY KEY, name TEXT UNIQUE)]] },
-  { name = 'referenced_exploit', width = 2, ddl = [[CREATE TABLE
+    part, vendor, product))]]
+  },
+  {
+    name = 'exploits',
+    width = 2,
+    ddl = [[CREATE TABLE exploits (
+    exploit_id INTEGER PRIMARY KEY, name TEXT)]]
+  },
+  {
+    name = 'metasploits',
+    width = 2,
+    ddl = [[CREATE TABLE metasploits (
+    metasploit_id INTEGER PRIMARY KEY, name TEXT UNIQUE)]]
+  },
+  {
+    name = 'referenced_exploit',
+    width = 2,
+    ddl = [[CREATE TABLE
     referenced_exploit (cve_id TEXT, exploit_id INTEGER,
-    PRIMARY KEY (cve_id, exploit_id))]] },
-  { name = 'referenced_metasploit', width = 2, ddl = [[CREATE TABLE
+    PRIMARY KEY (cve_id, exploit_id))]]
+  },
+  {
+    name = 'referenced_metasploit',
+    width = 2,
+    ddl = [[CREATE TABLE
     referenced_metasploit (cve_id TEXT, metasploit_id INTEGER,
-    PRIMARY KEY (cve_id, metasploit_id))]] },
+    PRIMARY KEY (cve_id, metasploit_id))]]
+  },
 }
 
 --- Return the luasql.sqlite3 module, nil when it is not installed.

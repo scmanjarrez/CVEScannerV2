@@ -13,7 +13,7 @@ local M = {}
 
 local IRC_SERVICES = { irc = true, ircs = true }
 local IRC_REGISTER = 'NICK cvescan\r\nUSER cvescan 0 * :cvescan\r\n'
-  .. 'VERSION\r\n'
+    .. 'VERSION\r\n'
 local IRC_MAX_READS = 10
 local IRC_RETRY_DELAYS = { 30, 30 }
 
