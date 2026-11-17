@@ -204,13 +204,18 @@ the `nodb` target omits it. Both contain only Nmap, its runtime dependencies,
 the NSE script and the data files the scanner needs. The `database.yaml`
 workflow publishes the dump and then rebuilds the `:db` image.
 
-- Database embedded: `scmanjarrez/cvescanner:db`, or
-  `scmanjarrez/cvescanner:latest` (updated only when a release is published)
-- No database: `scmanjarrez/cvescanner:nodb`
+- Database embedded: `scmanjarrez/cvescanner:db`,
+  `scmanjarrez/cvescanner:latest` (updated only when a release is published),
+  or `scmanjarrez/cvescanner:v4-db` (latest 4.x with database)
+- No database: `scmanjarrez/cvescanner:nodb`, or
+  `scmanjarrez/cvescanner:v4-nodb` (latest 4.x without database)
 
-On a release, the workflow also publishes the Git tag for the database image
-and the same tag with `-nodb` appended for the lightweight image (for example
-`v4.0` and `v4.0-nodb`).
+On a release tagged with a semver version `vX.Y.Z` (for example `v4.0.0`), the
+workflow publishes `X.Y.Z` and `X.Y` for the database image, and the same tags
+with `-nodb` appended for the lightweight image (for example `4.0.0`, `4.0`,
+`4.0.0-nodb` and `4.0-nodb`). Versioned images are a snapshot of the database
+at release time; `db`, `v4-db` and the other moving tags are updated with each
+database publication. `v3-db` and `v3-nodb` keep v3.
 
 ```bash
 docker run -v /tmp/cvslogs:/tmp/cvslogs scmanjarrez/cvescanner:db \
