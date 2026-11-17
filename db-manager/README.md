@@ -1,9 +1,9 @@
 # db-manager
 
 This package provides the asynchronous database updater and query command for
-CVEScannerV2. Rich displays update progress and query tables. `db-query` opens
-a Textual terminal interface by default when no product is supplied; product
-names from the database are available as input suggestions. Press the right
+CVEScannerV2. Rich displays update progress and query tables. `db-query -i`
+opens a Textual terminal interface; product names from the database are
+available as input suggestions. Press the right
 arrow to accept a suggestion, then press Enter or select Search.
 
 ## Architecture
@@ -88,10 +88,18 @@ Overlapping page parsing with writes in a thread was tried and discarded: the
 Python parsing holds the GIL, so it gave no measurable speedup and used more memory.
 Further gains would need parsing in separate processes.
 
-Without a product argument, `db-query` opens the Textual interface and suggests
-product names from the database. Search results separate exact-version matches
-from version ranges and apply inclusive or exclusive NVD bounds. The one-off
-command also supports raw output and debug logging for rejected comparisons.
+Without arguments, `db-query` prints its help; `-i` opens the Textual
+interface and suggests product names from the database. Search results separate
+exact-version matches from version ranges, apply inclusive or exclusive NVD
+bounds and show known exploits in one `EXPLOITS` column (`EDB MSF`, `EDB`,
+`MSF` or `-`). The one-off command (`-p`) also supports raw output and debug
+logging for rejected comparisons.
+
+Textual interface keys: `Tab`/`Shift+Tab` cycle product, version and update;
+`Ctrl+S` searches, `Ctrl+L` clears, `Ctrl+E`/`Ctrl+R` show exact versions or
+ranges, `Ctrl+T` focuses the results and `Ctrl+Q` quits. In a results table,
+arrows, `hjkl` and `Ctrl+N/P/B/F` move the cursor; `g`/`G` or `Alt+<`/`Alt+>`
+jump to the first/last row; `Ctrl+D/U` or `Ctrl+V`/`Alt+V` page down/up.
 
 ```bash
 uv run --project db-manager db-query -p "gibbon" -v "25.0.0"
@@ -112,7 +120,7 @@ uv run --project db-manager db-manager
 uv run --project db-manager db-manager --database data/cve.db --noscrape
 uv run --project db-manager db-manager --nvd-raw data/nvd-raw
 uv run --project db-manager db-query --help
-uv run --project db-manager db-query
+uv run --project db-manager db-query -i
 uv run --project db-manager db-query -c data/cve.db -p "gibbon" -v "25.0.0"
 ```
 
@@ -122,7 +130,7 @@ When working from this directory, the shorter commands are available:
 uv run db-manager --help
 uv run db-manager --noscrape
 uv run db-query --help
-uv run db-query
+uv run db-query -i
 ```
 
 The database updater reads the NVD API key from `NVD_KEY` or `.api` in the

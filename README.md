@@ -282,13 +282,16 @@ nmap -sV --script cvescannerv2 --script-args log=logfile.log,json=logfile.json <
 | `product_cpe` | `data/product-cpe.json` | Product to CPE overrides for Nmap products. `none` disables it. |
 | `service` | `all` | Restrict the scan to one product (for example `http_server`). |
 | `version` | `all` | Restrict the scan to one version. |
-| `probes` | `all` | Service probes to run: `all`, `none` or a comma-separated list (`smb`, `irc`, `smb_os`). |
+| `probes` | `all` | Service probes to run: `all`, `none` or a comma-separated list (`smb`, `smb_os`, `irc`, `ntp`, `upnp`, `cups`). |
 | `minconf` | `low` | Minimum confidence shown in the table and the log (`low`, `medium`, `high`). The JSON report always keeps every CVE. |
 
 > **Changes in v4**: the arguments `smb`, `http`, `catalog_url`, `path` and
 > `regex` were removed. They are ignored silently, so an old command line still
-> runs, but it no longer has any effect. The script no longer downloads the
-> catalogue; use `scripts/download-catalog.sh` instead.
+> runs, but it no longer has any effect. The download the catalogue, 
+> use `scripts/download-catalog.sh`. To keep the old
+> `http=0` behaviour (no HTTP requests from the script), use `catalog=none`
+> together with a `probes` list without `cups`. The full catalogue sweep of
+> v3 is now opt-in: use `sweep=1` (tiered) or `sweep=2` (every path).
 
 <details>
 <summary><b>Examples</b></summary>
@@ -373,6 +376,9 @@ Values of `source` (`version_source`):
 | `http` | Version found by an HTTP probe. |
 | `smb` | Version found by the SMB probe. |
 | `irc` | Version found by the IRC probe. |
+| `ntp` | Version found by the NTP probe (ntpd `readvar`). |
+| `upnp` | Version found by the UPnP probe (miniupnpd SSDP). |
+| `cups` | Version found by the CUPS probe (`GET /` page title). |
 
 See [Where the version comes from](#where-the-version-comes-from).
 
@@ -517,6 +523,9 @@ origin of that version in `version_source`:
 | `http` | HTTP fingerprints or targeted HTTP probes. | Good when the page or header exposes the version. |
 | `smb` | SMB probe (Samba `lanmanager`). | Exact version. |
 | `irc` | IRC probe (UnrealIRCd `VERSION` reply). | Exact version. |
+| `ntp` | NTP probe (ntpd mode 6 `readvar`). | Exact version and patch. |
+| `upnp` | UPnP probe (miniupnpd SSDP `SERVER:` header). | Exact version. |
+| `cups` | CUPS probe (`GET /` page title). | Exact version. |
 
 When a probe returns a precise version for the port's product it **replaces**
 the Nmap version; it is not added as a second candidate.
@@ -560,8 +569,7 @@ script depends on 10 of them through `dependencies`.
 cost about 2.9 times the scan time with no gain in versions or CVEs. Repeat
 the measurement on a target that responds differently to the intensity first.
 
-**Pending candidates.** Plans 012 and later, one per route. No dates are
-promised.
+**Pending candidates.** One per route. No dates are promised.
 
 - **P1 (V1):** `mcafee-epo-agent`, mapped to `mcafee:agent` (7 CVEs). The
   script identifies the agent, not the server, so
@@ -699,7 +707,9 @@ UPnP, **and** whose detected service can actually speak HTTP.
     body are discarded, and families are only activated by strong evidence.
   - `sweep=2` adds T3, every remaining catalogue path (unlimited unless
     `sweep_budget` is set). This is the previous behaviour.
-  - The core list is not yet validated against MS2/MS3 (F0 pending).
+  - On Metasploitable 2 and 3, `sweep=1` finds the same products and CVEs
+    as `sweep=2` with about 95 % fewer requests (50 instead of ~955 per
+    port).
   Targeted probes run by default.
 - **Abort on silence.** If a port stops answering HTTP, the sweep gives up when
   a whole request batch returns no response, instead of trying every path.

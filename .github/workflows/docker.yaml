@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   release:
     types: [published]
-  # Invocado por database.yaml: en ese caso solo publica las etiquetas :db, :nodb y de rama.
+  # Called by database.yaml: in that case it only publishes the :db, :nodb and branch tags.
   workflow_call:
 
 permissions:

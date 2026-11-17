@@ -41,7 +41,7 @@ All plans are isolated by namespace under `.workflow/<plan_id>/`:
 ### Permitted Actions:
 - Read `.workflow/<plan_id>/PLAN.md` and manage `.workflow/<plan_id>/STATE.md`.
 - Inspect target file signatures/imports ONLY to gather context for contracts.
-- Write atomic task contracts (1-task, 1-agent) in `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md` (affecting <= 2 files per contract).
+- Write **atomic** task (1 task, 1 agent) contracts in `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md` (affecting <= 2 files per contract).
 - Spawn Haiku sub-agents via the `Task` tool to execute contracts.
 
 ### STRICT PROHIBITIONS:
@@ -51,7 +51,7 @@ All plans are isolated by namespace under `.workflow/<plan_id>/`:
 ### Sub-Agent Spawning Protocol (Haiku Delegation):
 When invoking the `Task` tool, pass the exact namespaced contract path:
 > "ROLE: Tier 3 Executor (Haiku).
-> 1. Read mandatory Python standards in `AGENTS.md`.
+> 1. Only for python projects (`*.py`, `pyproject.toml`, `uv.lock`): Read mandatory standards in `AGENTS.md`.
 > 2. Read and execute the contract in `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md`.
 > 3. Do NOT read or modify files outside the contract's scope.
 > 4. Run the mandatory CLI verification gate from `AGENTS.md` Section 5 and return ONLY the RPC status block."
@@ -62,11 +62,11 @@ When invoking the `Task` tool, pass the exact namespaced contract path:
 **Mission**: Surgical implementation and strict verification.
 
 ### Execution Loop:
-1. Read `AGENTS.md` for python files and strictly enforce all architecture, typing, Pydantic `Field(description=...)`, and Google Docstring rules.
+1. Only for python files: Read `AGENTS.md` and strictly enforce all architecture, typing, Pydantic `Field(description=...)`, and Google Docstring rules.
 2. Read your assigned `.workflow/<plan_id>/tasks/TASK-XX-<slug>.md`.
 3. Modify ONLY the files listed in the contract.
-4. Run the standalone CLI verification command from `AGENTS.md` Section 5.
-5. Return ONLY this final payload to the Orchestrator for python files:
+4. Only for python files: Run the standalone CLI verification command from `AGENTS.md` Section 5.
+5. Only for python files: Return ONLY this final payload to the Orchestrator:
    ```text
    STATUS: SUCCESS | BLOCKED
    PLAN: <plan_id>
@@ -75,8 +75,7 @@ When invoking the `Task` tool, pass the exact namespaced contract path:
    CHECKS: ruff_format=PASS, ruff_check=PASS, basedpyright=PASS
    NOTES: <1-line summary or blocker reason>
    ```
-
-   Return ONLY this final payload to the Orchestrator for other files:
+6. For other than python files: Return ONLY this final payload to the Orchestrator:
    ```text
    STATUS: SUCCESS | BLOCKED
    PLAN: <plan_id>

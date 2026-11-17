@@ -10,10 +10,12 @@
 1. **Response Style**: Concise, direct, and in Spanish ("smart caveman / terse" mode).
 2. **Version Control**: **NEVER run `git add` or `git commit`** without explicit user authorization.
 3. **Strict Scope**: Solve only the assigned task. If the task is strictly to document or standardize docstrings, **do not modify business logic, method signatures, or dependencies**.
+4. **Package & Environment Management (`uv`)**: Use `uv` exclusively for all Python dependency, virtual environment, and project management (`uv add`, `uv remove`, `uv sync`, `uv run`, `uv init --package`). **NEVER** use `pip`.
 
 ---
 
 ## 2. Architectural & Design Principles
+- **Project Layout (`src` layout)**: By default, all Python projects MUST follow the standard `src/<project_name>/` package structure (configured via `pyproject.toml`). Only deviate from this layout if the user explicitly specifies an alternative structure (e.g., when configuring `uv` workspaces).
 - **KISS (Keep It Simple, Stupid)**: Prioritize simple, pragmatic solutions. Never introduce premature abstractions, unnecessary design patterns, or multi-layered indirection when a straightforward function or simple structure solves the issue.
 - **YAGNI (Avoid Over-Engineering)**: Solve only the immediate problem. Do not anticipate hypothetical future requirements. Clear, readable, and directly maintainable code takes precedence over complex flexibility.
 - **DRY (Don't Repeat Yourself)**: Extract duplicated logic and centralize reusable behavior, balancing DRY with readability—avoid creating tight coupling across unrelated domains solely for deduplication.
@@ -88,7 +90,7 @@ Code must comply with Python 3.12+ strict typing (explicit annotations, `X | Y` 
 Before finishing any task, you MUST execute these exact standalone commands on all modified files:
 
 ```bash
-ruff format --line-length 79 <file> && ruff check --fix --line-length 79 --select ALL --ignore W191,E111,E114,E117,D206,D300,Q000,Q001,Q002,Q003,Q004,COM812,COM819,CPY001,ISC002 --config "lint.pydocstyle.convention='google'" --config "lint.pycodestyle.max-line-length=79" <file> && basedpyright -p <(echo '{"typeCheckingMode":"strict"}') --pythonversion 3.12 --venvpath . --venv .venv <file>
+uv tool run ruff format --line-length 79 <file> && uv tool run ruff check --fix --line-length 79 --select ALL --ignore W191,E111,E114,E117,D206,D300,Q000,Q001,Q002,Q003,Q004,COM812,COM819,CPY001,ISC002 --config "lint.pydocstyle.convention='google'" --config "lint.pycodestyle.max-line-length=79" <file> && uv tool run basedpyright -p <(echo '{"typeCheckingMode":"strict"}') --pythonversion 3.12 --pythonpath .venv/bin/python <file>
 ```
 
 - **Zero Tolerance**: If `ruff` or `basedpyright` outputs ANY error or warning, fix the root cause in the code and re-run the command until both return **0 errors**.
