@@ -154,6 +154,47 @@ Candidates that were evaluated against lab targets and **discarded** because
 them: `ftp-syst`, `ajp-headers`, NTLM probes (`rdp-ntlm-info`,
 `http-ntlm-info`), `snmp-sysdescr` and `mysql-info`.
 
+## Releasing
+
+Releases are cut from `master`. The version must match in the code, the README
+examples and the release tag.
+
+1. Set the version and commit:
+
+   ```bash
+   scripts/bump-version.sh X.Y.Z          # nmap/src/cvescannerv2.nse, db-manager/pyproject.toml, db-manager/uv.lock, README.md examples
+   scripts/bump-version.sh --check X.Y.Z  # verifies the three version files only
+   ```
+
+   Commit and push to `master`, and wait for CI to pass.
+
+2. Create the release with the same number:
+
+   ```bash
+   gh release create vX.Y.Z --target master --title "CVEScannerV2 X.Y.Z" --generate-notes
+   ```
+
+3. Publishing the release triggers:
+
+   - `docker.yaml` (Publish Nmap images), after checking the version against the
+     tag. It pushes `scmanjarrez/cvescanner` with `db` images tagged `db`, `v4-db`,
+     `latest`, `X.Y.Z` and `X.Y`, and `nodb` images tagged `nodb`, `v4-nodb`,
+     `X.Y.Z-nodb` and `X.Y-nodb`.
+   - `release.yaml` (Release tarballs), after checking the version against the
+     tag. It builds `cvescannerv2-X.Y.Z-db.tar.gz` and
+     `cvescannerv2-X.Y.Z-nodb.tar.gz` plus `SHA256SUMS`, and attaches them to the
+     release.
+
+   Both checks fail if the code version does not match the tag. `docker.yaml`
+   also runs after each database update (`database.yaml`), which rebuilds only
+   the rolling tags (`db`, `nodb`, `v4-db`, `v4-nodb`).
+
+4. Before releasing, the `CVEScannerV2DB` dump must be v4. `release.yaml` fails
+   otherwise and asks you to run the "Update database" workflow first.
+
+Published version tags and releases are not moved. Fix a mistake with a new
+release. CI does move the rolling tags listed above.
+
 ## Tests
 
 

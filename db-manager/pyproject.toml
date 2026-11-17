@@ -1,6 +1,6 @@
 [project]
 name = "db-manager"
-version = "4.0.0"
+version = "4.0.2"
 description = "Asynchronous CVE database updater and query tools"
 readme = "README.md"
 authors = [{ name = "Sergio Chica", email = "sergio.chica@csic.es" }]

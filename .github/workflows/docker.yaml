@@ -18,6 +18,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Check the version matches the release tag
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: scripts/bump-version.sh --check "$RELEASE_TAG"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 

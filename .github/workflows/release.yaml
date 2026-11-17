@@ -33,6 +33,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check the version matches the tag
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        run: scripts/bump-version.sh --check "$RELEASE_TAG"
+
       - name: Install tools
         shell: bash
         run: |

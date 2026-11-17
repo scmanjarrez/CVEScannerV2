@@ -395,7 +395,7 @@ The log records every CVE with its reasons and every exploit reference. A run
 writes a header, one block per service and a footer:
 
 ```
-=== cvescannerv2 4.0  2026-11-05T06:11:04+00:00 ===
+=== cvescannerv2 4.0.2  2026-11-05T06:11:04+00:00 ===
 args: minconf=low maxcve=10 db=data/cve.db
 
 [192.168.251.131 512/tcp exec] netkit *
@@ -445,7 +445,7 @@ version and update is written once: the first detection wins.
 ```json
 {
   "schema_version": 2,
-  "scanner": { "name": "cvescannerv2", "version": "4.0" },
+  "scanner": { "name": "cvescannerv2", "version": "4.0.2" },
   "timestamp": "2026-11-05T10:00:00+00:00",
   "args": { "minconf": "low", "maxcve": 10 },
   "hosts": [
