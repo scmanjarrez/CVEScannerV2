@@ -818,9 +818,16 @@ uv run --project db-manager db-query -p "gibbon" -v "25.0.0"
 
 # Acknowledgements
 
-**This work has been supported by National R&D Project TEC2017-84197-C4-1-R and
-by the Comunidad de Madrid project CYNAMON P2018/TCS-4566 and co-financed by
-European Structural Funds (ESF and FEDER).**
+From 2021 to 2023, this work was supported by National R&D Project
+TEC2017-84197-C4-1-R and by the Comunidad de Madrid project CYNAMON
+P2018/TCS-4566, co-financed by European Structural Funds (ESF and FEDER).
+
+Since 2026, this work has been supported by the European Commission under
+the Horizon Europe funding program, as part of the project SafeHorizon (Grant
+Agreement 101168562), and by Comunidad Autónoma de Madrid, CIRMA-CAM Project
+TEC-2024/COM-404. Views and opinions expressed are, however, those of the
+authors only and do not necessarily reflect those of the European Union.
+Neither the European Union nor the granting authority can be held responsible.
 
 - Based on the [alegr3/CVEscanner](https://github.com/alegr3/CVEscanner)
   script.
