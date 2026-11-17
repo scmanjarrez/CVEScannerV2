@@ -417,6 +417,25 @@ t.case('tie keeps the existing reason', function()
   t.eq(result.C3.reasons, { 'range_overlap' })
 end)
 
+t.case('exact row inside an observed range does not beat range_overlap', function()
+  local overlap_row = { id = 'C4', StartInc = '2.0', EndExc = '2.4.8' }
+  local exact_row = { id = 'C4', version = '2.4.5' }
+  local from, to = '2.4.0', '2.4.10'
+
+  local a = {}
+  s.modules.version_scope.scoped_multi_versions({ overlap_row }, from, to, a,
+    false)
+  s.modules.version_scope.scoped_versions({ exact_row }, from, to, '*', a)
+
+  local b = {}
+  s.modules.version_scope.scoped_versions({ exact_row }, from, to, '*', b)
+  s.modules.version_scope.scoped_multi_versions({ overlap_row }, from, to, b,
+    false)
+
+  t.eq(a.C4.reasons, { 'range_overlap' })
+  t.eq(b.C4.reasons, { 'range_overlap' })
+end)
+
 t.suite('compare_version cache')
 
 t.case('results stay correct after the cache is reset', function()

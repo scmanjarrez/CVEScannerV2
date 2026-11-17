@@ -147,6 +147,8 @@ local function scoped_versions(all_versions, from, to, observed_update, result)
     local applies = false
     local reason = nil
     if from ~= to then
+      -- The observed version is a range, never exact evidence.
+      reason = 'range_overlap'
       local affected_version = pr_v
       if row_update ~= '*' and row_update ~= '-' and row_update ~= '' then
         affected_version = affected_version .. row_update
