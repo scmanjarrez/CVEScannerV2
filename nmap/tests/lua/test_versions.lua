@@ -447,3 +447,97 @@ t.case('results stay correct after the cache is reset', function()
   t.eq(mismatches(compare), {})
   t.eq(compare('2.2.8', '2.2.10'), -1)
 end)
+
+t.suite('mssql_build')
+
+local MSSQL = 'cpe:/a:microsoft:sql_server:2014'
+
+t.load_scanner()
+local mssql_build = require 'cvescannerv2.mssql_build'
+
+local function refine(cpe, version)
+  return mssql_build.refine(cpe, version)
+end
+
+t.case('2014 SP3 build maps to sp3', function()
+  t.eq(refine(MSSQL, '12.00.6329'), { 'cpe:/a:microsoft:sql_server:2014:sp3' })
+end)
+
+t.case('2014 SP1 and RTM builds', function()
+  t.eq(refine(MSSQL, '12.00.4100'), { 'cpe:/a:microsoft:sql_server:2014:sp1' })
+  t.eq(refine(MSSQL, '12.00.2000'), { MSSQL })
+end)
+
+t.case('2016 SP3 keeps the SP CPE and the build CPE', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:2016', '13.00.6300'), {
+    'cpe:/a:microsoft:sql_server:2016:sp3',
+    'cpe:/a:microsoft:sql_server_2016:13.0.6300',
+  })
+end)
+
+t.case('2016 RTM build keeps the original CPE and the build CPE', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:2016', '13.00.1601'), {
+    'cpe:/a:microsoft:sql_server:2016',
+    'cpe:/a:microsoft:sql_server_2016:13.0.1601',
+  })
+end)
+
+t.case('2019 has only the exact build CPE', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:2019', '15.00.4003'), {
+    'cpe:/a:microsoft:sql_server_2019:15.0.4003',
+  })
+end)
+
+t.case('2008 R2 SP1 build', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:2008', '10.50.2500'), {
+    'cpe:/a:microsoft:sql_server:2008:r2_sp1',
+  })
+end)
+
+t.case('4 component version with suffix refines like the base build', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:2019', '15.00.2000.00; RTM'), {
+    'cpe:/a:microsoft:sql_server_2019:15.0.2000',
+  })
+  t.eq(refine(MSSQL, '12.00.4100.00; SP1'), {
+    'cpe:/a:microsoft:sql_server:2014:sp1',
+  })
+end)
+
+t.case('4 component version without suffix matches the 3 component build', function()
+  local cpe = 'cpe:/a:microsoft:sql_server:2016'
+  t.eq(refine(cpe, '13.00.6300.2'), refine(cpe, '13.00.6300'))
+end)
+
+t.case('malformed build suffixes are left unchanged', function()
+  t.eq(refine(MSSQL, '12.00.6329x'), { MSSQL })
+  t.eq(refine(MSSQL, '12.00'), { MSSQL })
+end)
+
+t.case('CPE with update is left unchanged', function()
+  local cpe = 'cpe:/a:microsoft:sql_server:2014:sp1'
+  t.eq(refine(cpe, '12.00.6329'), { cpe })
+end)
+
+t.case('CPE wildcard update is refined like an unset update', function()
+  t.eq(refine(MSSQL .. ':*', '12.00.6329'), {
+    'cpe:/a:microsoft:sql_server:2014:sp3',
+  })
+end)
+
+t.case('other vendor is left unchanged', function()
+  local cpe = 'cpe:/a:oracle:sql_server:2014'
+  t.eq(refine(cpe, '12.00.6329'), { cpe })
+end)
+
+t.case('versions that are not build numbers are left unchanged', function()
+  t.eq(refine(MSSQL, '2014'), { MSSQL })
+  t.eq(refine(MSSQL, '12.00'), { MSSQL })
+  t.eq(refine(MSSQL, nil), { MSSQL })
+end)
+
+t.case('refine does not mutate its input and is repeatable', function()
+  local first = refine(MSSQL, '12.00.6329')
+  local second = refine(MSSQL, '12.00.6329')
+  t.eq(first, second)
+  t.eq(MSSQL, 'cpe:/a:microsoft:sql_server:2014')
+end)

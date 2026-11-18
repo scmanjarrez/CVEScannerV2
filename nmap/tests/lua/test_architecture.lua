@@ -15,6 +15,7 @@ local LAYER = {
   config = 0,
   cpe = 0,
   version = 1,
+  mssql_build = 1,
   match_table = 2,
   ['catalog.validate'] = 2,
   reference_files = 2,

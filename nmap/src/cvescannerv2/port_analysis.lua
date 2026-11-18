@@ -8,6 +8,7 @@
 
 local config = require 'cvescannerv2.config'
 local log = require 'cvescannerv2.log'
+local mssql_build = require 'cvescannerv2.mssql_build'
 local render = require 'cvescannerv2.text_output'
 local report = require 'cvescannerv2.json_report'
 local state = require 'cvescannerv2.state'
@@ -205,8 +206,10 @@ local function analyze_port(host, port, matches, scan_ctx)
     for _, cpe in ipairs(sorted_keys(cpes)) do
       local versions = cpes[cpe]
       for _, version_str in ipairs(sorted_keys(versions)) do
-        analyze_match(host, port, scan_ctx, origin, cpe, version_str, out,
-          cfg)
+        for _, refined in ipairs(mssql_build.refine(cpe, version_str)) do
+          analyze_match(host, port, scan_ctx, origin, refined, version_str,
+            out, cfg)
+        end
       end
     end
   end

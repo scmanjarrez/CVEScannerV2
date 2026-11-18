@@ -985,3 +985,77 @@ db_case('alias conditions apply only to CVEs found through the alias', function(
   t.eq(vulns['CVE-ALIAS'].reasons,
     { 'exact_version', 'alias_product', 'platform_mismatch:windows' })
 end)
+
+t.suite('mssql build refinement')
+
+-- Temporary database files of the SQL Server cases, removed at the end.
+local MSSQL_PATHS = {}
+
+-- SQL Server products: 2014 sp1, sp3 and any update, and a 2016 build product
+-- with a 13.0.x range.
+local MSSQL_PRODUCTS = {
+  { 1, 'microsoft', 'sql_server',      '2014', 'sp1' },
+  { 2, 'microsoft', 'sql_server',      '2014', 'sp3' },
+  { 3, 'microsoft', 'sql_server',      '2014', '*' },
+  { 4, 'microsoft', 'sql_server_2016', '*',    '*' },
+}
+
+-- Database spec with one CVE per 2014 update and one 2016 range CVE.
+local function mssql_spec()
+  local cves = {}
+  for _, id in ipairs({ 'CVE-2014-SP1', 'CVE-2014-SP3', 'CVE-2014-ANY',
+    'CVE-2016-RANGE' }) do
+    table.insert(cves, { id, '7.5', nil, 2000, nil })
+  end
+  return {
+    cves = cves,
+    products = MSSQL_PRODUCTS,
+    affected = {
+      { 'CVE-2014-SP1', 1 },
+      { 'CVE-2014-SP3', 2 },
+      { 'CVE-2014-ANY', 3 },
+    },
+    multiaffected = {
+      { 'CVE-2016-RANGE', 4, nil, '13.0.0', nil, '13.1.0' },
+    },
+  }
+end
+
+-- Analyze one CPE and version as a port match and return the CVE ids of the
+-- cached results, with the reasons of each CVE.
+local function mssql_found(cpe, version_str)
+  local sc = t.load_scanner({ sql = sqlite })
+  local path = fixture.create(mssql_spec(), sqlite)
+  table.insert(MSSQL_PATHS, path)
+  local reg = sc.modules.state
+  reg.db_env, reg.db_conn = fixture.open(path, sqlite)
+  reg.log_file = { write = function() end }
+  reg.service_cache = {}
+  local matches = { data = { nmap = {}, http = {}, smb = {} }, size = 0 }
+  sc.modules.match_table.add_cpe_version(cpe, version_str, matches, 'nmap')
+  local host = { ip = '10.0.0.1' }
+  local port = { number = 1433, protocol = 'tcp', service = 'ms-sql-s' }
+  sc.modules.port_analysis.analyze_port(host, port, matches, { os = {} })
+  local found, reasons = {}, {}
+  for _, cached in pairs(reg.service_cache) do
+    for _, cve in ipairs(cached.result.cves) do
+      found[cve.id] = true
+      reasons[cve.id] = cve.reasons
+    end
+  end
+  return found, reasons
+end
+
+db_case('2014 build 12.00.6329 keeps the sp3 and any-update CVEs only', function()
+  local found, reasons = mssql_found('cpe:/a:microsoft:sql_server:2014',
+    '12.00.6329')
+  t.keys_eq(found, { 'CVE-2014-SP3', 'CVE-2014-ANY' })
+  t.eq(reasons['CVE-2014-SP3'], { 'exact_version' })
+end)
+
+db_case('2016 build 13.00.6300 finds the sql_server_2016 range CVE', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2016', '13.00.6300')
+  t.truthy(found['CVE-2016-RANGE'], 'CVE-2016-RANGE missing')
+end)
+
+for _, path in ipairs(MSSQL_PATHS) do os.remove(path) end
