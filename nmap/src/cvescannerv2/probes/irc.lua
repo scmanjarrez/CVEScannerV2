@@ -53,11 +53,19 @@ local function irc_read_version(sock)
   return nil, false
 end
 
+--- Transport protocol for a port: 'ssl' for ircs or an SSL tunnel, else 'tcp'.
+-- @param port table Nmap-style port (service, version.service_tunnel).
+-- @return string 'ssl' or 'tcp'.
+local function irc_proto(port)
+  local tunnel = port.version and port.version.service_tunnel == 'ssl'
+  if port.service == 'ircs' or tunnel then return 'ssl' end
+  return 'tcp'
+end
+
 --- Send the registration and VERSION requests on an open socket.
 -- Return the UnrealIRCd version (or nil) and the throttled flag.
 local function irc_exchange(sock, host, port)
-  local proto = ((port.service == 'ircs') or (port.version and port.version.service_tunnel == 'ssl')) and 'ssl' or 'tcp'
-  if not sock:connect(host, port, proto) then return nil, false end
+  if not sock:connect(host, port, irc_proto(port)) then return nil, false end
   sock:send(IRC_REGISTER)
   return irc_read_version(sock)
 end

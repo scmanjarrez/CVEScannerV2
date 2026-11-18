@@ -572,7 +572,8 @@ local function irc_stub(script)
     local sock = {}
     function sock.set_timeout() end
 
-    function sock.connect()
+    function sock.connect(_, _, _, proto)
+      log.proto = proto
       if script.connect_err then return false, script.connect_err end
       return true
     end
@@ -607,6 +608,52 @@ t.case('351 reply sets the UnrealIRCd version', function()
   t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
   t.keys_eq(matches.data.nmap, {})
   t.eq(log.closed, 1)
+end)
+
+t.case('ircs service connects over ssl', function()
+  local log, new_socket = irc_stub({ lines = { IRC_351 } })
+  local scanner = t.load_scanner()
+  scanner.stubs.nmap.new_socket = new_socket
+  local port = {
+    number = 6697,
+    service = 'ircs',
+    version = { cpe = { irc_nmap }, version = '' }
+  }
+  local matches = new_match_table()
+  matches.data.irc = {}
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.30' }, port,
+    matches)
+  t.eq(log.proto, 'ssl')
+  t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+end)
+
+t.case('ssl tunnel version connects over ssl', function()
+  local log, new_socket = irc_stub({ lines = { IRC_351 } })
+  local scanner = t.load_scanner()
+  scanner.stubs.nmap.new_socket = new_socket
+  local port = {
+    number = 6667,
+    service = 'irc',
+    version = { cpe = { irc_nmap }, version = '', service_tunnel = 'ssl' }
+  }
+  local matches = new_match_table()
+  matches.data.irc = {}
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.31' }, port,
+    matches)
+  t.eq(log.proto, 'ssl')
+  t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
+end)
+
+t.case('plain irc service connects over tcp', function()
+  local log, new_socket = irc_stub({ lines = { IRC_351 } })
+  local scanner = t.load_scanner()
+  scanner.stubs.nmap.new_socket = new_socket
+  local matches = new_match_table()
+  matches.data.irc = {}
+  scanner.modules.port_matches.add_nmap_matches({ ip = '10.1.0.32' }, irc_port,
+    matches)
+  t.eq(log.proto, 'tcp')
+  t.truthy(matches.data.irc[irc_nmap]['3.2.8.1'])
 end)
 
 t.case('precise Nmap version skips the irc probe', function()

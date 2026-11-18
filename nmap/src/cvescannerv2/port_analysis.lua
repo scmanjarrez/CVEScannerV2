@@ -8,6 +8,7 @@
 
 local config = require 'cvescannerv2.config'
 local log = require 'cvescannerv2.log'
+local mssql_build = require 'cvescannerv2.mssql_build'
 local render = require 'cvescannerv2.text_output'
 local report = require 'cvescannerv2.json_report'
 local state = require 'cvescannerv2.state'
@@ -142,16 +143,18 @@ local function add_output(out, cfg, result)
 end
 
 
--- Handles one CPE and version pair of the matches of a port.
+-- Handles one CPE and version pair of the matches of a port. selected tells
+-- whether the original CPE of the pair passes the config filter, so a
+-- refined CPE is kept when its original product was selected.
 local function analyze_match(host, port, scan_ctx, origin, cpe, version_str,
-                             out, cfg)
+                             selected, out, cfg)
   stdnse.verbose(2, fmt("cpe => %s | version => %s", cpe, version_str))
   local vendor, product, info, source = parse_cpe_version(cpe, version_str)
   local version_source = source
   if origin ~= 'nmap' then
     version_source = origin
   end
-  if not is_selected_service(product, version_str) then
+  if not (selected or is_selected_service(product, version_str)) then
     return
   end
   stdnse.verbose(2, fmt("product => %s | version => %s", product,
@@ -205,8 +208,12 @@ local function analyze_port(host, port, matches, scan_ctx)
     for _, cpe in ipairs(sorted_keys(cpes)) do
       local versions = cpes[cpe]
       for _, version_str in ipairs(sorted_keys(versions)) do
-        analyze_match(host, port, scan_ctx, origin, cpe, version_str, out,
-          cfg)
+        local _, original_product = parse_cpe_version(cpe, version_str)
+        local selected = is_selected_service(original_product, version_str)
+        for _, refined in ipairs(mssql_build.refine(cpe, version_str)) do
+          analyze_match(host, port, scan_ctx, origin, refined, version_str,
+            selected, out, cfg)
+        end
       end
     end
   end

@@ -744,6 +744,22 @@ The Nmap-based detection has limits that the script cannot overcome:
 - Backported fixes cannot be detected from the version number (see
   `distro_backport`).
 
+## SQL Server builds
+
+- With an Nmap version `MM.mm.BBBB`, the service pack is derived from the build
+  (2000–2016). From 2016 on, `sql_server_<year>` is also queried alongside the
+  Nmap service pack, using build ranges. From 2017 on, the year CPE
+  `sql_server:<year>` is still kept.
+- Up to 2014, NVD only distinguishes service packs, not CUs or GDRs. A patched
+  SP may still show CVEs already fixed in that SP. RTM builds (before SP1) are
+  not refined.
+- When Nmap reports only 3 build components, NVD uses 4 and, at the exact build
+  that starts a range, a CVE may be missed. With `ms-sql-info`, Nmap reports 4
+  components and they are used.
+- From 2016 on, each port gets two entries: `sql_server` (service pack or year)
+  and `sql_server_<year>`. `--script-args service=sql_server` covers both entries.
+- When the year in Nmap's CPE contradicts the build (e.g. a 2022 build reported as `sql_server:2019`), the build wins and the CPE year is replaced.
+
 # Troubleshooting
 
 ## Upstream request failures

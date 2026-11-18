@@ -19,6 +19,7 @@ This guide is for contributors. User documentation is in [`../README.md`](../REA
 | `config` | L0 | Reads and normalizes every script argument. |
 | `cpe` | L0 | Pure CPE 2.2 and 2.3 string parser. |
 | `version` | L1 | Version parsing and comparison. |
+| `mssql_build` | L1 | Refines SQL Server CPEs from the build number: service pack and/or year CPE plus a `sql_server_<year>` build CPE. |
 | `match_table` | L2 | Records detected versions and prunes series entries. |
 | `catalog.validate` | L2 | Pure validation of the catalogue JSON files. |
 | `catalog.tiers` | L2 | Route classifier into core, family and tail tiers for the sweep. |
