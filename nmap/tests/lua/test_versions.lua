@@ -626,3 +626,87 @@ t.case('mismatched year refinement is repeatable', function()
   t.eq(refine(cpe, '16.00.1000'), first)
   t.eq(cpe, 'cpe:/a:microsoft:sql_server:2019')
 end)
+
+t.case('overflowing version components return the CPE unchanged', function()
+  for _, version in ipairs({
+    '999999999999999999999999.0.1',
+    '13.00.6300.99999999999999999999',
+    '13.99999999999999999999.1',
+    '13.00.99999999999999999999',
+  }) do
+    local ok, result = pcall(refine, 'cpe:/a:microsoft:sql_server:2016',
+      version)
+    t.eq(ok, true, 'refine raised for ' .. version)
+    t.eq(result, { 'cpe:/a:microsoft:sql_server:2016' }, version)
+  end
+end)
+
+t.case('overflowing version components keep an unversioned CPE', function()
+  for _, version in ipairs({
+    '999999999999999999999999.0.1',
+    '13.00.6300.99999999999999999999',
+    '13.99999999999999999999.1',
+  }) do
+    local ok, result = pcall(refine, 'cpe:/a:microsoft:sql_server', version)
+    t.eq(ok, true, 'refine raised for ' .. version)
+    t.eq(result, { 'cpe:/a:microsoft:sql_server' }, version)
+  end
+end)
+
+t.case('leading zeros and long build numbers do not raise', function()
+  local ok, result = pcall(refine, MSSQL, '0')
+  t.eq(ok, true)
+  t.eq(result, { MSSQL })
+  ok, result = pcall(refine, MSSQL, '00000013.00.06300')
+  t.eq(ok, true)
+  t.eq(result, {
+    'cpe:/a:microsoft:sql_server:2016:sp3',
+    'cpe:/a:microsoft:sql_server_2016:13.0.6300',
+  })
+  ok, result = pcall(refine, 'cpe:/a:microsoft:sql_server:2016',
+    '13.00.' .. string.rep('9', 30))
+  t.eq(ok, true)
+  t.eq(result, { 'cpe:/a:microsoft:sql_server:2016' })
+end)
+
+t.case('unversioned CPE gets the release year and the build CPE', function()
+  local expected = {
+    'cpe:/a:microsoft:sql_server:2019',
+    'cpe:/a:microsoft:sql_server_2019:15.0.4003.23',
+  }
+  t.eq(refine('cpe:/a:microsoft:sql_server', '15.00.4003.23'), expected)
+  t.eq(refine('cpe:/a:microsoft:sql_server:*', '15.00.4003.23'), expected)
+  t.eq(refine('cpe:/a:microsoft:sql_server:-', '15.00.4003.23'), expected)
+end)
+
+t.case('unversioned CPE with a build reaching a service pack', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server', '12.00.6329'), {
+    'cpe:/a:microsoft:sql_server:2014:sp3',
+  })
+  t.eq(refine('cpe:/a:microsoft:sql_server', '12.00.2000'), {
+    'cpe:/a:microsoft:sql_server:2014',
+  })
+  t.eq(refine('cpe:/a:microsoft:sql_server', '10.50.2500'), {
+    'cpe:/a:microsoft:sql_server:2008:r2_sp1',
+  })
+end)
+
+t.case('unversioned 2.3 CPE gets the release year', function()
+  t.eq(refine('cpe:2.3:a:microsoft:sql_server:*:*:*:*:*:*:*:*',
+    '16.00.1000'), {
+    'cpe:/a:microsoft:sql_server:2022',
+    'cpe:/a:microsoft:sql_server_2022:16.0.1000',
+  })
+end)
+
+t.case('unversioned CPE keeps a coherent update', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:-:sp1', '12.00.6329'), {
+    'cpe:/a:microsoft:sql_server:2014:sp1',
+  })
+end)
+
+t.case('unversioned CPE drops an update not matching the release', function()
+  t.eq(refine('cpe:/a:microsoft:sql_server:-:r2_sp1', '10.00.2531'), {
+    'cpe:/a:microsoft:sql_server:2008:sp1',
+  })
+end)

@@ -1120,4 +1120,23 @@ db_case('D5: service=sql_server on a 2022 build selects the 2022 year and build 
   t.keys_eq(found, { 'CVE-2022-YEAR', 'CVE-2022-RANGE' })
 end)
 
+db_case('E2: CPE without year finds the year and the build range CVEs', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server', '15.00.4003.23')
+  t.keys_eq(found, { 'CVE-2019-YEAR', 'CVE-2019-RANGE' })
+end)
+
+db_case('E2: CPE with * as year finds the year and the build range CVEs', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:*', '15.00.4003.23')
+  t.keys_eq(found, { 'CVE-2019-YEAR', 'CVE-2019-RANGE' })
+end)
+
+db_case('E1: overflowing build or revision does not abort the port analysis', function()
+  for _, version in ipairs({ '999999999999999999999999.0.1',
+    '13.00.6300.99999999999999999999' }) do
+    local ok, found = pcall(mssql_found, 'cpe:/a:microsoft:sql_server:2016', version)
+    t.truthy(ok, 'analyze_port raised for ' .. version)
+    t.eq(type(found), 'table', 'no result for ' .. version)
+  end
+end)
+
 for _, path in ipairs(MSSQL_PATHS) do os.remove(path) end
