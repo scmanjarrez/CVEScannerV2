@@ -991,20 +991,31 @@ t.suite('mssql build refinement')
 -- Temporary database files of the SQL Server cases, removed at the end.
 local MSSQL_PATHS = {}
 
--- SQL Server products: 2014 sp1, sp3 and any update, and a 2016 build product
--- with a 13.0.x range.
+-- SQL Server products: 2014 sp1, sp3 and any update, a 2016 build product
+-- with a 13.0.x range, a 2016 sp3 product, the 2019 year product and the
+-- 2019 build product with a range, the 2022 year product and the 2022 build
+-- product with a range.
 local MSSQL_PRODUCTS = {
   { 1, 'microsoft', 'sql_server',      '2014', 'sp1' },
   { 2, 'microsoft', 'sql_server',      '2014', 'sp3' },
   { 3, 'microsoft', 'sql_server',      '2014', '*' },
   { 4, 'microsoft', 'sql_server_2016', '*',    '*' },
+  { 5, 'microsoft', 'sql_server',      '2016', 'sp3' },
+  { 6, 'microsoft', 'sql_server',      '2019', '*' },
+  { 7, 'microsoft', 'sql_server_2019', '*',    '*' },
+  { 8, 'microsoft', 'sql_server',      '2022', '*' },
+  { 9, 'microsoft', 'sql_server_2022', '*',    '*' },
 }
 
--- Database spec with one CVE per 2014 update and one 2016 range CVE.
+-- Database spec with one CVE per 2014 update, the 2016 range CVEs (the
+-- 13.0.6300.2 edges, the sp3 CVE), the 2019 year and range CVEs, and the
+-- 2022 year and range CVEs.
 local function mssql_spec()
   local cves = {}
   for _, id in ipairs({ 'CVE-2014-SP1', 'CVE-2014-SP3', 'CVE-2014-ANY',
-    'CVE-2016-RANGE' }) do
+    'CVE-2016-RANGE', 'CVE-2016-SP3', 'CVE-2016-EDGE-START',
+    'CVE-2016-EDGE-END', 'CVE-2019-YEAR', 'CVE-2019-RANGE',
+    'CVE-2022-YEAR', 'CVE-2022-RANGE' }) do
     table.insert(cves, { id, '7.5', nil, 2000, nil })
   end
   return {
@@ -1014,17 +1025,29 @@ local function mssql_spec()
       { 'CVE-2014-SP1', 1 },
       { 'CVE-2014-SP3', 2 },
       { 'CVE-2014-ANY', 3 },
+      { 'CVE-2016-SP3', 5 },
+      { 'CVE-2019-YEAR', 6 },
+      { 'CVE-2022-YEAR', 8 },
     },
     multiaffected = {
       { 'CVE-2016-RANGE', 4, nil, '13.0.0', nil, '13.1.0' },
+      -- [13.0.6300.2, 13.0.6441.1)
+      { 'CVE-2016-EDGE-START', 4, '13.0.6300.2', nil, nil, '13.0.6441.1' },
+      -- [13.0.0, 13.0.6300.2)
+      { 'CVE-2016-EDGE-END', 4, '13.0.0', nil, nil, '13.0.6300.2' },
+      -- [15.0.4003.23, 15.0.4100.0)
+      { 'CVE-2019-RANGE', 7, '15.0.4003.23', nil, nil, '15.0.4100.0' },
+      -- [16.0.0.0, 16.0.4000.0)
+      { 'CVE-2022-RANGE', 9, '16.0.0.0', nil, nil, '16.0.4000.0' },
     },
   }
 end
 
 -- Analyze one CPE and version as a port match and return the CVE ids of the
--- cached results, with the reasons of each CVE.
-local function mssql_found(cpe, version_str)
-  local sc = t.load_scanner({ sql = sqlite })
+-- cached results, with the reasons of each CVE. service is the value of the
+-- service script argument (nil keeps the default 'all').
+local function mssql_found(cpe, version_str, service)
+  local sc = t.load_scanner({ sql = sqlite, args = { service = service } })
   local path = fixture.create(mssql_spec(), sqlite)
   table.insert(MSSQL_PATHS, path)
   local reg = sc.modules.state
@@ -1056,6 +1079,45 @@ end)
 db_case('2016 build 13.00.6300 finds the sql_server_2016 range CVE', function()
   local found = mssql_found('cpe:/a:microsoft:sql_server:2016', '13.00.6300')
   t.truthy(found['CVE-2016-RANGE'], 'CVE-2016-RANGE missing')
+end)
+
+db_case('D1: 4 component build keeps the inclusive start and drops the exclusive end', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2016', '13.00.6300.2')
+  t.truthy(found['CVE-2016-EDGE-START'], 'inclusive start 13.0.6300.2 missing')
+  t.eq(found['CVE-2016-EDGE-END'], nil, 'exclusive end 13.0.6300.2 matched')
+end)
+
+db_case('D2: year CPE with a 4 component build finds the year and the build range CVEs', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2019', '15.00.4003.23')
+  t.keys_eq(found, { 'CVE-2019-YEAR', 'CVE-2019-RANGE' })
+end)
+
+db_case('D3: service=sql_server selects the year and the build product', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2019', '15.00.4003.23',
+    'sql_server')
+  t.keys_eq(found, { 'CVE-2019-YEAR', 'CVE-2019-RANGE' })
+end)
+
+db_case('D3: service=sql_server_2019 selects only the build product', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2019', '15.00.4003.23',
+    'sql_server_2019')
+  t.keys_eq(found, { 'CVE-2019-RANGE' })
+end)
+
+db_case('D4: sp3 CPE with a 4 component build finds the sp3 and the range CVEs', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2016:sp3', '13.00.6300.2')
+  t.keys_eq(found, { 'CVE-2016-SP3', 'CVE-2016-RANGE', 'CVE-2016-EDGE-START' })
+end)
+
+db_case('D5: 2019 year CPE on a 2022 build keeps the 2022 CVEs only', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2019', '16.00.1000.00; RTM')
+  t.keys_eq(found, { 'CVE-2022-YEAR', 'CVE-2022-RANGE' })
+end)
+
+db_case('D5: service=sql_server on a 2022 build selects the 2022 year and build CVEs', function()
+  local found = mssql_found('cpe:/a:microsoft:sql_server:2019', '16.00.1000.00; RTM',
+    'sql_server')
+  t.keys_eq(found, { 'CVE-2022-YEAR', 'CVE-2022-RANGE' })
 end)
 
 for _, path in ipairs(MSSQL_PATHS) do os.remove(path) end

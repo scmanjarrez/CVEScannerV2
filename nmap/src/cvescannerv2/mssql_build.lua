@@ -21,29 +21,33 @@ local RELEASES = {
   ['10.50'] = { year = '2008', r2 = true, sps = { 2500, 4000, 6000 } },
   ['11.00'] = { year = '2012', sps = { 3000, 5058, 6020, 7001 } },
   ['12.00'] = { year = '2014', sps = { 4100, 5000, 6024 } },
-  ['13.00'] = { year = '2016', sps = { 4001, 5026, 6300 } },
-  ['14.00'] = { year = '2017' },
-  ['15.00'] = { year = '2019' },
-  ['16.00'] = { year = '2022' },
-  ['17.00'] = { year = '2025' },
+  ['13.00'] = { year = '2016', build = true, sps = { 4001, 5026, 6300 } },
+  ['14.00'] = { year = '2017', build = true },
+  ['15.00'] = { year = '2019', build = true },
+  ['16.00'] = { year = '2022', build = true },
+  ['17.00'] = { year = '2025', build = true },
 }
 
 
---- Return the 'major.minor' key, major and integer build, or nil.
--- Accepts an optional 4th component and an optional '; SP1' style suffix.
--- Only the first three components are used.
+--- Return the 'major.minor' key, major, integer build and revision, or nil.
+-- The revision is the optional 4th component, or nil when absent.
+-- Accepts an optional '; SP1' style suffix after the version.
 local function parse_version(version)
   if type(version) ~= 'string' then return nil end
   local major, minor, build, rest =
     version:match('^%s*(%d+)%.(%d+)%.(%d+)(.*)$')
   if not major then return nil end
-  local tail = rest:match('^%.%d+(.*)$')
-  if tail then rest = tail end
+  local rev = nil
+  local rev_digits, tail = rest:match('^%.(%d+)(.*)$')
+  if rev_digits then
+    rev = tonumber(rev_digits)
+    rest = tail
+  end
   if rest ~= '' and not rest:match('^[;%s]') then return nil end
   local key = string.format('%d.%02d', tonumber(major), tonumber(minor))
   local number = math.tointeger(tonumber(build))
   if not number then return nil end
-  return key, tonumber(major), number
+  return key, tonumber(major), number, rev
 end
 
 
@@ -66,45 +70,69 @@ end
 
 
 --- Return the CPE naming the exact build, as sql_server_<year>.
-local function build_cpe(release, major, build)
-  return string.format('cpe:/a:microsoft:sql_server_%s:%d.0.%d',
+-- The revision is appended only when it is known (4 component version).
+local function build_cpe(release, major, build, rev)
+  local name = string.format('cpe:/a:microsoft:sql_server_%s:%d.0.%d',
     release.year, major, build)
+  if rev == nil then return name end
+  return string.format('%s.%d', name, rev)
+end
+
+
+--- Return true when the CPE year and update agree with the release.
+-- A CPE without year is trusted. A year other than the release year is
+-- not. Within the same year, an 'r2' update needs an R2 release, and an
+-- 'spN' update on an R2 release is 2008 (not R2), so it is not trusted.
+local function cpe_trusted(release, cpe_version, update)
+  if cpe_version == nil or cpe_version == '' then return true end
+  if cpe_version == '*' or cpe_version == '-' then return true end
+  if cpe_version ~= release.year then return false end
+  if update and update:match('^r2') and not release.r2 then return false end
+  if release.r2 and update and update:match('^sp%d') then return false end
+  return true
 end
 
 
 --- Return the list of CPEs for a SQL Server CPE and version.
--- Falls back to { cpe } when the CPE or the version is not refinable.
+-- The CPE year and update are trusted only when they agree with the
+-- build (see cpe_trusted). An untrusted CPE is treated as having neither
+-- update nor year: its generic CPE is the bare year, or the service pack
+-- CPE when the build reaches one.
+-- Element 1 is the generic CPE: the original one when it has a trusted
+-- update, the service pack CPE when the build reaches one, otherwise the
+-- original (or the bare year when untrusted).
+-- Element 2, when the release has build = true, is the sql_server_<year>
+-- build CPE. Falls back to { cpe } when the CPE or the version is not
+-- refinable.
 function M.refine(cpe, version)
-  local _, _, _, vendor, product, _, update = split_cpe(cpe)
+  local _, _, _, vendor, product, cpe_version, update =
+    split_cpe(cpe)
   if vendor ~= 'microsoft' or product ~= 'sql_server' then
     return { cpe }
   end
-  if update and update ~= '' and update ~= '*' then
-    return { cpe }
-  end
 
-  local key, major, build = parse_version(version)
+  local key, major, build, rev = parse_version(version)
   local release = key and RELEASES[key]
   if not release then
     return { cpe }
   end
 
-  -- 2017 and later: only the exact build CPE.
-  if not release.sps then
-    return { build_cpe(release, major, build) }
+  local trusted = cpe_trusted(release, cpe_version, update)
+  local generic = cpe
+  if not trusted then
+    generic = 'cpe:/a:microsoft:sql_server:' .. release.year
+  end
+  local has_update = trusted and update and update ~= '' and update ~= '*'
+  if release.sps and not has_update then
+    local sp = service_pack(release.sps, build)
+    if sp then generic = sp_cpe(release, sp) end
   end
 
-  local sp = service_pack(release.sps, build)
-  -- 2016 also keeps the build CPE, after the service pack (or original).
-  if release.year == '2016' then
-    local first = sp and sp_cpe(release, sp) or cpe
-    return { first, build_cpe(release, major, build) }
+  local result = { generic }
+  if release.build then
+    result[2] = build_cpe(release, major, build, rev)
   end
-
-  if not sp then
-    return { cpe }
-  end
-  return { sp_cpe(release, sp) }
+  return result
 end
 
 
