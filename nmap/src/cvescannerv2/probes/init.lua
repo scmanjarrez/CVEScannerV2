@@ -83,10 +83,11 @@ local function run_version_probe(host, port, probe)
 end
 M.run_version_probe = run_version_probe
 
---- Return the first OS family from an 'os' probe on an open TCP or UDP port.
+--- Return the first OS family from an 'os' probe on an open TCP port.
 -- Only the probes whose services or ports match an open port run.
 local function first_os_probe(host)
-  for port in nmap.get_ports(host, nil, 'tcp', 'open') do
+  local port = nmap.get_ports(host, nil, 'tcp', 'open')
+  while port do
     for _, probe in ipairs(SERVICE_PROBES) do
       if probe.kind == 'os' and probe_enabled(probe.name)
           and probe_applies(probe, port, nil) then
@@ -96,6 +97,7 @@ local function first_os_probe(host)
         end
       end
     end
+    port = nmap.get_ports(host, port, 'tcp', 'open')
   end
   return nil, nil
 end

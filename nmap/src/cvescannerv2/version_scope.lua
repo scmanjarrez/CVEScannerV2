@@ -13,8 +13,27 @@ local compare_version = version.compare_version
 local version_or_default = version.version_or_default
 
 
+-- Strength of each scope reason. A nil reason means a plain match (the
+-- strongest). Unknown reasons count as the weakest.
+local REASON_STRENGTH = {
+  exact_version = 3,
+  range_contains = 3,
+  range_overlap = 2,
+  update_unknown = 2,
+  nvd_unbounded = 1,
+}
+
+local function reason_strength(reason)
+  if reason == nil then return 3 end
+  return REASON_STRENGTH[reason] or 1
+end
+
+
+-- Keep one reason per CVE: the strongest one. A tie keeps the existing one,
+-- so the final reason does not depend on the order of the rows.
 local function add_scoped_vulnerability(row, result, reason)
-  if result[row.id] == nil then
+  local rec = result[row.id]
+  if rec == nil then
     result[row.id] = {
       ['CVSSV2'] = row.CVSSV2,
       ['CVSSV3'] = row.CVSSV3,
@@ -23,6 +42,11 @@ local function add_scoped_vulnerability(row, result, reason)
       ['Metasploit'] = row.Metasploit,
       ['reasons'] = reason and { reason } or {}
     }
+    return
+  end
+  local current = rec.reasons[1]
+  if reason_strength(reason) > reason_strength(current) then
+    rec.reasons = reason and { reason } or {}
   end
 end
 
@@ -123,6 +147,8 @@ local function scoped_versions(all_versions, from, to, observed_update, result)
     local applies = false
     local reason = nil
     if from ~= to then
+      -- The observed version is a range, never exact evidence.
+      reason = 'range_overlap'
       local affected_version = pr_v
       if row_update ~= '*' and row_update ~= '-' and row_update ~= '' then
         affected_version = affected_version .. row_update

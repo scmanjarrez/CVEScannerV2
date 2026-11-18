@@ -13,6 +13,15 @@ local M = {}
 
 local PLATFORM_RANK = { ok = 4, family = 3, unknown = 2, bad = 1 }
 
+-- Count the vendors of one family in the shared family table.
+local function family_vendor_count(family)
+  local count = 0
+  for _, f in pairs(state.platform_families) do
+    if f == family then count = count + 1 end
+  end
+  return count
+end
+
 -- Compare one OS platform row with the host context.
 -- Return 'ok', 'family', 'unknown' or 'bad'.
 local function os_platform_status(row, os_ctx)
@@ -20,7 +29,11 @@ local function os_platform_status(row, os_ctx)
   if family == nil or os_ctx.family == nil then return 'unknown' end
   if family ~= os_ctx.family then return 'bad' end
   if row.vendor == 'linux' then return 'ok' end
-  if os_ctx.distro == nil then return 'family' end
+  if os_ctx.distro == nil then
+    -- Sole vendor of its family (e.g. microsoft -> windows): no distro needed.
+    if family_vendor_count(family) == 1 then return 'ok' end
+    return 'family'
+  end
   local distro_vendor = os_ctx.distro
   if os_ctx.distro == 'ubuntu' then distro_vendor = 'canonical' end
   if row.vendor == distro_vendor then return 'ok' end
@@ -30,8 +43,11 @@ end
 
 -- Return the best status, family and vendor of one AND configuration.
 -- A configuration without OS platform rows is a component requirement.
+-- A compatible OS row plus any non-OS row (application, hardware) is a
+-- component requirement too.
 local function config_status(rows, os_ctx)
   local best, family, vendor = nil, nil, nil
+  local has_component_row = false
   for _, row in ipairs(rows) do
     if row.part == 'o' then
       local status = os_platform_status(row, os_ctx)
@@ -40,9 +56,14 @@ local function config_status(rows, os_ctx)
       if best == nil or PLATFORM_RANK[status] > PLATFORM_RANK[best] then
         best = status
       end
+    else
+      has_component_row = true
     end
   end
   if best == nil then return 'component', nil, nil end
+  if best == 'ok' and has_component_row then
+    return 'component', family, vendor
+  end
   return best, family, vendor
 end
 

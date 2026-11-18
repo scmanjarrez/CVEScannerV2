@@ -907,14 +907,19 @@ local function os_scanner(args, platform)
   return sc
 end
 
---- Install an nmap.get_ports stub that yields the given open ports.
+--- Install an nmap.get_ports stub that emulates the NSE API: it returns the
+-- first open port when prev is nil, else the open port after prev, or nil.
 local function open_ports(sc, ports)
-  sc.stubs.nmap.get_ports = function()
-    local i = 0
-    return function()
-      i = i + 1
-      return ports[i]
+  sc.stubs.nmap.get_ports = function(_, prev)
+    if prev == nil then
+      return ports[1]
     end
+    for i, port in ipairs(ports) do
+      if port == prev then
+        return ports[i + 1]
+      end
+    end
+    return nil
   end
 end
 
@@ -1090,7 +1095,7 @@ t.case('known os or no conditional CVE never runs the probe', function()
     local ports_calls = 0
     plain.stubs.nmap.get_ports = function()
       ports_calls = ports_calls + 1
-      return function() return nil end
+      return nil
     end
     local plain_meta = os_scan(plain, '10.2.0.12')
     t.eq(plain_meta.counts.high, 1)

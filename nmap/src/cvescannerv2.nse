@@ -114,7 +114,7 @@ dependencies = {
   "mqtt-subscribe", "amqp-info", "xmpp-info",
 }
 author = "Sergio Chica"
-local version = "4.0.2"
+local version = "4.0.3"
 
 local http = require 'http'
 http.USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0'

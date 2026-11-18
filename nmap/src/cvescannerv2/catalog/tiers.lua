@@ -160,9 +160,11 @@ end
 --- Group paths into core, family and tail lists.
 --
 -- Walks paths in their original order and skips exact duplicates. The core
--- list holds the canonical CORE entries present in paths, in CORE order.
--- Family and tail lists keep the original order and raw path strings.
--- Only families with at least one path appear in the families table.
+-- list holds the raw path strings whose canonical form (query and fragment
+-- stripped) is a CORE entry, grouped by CORE order and keeping each group's
+-- original order, so queries such as '/x?a=1' are emitted intact. Family and
+-- tail lists keep the original order and raw path strings. Only families with
+-- at least one path appear in the families table.
 --
 -- Args:
 --   paths: List of request paths.
@@ -173,13 +175,15 @@ end
 function M.build(paths)
   local result = { core = {}, families = {}, tail = {} }
   local seen = {}
-  local core_present = {}
+  local core_groups = {}
   for _, path in ipairs(paths) do
     if not seen[path] then
       seen[path] = true
       local tier = M.classify(path)
       if tier == 'core' then
-        core_present[strip_query(path)] = true
+        local canon = strip_query(path)
+        core_groups[canon] = core_groups[canon] or {}
+        table.insert(core_groups[canon], path)
       elseif tier == 'tail' then
         table.insert(result.tail, path)
       else
@@ -189,8 +193,8 @@ function M.build(paths)
       end
     end
   end
-  for _, path in ipairs(M.CORE) do
-    if core_present[path] then
+  for _, canon in ipairs(M.CORE) do
+    for _, path in ipairs(core_groups[canon] or {}) do
       table.insert(result.core, path)
     end
   end

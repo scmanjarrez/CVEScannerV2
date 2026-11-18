@@ -88,6 +88,11 @@ t.case('build places core paths present in the input in CORE order', function()
   t.eq(result.core, { '/login', '/healthz' })
 end)
 
+t.case('build emits core paths with their query intact', function()
+  local result = tiers.build({ '/healthz?a=1', '/login?next=/y', '/login' })
+  t.eq(result.core, { '/login?next=/y', '/login', '/healthz?a=1' })
+end)
+
 t.case('build omits core paths absent from the input', function()
   local result = tiers.build({ '/a.php' })
   t.eq(result.core, {})
